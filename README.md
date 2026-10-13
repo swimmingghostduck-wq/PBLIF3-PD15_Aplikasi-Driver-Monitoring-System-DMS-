@@ -48,7 +48,32 @@ adalah logika sistem, penerapan AI, dan mekanisme monitoring data.
 
 ## Setup
 
-### 1. Aplikasi Laravel
+### Cara cepat (disarankan)
+
+```powershell
+git clone https://github.com/swimmingghostduck-wq/PBLIF3-PD15_Aplikasi-Driver-Monitoring-System-DMS-.git
+cd PBLIF3-PD15_Aplikasi-Driver-Monitoring-System-DMS-
+.\setup.ps1
+```
+
+Skrip `setup.ps1` memeriksa kebutuhan perangkat lunak, memasang dependensi,
+menyiapkan `.env`, membuat database, menjalankan migrasi, menyiapkan virtual
+environment Python, dan mengunduh model MediaPipe.
+
+Skrip aman dijalankan berulang kali — langkah yang sudah selesai otomatis
+dilewati. Opsi yang tersedia:
+
+```powershell
+.\setup.ps1 -SkipAi    # lewati bagian AI Service
+.\setup.ps1 -SkipDb    # lewati database & migrasi
+```
+
+> Jika PowerShell menolak menjalankan skrip, jalankan satu kali:
+> `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned`
+
+### Manual
+
+#### 1. Aplikasi Laravel
 
 ```powershell
 composer install
@@ -61,7 +86,7 @@ php artisan migrate
 npm install
 ```
 
-### 2. AI Service
+#### 2. AI Service
 
 ```powershell
 cd ai-service
