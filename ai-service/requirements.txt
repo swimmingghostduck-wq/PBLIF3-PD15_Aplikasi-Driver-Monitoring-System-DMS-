@@ -1,0 +1,22 @@
+# ============================================================
+# AI Service - Driver Monitoring System (DMS)
+# Kode Tim PBL : IF3-PD15
+# Python        : 3.13
+# ============================================================
+
+# --- Web framework ---
+fastapi==0.143.0
+uvicorn[standard]==0.38.0
+python-multipart==0.0.20
+
+# --- Konfigurasi ---
+pydantic==2.12.4
+pydantic-settings==2.13.0
+
+# --- Computer Vision / AI ---
+mediapipe==1.1.0
+opencv-python==5.0.0.93
+numpy==2.5.3
+
+# --- HTTP client (untuk callback ke Laravel) ---
+httpx==0.28.1
