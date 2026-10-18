@@ -1,0 +1,351 @@
+{% extends 'base.html' %}
+{% block title %}Monitoring Pengemudi Real-Time - DMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header Ringkasan Status -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/80 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <span>Pemantauan Kamera Real-Time</span>
+                <span id="liveBadge" class="flex h-3 w-3 relative">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                </span>
+            </h1>
+            <p class="text-sm text-slate-400 mt-0.5">Pengemudi: <strong class="text-slate-200">{{ user.full_name }}</strong> | Input: Kamera / Webcam</p>
+        </div>
+
+        <div class="flex items-center space-x-3">
+            <!-- Audio Toggle -->
+            <button id="toggleAudioBtn" onclick="toggleAudio()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition">
+                <span id="audioIcon">🔊</span>
+                <span id="audioText">Audio Alarm: AKTIF</span>
+            </button>
+            <a href="{{ url_for('driver.history') }}" class="px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/30 transition">
+                📋 Riwayat Peringatan Saya
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Banner Darurat (Muncul otomatis saat kantuk/distraksi terdeteksi) -->
+    <div id="alarmBanner" class="hidden p-4 rounded-2xl bg-red-600/90 border-2 border-red-500 text-white shadow-2xl alarm-pulsing flex items-center justify-between">
+        <div class="flex items-center space-x-4">
+            <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl font-bold">
+                ⚠️
+            </div>
+            <div>
+                <h3 id="alarmTitle" class="text-lg font-extrabold uppercase tracking-wide">PERINGATAN BAHAYA</h3>
+                <p id="alarmDesc" class="text-sm text-red-100 font-medium">Pengemudi terdeteksi mengantuk! Segera buka mata Anda.</p>
+            </div>
+        </div>
+        <span class="px-3 py-1 bg-black/40 rounded-lg text-xs font-mono font-bold">NFR-03 REAL-TIME</span>
+    </div>
+
+    <!-- Grid Konten: Video Stream & Panel Telemetri -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Kolom Kiri: Video Feed Stream -->
+        <div class="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col">
+            <div class="bg-slate-900/80 px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Feed MediaPipe & Computer Vision
+                </span>
+                <span id="modelBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700 font-mono">
+                    Model: Memuat...
+                </span>
+            </div>
+
+            <div class="relative bg-black flex items-center justify-center min-h-[380px] sm:min-h-[440px]">
+                <img id="videoFeed" src="{{ url_for('driver.video_feed') }}" 
+                     alt="Video Stream Driver Monitoring" 
+                     class="w-full h-auto object-contain max-h-[520px]">
+                
+                <!-- Overlay Status Wajah jika tidak ada wajah -->
+                <div id="noFaceNotice" class="hidden absolute inset-0 bg-black/75 flex flex-col items-center justify-center text-center p-6">
+                    <div class="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mb-3">
+                        👤
+                    </div>
+                    <h4 class="text-lg font-bold text-white">Wajah Pengemudi Tidak Terdeteksi</h4>
+                    <p class="text-xs text-slate-400 mt-1 max-w-sm">Pastikan wajah Anda berada di depan kamera dengan pencahayaan yang cukup.</p>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/80 px-4 py-2.5 border-t border-slate-700/60 text-xs text-slate-400 flex items-center justify-between">
+                <span>FPS: Real-Time (~25-30 FPS)</span>
+                <span class="text-slate-500">PBL IF3-PD15 Simulation Mode</span>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Panel Telemetri & Indikator AI -->
+        <div class="space-y-5">
+            <!-- Kartu Status Utama -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Status Kewaspadaan Saat Ini</h3>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div id="statusText" class="text-2xl font-black text-emerald-400">TERJAGA</div>
+                        <p id="statusSub" class="text-xs text-slate-400 mt-0.5">Pengemudi fokus pada jalan</p>
+                    </div>
+                    <div id="statusIcon" class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl">
+                        👁️
+                    </div>
+                </div>
+
+                <!-- Drowsiness Score Progress Bar -->
+                <div class="mt-4 pt-4 border-t border-slate-700/60">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-400">Skor Tingkat Kantuk:</span>
+                        <span id="drowsyScoreText" class="font-bold text-slate-200">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                        <div id="drowsyScoreBar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kartu Metrik Geometris Wajah -->
+            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Metrik Landmark MediaPipe</h3>
+
+                <!-- EAR (Eye Aspect Ratio) -->
+                <div>
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-slate-300 font-medium">Eye Aspect Ratio (EAR)</span>
+                        <span id="earVal" class="font-mono font-bold text-blue-400">0.000</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="earBar" class="bg-blue-500 h-2 rounded-full transition-all duration-150" style="width: 70%"></div>
+                    </div>
+                    <span class="text-[10px] text-slate-500">Ambang Batas Tertutup: &lt; 0.220</span>
+                </div>
+
+                <!-- MAR (Mouth Aspect Ratio) -->
+                <div>
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-slate-300 font-medium">Mouth Aspect Ratio (MAR)</span>
+                        <span id="marVal" class="font-mono font-bold text-amber-400">0.000</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                        <div id="marBar" class="bg-amber-500 h-2 rounded-full transition-all duration-150" style="width: 25%"></div>
+                    </div>
+                    <span class="text-[10px] text-slate-500">Ambang Batas Menguap: &gt; 0.650</span>
+                </div>
+
+                <!-- Head Pose Yaw -->
+                <div class="pt-2 border-t border-slate-700/60">
+                    <div class="flex justify-between items-center text-xs mb-1">
+                        <span class="text-slate-300 font-medium">Arah Pandangan (Yaw)</span>
+                        <span id="yawVal" class="font-mono font-bold text-purple-400">0.0° (Tengah)</span>
+                    </div>
+                    <p id="poseNotice" class="text-[10px] text-slate-400">Menghadap lurus ke depan</p>
+                </div>
+            </div>
+
+            <!-- Kartu Petunjuk Pengujian -->
+            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs text-slate-400 space-y-1.5">
+                <div class="font-semibold text-slate-300 flex items-center gap-1.5">
+                    <span>💡</span> Cara Menguji Sistem:
+                </div>
+                <p>1. Pejamkan mata selama &gt; 1.5 detik untuk menguji alarm kantuk.</p>
+                <p>2. Menoleh ke kiri/kanan selama &gt; 2.5 detik untuk menguji alarm distraksi.</p>
+                <p>3. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Inisialisasi Web Audio API Synthesizer untuk Audio Alarm (NFR-03 & FR-10)
+    let audioCtx = null;
+    let isAudioEnabled = true;
+    let alarmOscillator = null;
+    let alarmGain = null;
+    let isBeeping = false;
+
+    function initAudioContext() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playAlarmSound() {
+        if (!isAudioEnabled) return;
+        initAudioContext();
+        if (isBeeping) return;
+
+        isBeeping = true;
+        try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc.type = 'sawtooth';
+            // Frekuensi nada tinggi peringatan bahaya (880 Hz - 440 Hz modulasi)
+            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+
+            setTimeout(() => {
+                isBeeping = false;
+            }, 450);
+        } catch (e) {
+            console.error("Audio error:", e);
+            isBeeping = false;
+        }
+    }
+
+    function toggleAudio() {
+        isAudioEnabled = !isAudioEnabled;
+        const icon = document.getElementById('audioIcon');
+        const text = document.getElementById('audioText');
+        const btn = document.getElementById('toggleAudioBtn');
+
+        if (isAudioEnabled) {
+            initAudioContext();
+            icon.innerText = '🔊';
+            text.innerText = 'Audio Alarm: AKTIF';
+            btn.className = "px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition";
+        } else {
+            icon.innerText = '🔇';
+            text.innerText = 'Audio Alarm: SENYAP';
+            btn.className = "px-3.5 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-semibold rounded-xl border border-red-700/60 flex items-center gap-2 transition";
+        }
+    }
+
+    // Polling Status API setiap 200ms
+    const alarmBanner = document.getElementById('alarmBanner');
+    const alarmTitle = document.getElementById('alarmTitle');
+    const alarmDesc = document.getElementById('alarmDesc');
+    const statusText = document.getElementById('statusText');
+    const statusSub = document.getElementById('statusSub');
+    const statusIcon = document.getElementById('statusIcon');
+    const modelBadge = document.getElementById('modelBadge');
+    const earVal = document.getElementById('earVal');
+    const earBar = document.getElementById('earBar');
+    const marVal = document.getElementById('marVal');
+    const marBar = document.getElementById('marBar');
+    const yawVal = document.getElementById('yawVal');
+    const poseNotice = document.getElementById('poseNotice');
+    const drowsyScoreText = document.getElementById('drowsyScoreText');
+    const drowsyScoreBar = document.getElementById('drowsyScoreBar');
+    const noFaceNotice = document.getElementById('noFaceNotice');
+
+    async function updateDMSStatus() {
+        try {
+            const res = await fetch("{{ url_for('driver.status_feed') }}");
+            if (!res.ok) return;
+            const data = await res.json();
+
+            // 1. Model Name
+            modelBadge.innerText = "Model: " + (data.method || "Baseline");
+
+            // 2. Status Wajah
+            if (!data.face_detected) {
+                noFaceNotice.classList.remove('hidden');
+            } else {
+                noFaceNotice.classList.add('hidden');
+            }
+
+            // 3. Metrik EAR & MAR
+            const ear = data.ear_avg || 0.0;
+            const mar = data.mar || 0.0;
+            earVal.innerText = ear.toFixed(3);
+            marVal.innerText = mar.toFixed(3);
+
+            // Persentase bar (normalisasi)
+            const earPct = Math.min(100, Math.max(0, (ear / 0.40) * 100));
+            const marPct = Math.min(100, Math.max(0, (mar / 1.00) * 100));
+            earBar.style.width = earPct + "%";
+            marBar.style.width = marPct + "%";
+
+            // 4. Pose Kepala
+            const yaw = data.yaw || 0.0;
+            let yawText = `${yaw.toFixed(1)}° `;
+            if (yaw > 20) {
+                yawText += "(Menoleh Kanan)";
+                poseNotice.innerText = "Pengemudi menoleh ke kanan";
+            } else if (yaw < -20) {
+                yawText += "(Menoleh Kiri)";
+                poseNotice.innerText = "Pengemudi menoleh ke kiri";
+            } else {
+                yawText += "(Tengah)";
+                poseNotice.innerText = "Menghadap lurus ke depan";
+            }
+            yawVal.innerText = yawText;
+
+            // 5. Skor Kantuk
+            const score = (data.drowsy_score || 0.0) * 100;
+            drowsyScoreText.innerText = Math.round(score) + "%";
+            drowsyScoreBar.style.width = Math.round(score) + "%";
+
+            if (score > 70) {
+                drowsyScoreBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-300";
+            } else if (score > 40) {
+                drowsyScoreBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
+            } else {
+                drowsyScoreBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-300";
+            }
+
+            // 6. Label Status & Alarm
+            if (data.is_alarm_active) {
+                alarmBanner.classList.remove('hidden');
+                alarmTitle.innerText = "PERINGATAN: " + (data.alarm_type || "BAHAYA");
+                alarmDesc.innerText = data.alarm_message || "Kondisi berbahaya terdeteksi!";
+                statusText.innerText = data.alarm_type || "BAHAYA";
+                statusText.className = "text-2xl font-black text-red-500";
+                statusIcon.className = "w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-3xl";
+                statusIcon.innerText = "🚨";
+                statusSub.innerText = data.alarm_message;
+
+                // Bunyikan Web Audio alarm
+                playAlarmSound();
+            } else {
+                alarmBanner.classList.add('hidden');
+                const label = data.status_label || "TERJAGA";
+                statusText.innerText = label;
+
+                if (label === 'TERJAGA') {
+                    statusText.className = "text-2xl font-black text-emerald-400";
+                    statusIcon.className = "w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl";
+                    statusIcon.innerText = "👁️";
+                    statusSub.innerText = "Pengemudi fokus pada jalan";
+                } else if (label === 'MENGUAP') {
+                    statusText.className = "text-2xl font-black text-amber-400";
+                    statusIcon.className = "w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl";
+                    statusIcon.innerText = "🥱";
+                    statusSub.innerText = "Mulai terindikasi kelelahan";
+                } else {
+                    statusText.className = "text-2xl font-black text-blue-400";
+                    statusIcon.className = "w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-3xl";
+                    statusIcon.innerText = "👤";
+                    statusSub.innerText = "Kondisi stabil";
+                }
+            }
+        } catch (err) {
+            console.error("Poll error:", err);
+        }
+    }
+
+    // Jalankan polling setiap 250 milidetik
+    setInterval(updateDMSStatus, 250);
+
+    // Aktifkan audio context pada klik pertama halaman
+    document.addEventListener('click', () => {
+        initAudioContext();
+    }, { once: true });
+</script>
+{% endblock %}
+

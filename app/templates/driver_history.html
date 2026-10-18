@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% block title %}Riwayat Peringatan Driver - DMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/80 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Riwayat Peringatan Saya</h1>
+            <p class="text-sm text-slate-400 mt-0.5">Catatan insiden kewaspadaan pengemudi: <strong class="text-slate-200">{{ user.full_name }}</strong></p>
+        </div>
+        <a href="{{ url_for('driver.monitor') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-xl shadow transition">
+            🎥 Kembali ke Kamera Monitoring
+        </a>
+    </div>
+
+    <!-- Ringkasan Statistik Kartu -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Kantuk Terdeteksi</span>
+                <div class="text-3xl font-extrabold text-red-400 mt-1">{{ total_kantuk }}</div>
+                <span class="text-[11px] text-slate-500">Mata terpejam &gt; 1.5 detik</span>
+            </div>
+            <div class="w-12 h-12 bg-red-500/20 rounded-xl flex items-center justify-center text-2xl">😴</div>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Tidak Fokus / Menoleh</span>
+                <div class="text-3xl font-extrabold text-purple-400 mt-1">{{ total_distraksi }}</div>
+                <span class="text-[11px] text-slate-500">Kepala menoleh samping &gt; 2.5s</span>
+            </div>
+            <div class="w-12 h-12 bg-purple-500/20 rounded-xl flex items-center justify-center text-2xl">👀</div>
+        </div>
+
+        <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow flex items-center justify-between">
+            <div>
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Menguap</span>
+                <div class="text-3xl font-extrabold text-amber-400 mt-1">{{ total_menguap }}</div>
+                <span class="text-[11px] text-slate-500">Indikasi kelelahan berkendara</span>
+            </div>
+            <div class="w-12 h-12 bg-amber-500/20 rounded-xl flex items-center justify-center text-2xl">🥱</div>
+        </div>
+    </div>
+
+    <!-- Tabel Riwayat Insiden -->
+    <div class="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-xl">
+        <div class="px-6 py-4 border-b border-slate-700/80">
+            <h3 class="font-bold text-white text-base">Daftar Insiden Tersimpan</h3>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-900/60 text-xs uppercase font-semibold text-slate-400 border-b border-slate-700">
+                    <tr>
+                        <th class="px-6 py-3.5">Waktu Insiden</th>
+                        <th class="px-6 py-3.5">Jenis Peringatan</th>
+                        <th class="px-6 py-3.5">Tingkat Bahaya</th>
+                        <th class="px-6 py-3.5">Estimasi Durasi</th>
+                        <th class="px-6 py-3.5">Catatan Telemetri</th>
+                        <th class="px-6 py-3.5 text-center">Bukti Foto</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-700/60">
+                    {% for item in alerts.items %}
+                    <tr class="hover:bg-slate-700/30 transition">
+                        <td class="px-6 py-4 font-mono text-xs text-slate-300">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td class="px-6 py-4 font-semibold">
+                            {% if item.alert_type == 'kantuk' %}
+                                <span class="text-red-400 flex items-center gap-1.5">🚨 Mengantuk</span>
+                            {% elif item.alert_type == 'tidak_fokus' %}
+                                <span class="text-purple-400 flex items-center gap-1.5">⚠️ Tidak Fokus</span>
+                            {% elif item.alert_type == 'menguap' %}
+                                <span class="text-amber-400 flex items-center gap-1.5">🥱 Menguap</span>
+                            {% else %}
+                                <span class="text-slate-300">{{ item.alert_type }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4">
+                            {% if item.severity == 'BAHAYA' %}
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-red-900/50 text-red-300 border border-red-700">BAHAYA</span>
+                            {% else %}
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-900/50 text-amber-300 border border-amber-700">PERINGATAN</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-6 py-4 text-xs font-mono">{{ item.duration_seconds }}s</td>
+                        <td class="px-6 py-4 text-xs text-slate-400">{{ item.notes or '-' }}</td>
+                        <td class="px-6 py-4 text-center">
+                            {% if item.snapshot_path %}
+                                <a href="{{ url_for('static', filename='snapshots/' + item.snapshot_path) }}" target="_blank"
+                                   class="text-xs px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-blue-400 rounded-lg border border-slate-600 transition inline-block">
+                                    📷 Lihat Foto
+                                </a>
+                            {% else %}
+                                <span class="text-xs text-slate-500">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="px-6 py-8 text-center text-slate-400">
+                            Belum ada riwayat peringatan yang tercatat. Pertahankan konsentrasi berkendara Anda!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Paginasi -->
+        {% if alerts.pages > 1 %}
+        <div class="px-6 py-3 bg-slate-900/40 border-t border-slate-700 flex justify-between items-center text-xs text-slate-400">
+            <span>Halaman {{ alerts.page }} dari {{ alerts.pages }}</span>
+            <div class="space-x-2">
+                {% if alerts.has_prev %}
+                    <a href="{{ url_for('driver.history', page=alerts.prev_num) }}" class="px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-white">Sebelumnya</a>
+                {% endif %}
+                {% if alerts.has_next %}
+                    <a href="{{ url_for('driver.history', page=alerts.next_num) }}" class="px-3 py-1 bg-slate-700 rounded hover:bg-slate-600 text-white">Berikutnya</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

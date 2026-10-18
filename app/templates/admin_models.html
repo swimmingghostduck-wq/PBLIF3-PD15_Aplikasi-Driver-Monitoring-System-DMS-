@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+{% block title %}Manajemen Model AI - Admin DMS{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/80 gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-white">Manajemen & Evaluasi Model AI</h1>
+            <p class="text-sm text-slate-400 mt-0.5">Inspeksi model hasil training mandiri, akurasi NFR-05, dan grafik Confusion Matrix</p>
+        </div>
+        <div class="flex items-center space-x-3">
+            <form action="{{ url_for('admin.reload_model') }}" method="POST">
+                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow transition flex items-center gap-2">
+                    <span>🔄</span> Muat Ulang Model ke Memory
+                </button>
+            </form>
+            <a href="{{ url_for('admin.dashboard') }}" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition">
+                ⬅️ Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Grid Dua Kolom -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Kolom Kiri: Daftar File Model di Disk & Panduan Training -->
+        <div class="space-y-6">
+            <!-- Kartu File Model -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl">
+                <h3 class="text-base font-bold text-white mb-3 flex items-center gap-2">
+                    <span>📁</span> File Bobot Model Tersimpan (`models/`)
+                </h3>
+                <div class="space-y-2">
+                    {% for m in models_list %}
+                    <div class="p-3 bg-slate-900 rounded-xl border border-slate-700/80 flex items-center justify-between">
+                        <div>
+                            <div class="text-sm font-bold text-white font-mono">{{ m.filename }}</div>
+                            <div class="text-xs text-slate-400">Ukuran: {{ m.size_kb }} KB</div>
+                        </div>
+                        <span class="text-xs px-2.5 py-1 bg-blue-900/60 text-blue-300 rounded border border-blue-700 font-mono">
+                            {{ 'Aktif' if 'trained_model' in m.filename else 'Arsip' }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div class="p-4 bg-slate-900/50 rounded-xl border border-slate-700 text-center text-xs text-slate-400">
+                        Belum ada file model terlatih di folder <code>models/</code>. Sistem saat ini berjalan dengan <strong>Baseline Geometris (EAR/MAR)</strong>.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Kartu Panduan Melatih Model Mandiri -->
+            <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl space-y-4">
+                <h3 class="text-base font-bold text-white flex items-center gap-2">
+                    <span>🛠️</span> Panduan Melatih Model Kustom Mandiri
+                </h3>
+                <p class="text-xs text-slate-400">
+                    Jalankan perintah berikut di terminal VS Code untuk mengumpulkan dataset dan melatih model AI Anda sendiri:
+                </p>
+
+                <div class="space-y-3 text-xs font-mono">
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-slate-500 font-sans block mb-1 font-semibold">1. Kumpulkan Data Wajah via Webcam:</span>
+                        <code class="text-emerald-400">python training_suite/data_collector.py</code>
+                    </div>
+
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-slate-500 font-sans block mb-1 font-semibold">2. Latih Model Machine Learning (Random Forest):</span>
+                        <code class="text-blue-400">python training_suite/train_sklearn.py --model rf</code>
+                    </div>
+
+                    <div class="bg-slate-900 p-3 rounded-xl border border-slate-700">
+                        <span class="text-slate-500 font-sans block mb-1 font-semibold">3. Buat Grafik Confusion Matrix untuk Laporan:</span>
+                        <code class="text-purple-400">python training_suite/evaluate.py</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kolom Kanan: Tampilan Grafik Confusion Matrix -->
+        <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 shadow-xl flex flex-col">
+            <h3 class="text-base font-bold text-white mb-2 flex items-center gap-2">
+                <span>📊</span> Visualisasi Evaluasi Model (Confusion Matrix)
+            </h3>
+            <p class="text-xs text-slate-400 mb-4">Grafik pembuktian akurasi model AI untuk luaran laporan PBL dan poster.</p>
+
+            <div class="flex-grow flex items-center justify-center bg-slate-900 rounded-xl border border-slate-700 p-4 min-h-[300px]">
+                {% if cm_exists %}
+                    <img src="{{ url_for('static', filename='../models/confusion_matrix.png') }}"
+                         alt="Grafik Confusion Matrix"
+                         class="max-w-full h-auto rounded-lg shadow-lg">
+                {% else %}
+                    <div class="text-center p-6 text-slate-400 text-xs">
+                        <span class="text-3xl block mb-2">📈</span>
+                        <p class="font-semibold text-slate-300">Grafik Confusion Matrix Belum Dibuat</p>
+                        <p class="mt-1">Jalankan <code>python training_suite/evaluate.py</code> di terminal untuk menghasilkan grafik evaluasi.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
