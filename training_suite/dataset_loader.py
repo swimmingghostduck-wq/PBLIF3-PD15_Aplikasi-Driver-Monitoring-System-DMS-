@@ -94,9 +94,11 @@ class DatasetLoader:
                     print(f"[DatasetLoader] Berhasil memuat {len(df)} sample dari {self.csv_path}")
                 else:
                     print(f"[DatasetLoader] Sample pada CSV ({len(df)}) terlalu sedikit untuk training.")
-                    print("[DatasetLoader] Menggabungkan dengan dataset fisiologis realistis...")
                     synthetic_df = self.generate_synthetic_baseline_dataset()
-                    df = pd.concat([synthetic_df, df], ignore_index=True)
+                    if len(df) > 0:
+                        df = pd.concat([synthetic_df, df], ignore_index=True)
+                    else:
+                        df = synthetic_df
             except Exception as e:
                 print(f"[DatasetLoader] Gagal membaca CSV: {e}. Menggunakan dataset fisiologis.")
                 df = self.generate_synthetic_baseline_dataset()

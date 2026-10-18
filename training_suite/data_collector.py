@@ -1,13 +1,21 @@
 import os
 import sys
+
+# Auto-switch ke virtual environment jika dijalankan langsung dengan Python global
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+_VENV_PY = os.path.join(ROOT_DIR, 'venv', 'Scripts', 'python.exe')
+if not os.path.exists(_VENV_PY):
+    _VENV_PY = os.path.join(ROOT_DIR, 'venv', 'bin', 'python')
+if os.path.exists(_VENV_PY) and os.path.abspath(sys.executable).lower() != os.path.abspath(_VENV_PY).lower():
+    import subprocess
+    sys.exit(subprocess.run([_VENV_PY] + sys.argv).returncode)
+
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 import time
 import csv
 import cv2
-
-# Tambahkan direktori root agar dapat mengimpor dms_core
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
 
 from dms_core.detector import FaceLandmarkDetector
 
@@ -35,10 +43,19 @@ def run_collector():
         csv_file.flush()
 
     detector = FaceLandmarkDetector()
-    cap = cv2.VideoCapture(0)
+    
+    # Mencoba membuka webcam (DirectShow untuk Windows yang lebih stabil, dan coba index 0 lalu 1)
+    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(1, cv2.CAP_DSHOW)
+    if not cap.isOpened():
+        cap = cv2.VideoCapture(1)
 
     if not cap.isOpened():
-        print("[ERROR] Tidak dapat membuka webcam. Pastikan kamera terpasang dan tidak dipakai aplikasi lain.")
+        print("[ERROR] Tidak dapat membuka webcam. Pastikan kamera terpasang dan tidak dipakai aplikasi lain (seperti Zoom/Meet/Browser).")
+        csv_file.close()
         return
 
     # Status rekaman
@@ -59,95 +76,126 @@ def run_collector():
     print("  [Q] atau [ESC] Keluar & Selesai")
     print("=" * 60)
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("[WARN] Gagal membaca frame dari webcam.")
-            break
+    win_name = "DMS Data Collector - Tekan [Q] untuk Keluar"
+    cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+    try:
+        cv2.setWindowProperty(win_name, cv2.WND_PROP_TOPMOST, 1)
+    except Exception:
+        pass
 
-        # Flip horizontal agar seperti cermin
-        frame = cv2.flip(frame, 1)
-        h, w = frame.shape[:2]
+    print("\n" + "=" * 60)
+    print("      DMS DATA COLLECTOR AKTIF!")
+    print("=" * 60)
+    print("[+] Jendela kamera pop-up telah dibuka di layar Anda.")
+    print("[+] Silakan fokuskan jendela kamera tersebut.")
+    print("Instruksi Tombol:")
+    print("  [1] Set Kelas: TERJAGA (Mata Terbuka Normal)")
+    print("  [2] Set Kelas: MENGANTUK (Mata Terpejam/Sayu)")
+    print("  [3] Set Kelas: MENGUAP (Mulut Terbuka Lebar)")
+    print("  [SPASI] Mulai/Stop Rekam Kontinu (Auto 10 Detik)")
+    print("  [R] Rekam 1 Sample Saat Ini (Manual Click)")
+    print("  [Q] atau [ESC] Keluar & Selesai")
+    print("=" * 60 + "\n")
 
-        results = detector.process_frame(frame)
-        hud_frame = frame.copy()
+    try:
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                print("[WARN] Gagal membaca frame dari webcam.")
+                break
 
-        # Visualisasi Landmark Mata & Wajah
-        if results.get('face_detected', False):
-            # Gambar titik landmark mata
-            for pt in results['left_eye_pts']:
-                cv2.circle(hud_frame, pt, 2, (0, 255, 0), -1)
-            for pt in results['right_eye_pts']:
-                cv2.circle(hud_frame, pt, 2, (0, 255, 0), -1)
+            # Flip horizontal agar seperti cermin
+            frame = cv2.flip(frame, 1)
+            h, w = frame.shape[:2]
 
-            # Kotak Wajah
-            x1, y1, x2, y2 = results['bbox']
-            cv2.rectangle(hud_frame, (x1, y1), (x2, y2), (255, 200, 0), 1)
+            results = detector.process_frame(frame)
+            hud_frame = frame.copy()
 
-            # Jika sedang merekam, simpan sample
-            if is_recording:
-                row = results['features_vector'] + [current_label]
-                csv_writer.writerow(row)
-                recorded_samples += 1
-
-                # Cek batas waktu auto-record
-                if auto_record_end_time > 0 and time.time() >= auto_record_end_time:
-                    is_recording = False
-                    auto_record_end_time = 0.0
-                    print(f"[*] Sesi perekaman selesai. Total sample tersimpan: {recorded_samples}")
-
-        # Tampilkan Panel Informasi (HUD)
-        overlay = hud_frame.copy()
-        cv2.rectangle(overlay, (0, 0), (w, 120), (20, 20, 20), -1)
-        cv2.addWeighted(overlay, 0.75, hud_frame, 0.25, 0, hud_frame)
-
-        # Header Info
-        status_color = (0, 0, 255) if is_recording else (180, 180, 180)
-        rec_status = f"STATUS: RECORDING (Kelas: {current_label})" if is_recording else f"STATUS: STANDBY (Siap: {current_label})"
-        cv2.putText(hud_frame, rec_status, (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, status_color, 2)
-
-        # Metrik Deteksi
-        ear_text = f"EAR: {results.get('ear_avg', 0.0):.3f} | MAR: {results.get('mar', 0.0):.3f}"
-        pose_text = f"Yaw: {results.get('yaw', 0.0):.1f}° | Pitch: {results.get('pitch', 0.0):.1f}°"
-        sample_text = f"Total Sample: {recorded_samples} tersimpan"
-        cv2.putText(hud_frame, ear_text, (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 255), 1)
-        cv2.putText(hud_frame, pose_text, (15, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
-        cv2.putText(hud_frame, sample_text, (15, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 0), 1)
-
-        cv2.imshow("DMS Data Collector - Tekan [Q] untuk Keluar", hud_frame)
-
-        # Event Handler Tombol Keyboard
-        key = cv2.waitKey(1) & 0xFF
-        if key in [ord('q'), ord('Q'), 27]: # ESC / Q
-            break
-        elif key == ord('1'):
-            current_label = 'TERJAGA'
-            print("[+] Target Label: TERJAGA (Alert)")
-        elif key == ord('2'):
-            current_label = 'MENGANTUK'
-            print("[+] Target Label: MENGANTUK (Drowsy / Closed Eyes)")
-        elif key == ord('3'):
-            current_label = 'MENGUAP'
-            print("[+] Target Label: MENGUAP (Yawn)")
-        elif key == 32: # SPASI: Rekam 10 detik
-            is_recording = not is_recording
-            if is_recording:
-                auto_record_end_time = time.time() + 10.0
-                print(f"[!] Memulai perekaman otomatis 10 detik untuk label: {current_label}...")
-            else:
-                auto_record_end_time = 0.0
-                print("[!] Perekaman dihentikan.")
-        elif key in [ord('r'), ord('R')]: # Manual 1 frame
+            # Visualisasi Landmark Mata & Wajah
             if results.get('face_detected', False):
-                row = results['features_vector'] + [current_label]
-                csv_writer.writerow(row)
-                recorded_samples += 1
-                csv_file.flush()
-                print(f"[+] 1 sample manual tersimpan ({current_label}). Total: {recorded_samples}")
+                # Gambar titik landmark mata
+                for pt in results['left_eye_pts']:
+                    cv2.circle(hud_frame, pt, 2, (0, 255, 0), -1)
+                for pt in results['right_eye_pts']:
+                    cv2.circle(hud_frame, pt, 2, (0, 255, 0), -1)
 
-    csv_file.close()
-    cap.release()
-    cv2.destroyAllWindows()
+                # Kotak Wajah
+                x1, y1, x2, y2 = results['bbox']
+                cv2.rectangle(hud_frame, (x1, y1), (x2, y2), (255, 200, 0), 1)
+
+                # Jika sedang merekam, simpan sample
+                if is_recording:
+                    row = results['features_vector'] + [current_label]
+                    csv_writer.writerow(row)
+                    recorded_samples += 1
+
+                    # Cek batas waktu auto-record
+                    if auto_record_end_time > 0 and time.time() >= auto_record_end_time:
+                        is_recording = False
+                        auto_record_end_time = 0.0
+                        print(f"[*] Sesi perekaman selesai. Total sample tersimpan: {recorded_samples}")
+
+            # Tampilkan Panel Informasi (HUD)
+            overlay = hud_frame.copy()
+            cv2.rectangle(overlay, (0, 0), (w, 140), (20, 20, 20), -1)
+            cv2.addWeighted(overlay, 0.8, hud_frame, 0.2, 0, hud_frame)
+
+            # Header Info
+            status_color = (0, 0, 255) if is_recording else (0, 255, 0)
+            rec_status = f"● RECORDING: {current_label}" if is_recording else f"○ STANDBY - Siap: {current_label}"
+            cv2.putText(hud_frame, rec_status, (15, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.75, status_color, 2)
+
+            # Metrik Deteksi (Tampilkan EAR Kiri dan Kanan untuk deteksi rambut/poni)
+            ear_l = results.get('ear_left', 0.0)
+            ear_r = results.get('ear_right', 0.0)
+            ear_avg = results.get('ear_avg', 0.0)
+            mar = results.get('mar', 0.0)
+            
+            ear_text = f"EAR L: {ear_l:.3f} | R: {ear_r:.3f} | Avg: {ear_avg:.3f} | MAR: {mar:.3f}"
+            pose_text = f"Head Pose: Yaw {results.get('yaw', 0.0):.1f}° | Pitch {results.get('pitch', 0.0):.1f}°"
+            sample_text = f"Dataset: {recorded_samples} sampel tersimpan"
+            guide_text = "Tombol: [1]=TERJAGA | [2]=MENGANTUK | [3]=MENGUAP | [SPASI]=REKAM | [Q]=KELUAR"
+
+            cv2.putText(hud_frame, ear_text, (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 1)
+            cv2.putText(hud_frame, pose_text, (15, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
+            cv2.putText(hud_frame, sample_text, (15, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (100, 255, 100), 1)
+            cv2.putText(hud_frame, guide_text, (15, 132), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
+
+            cv2.imshow(win_name, hud_frame)
+
+            # Event Handler Tombol Keyboard
+            key = cv2.waitKey(1) & 0xFF
+            if key in [ord('q'), ord('Q'), 27]: # ESC / Q
+                break
+            elif key == ord('1'):
+                current_label = 'TERJAGA'
+                print("[+] Target Label: TERJAGA (Alert)")
+            elif key == ord('2'):
+                current_label = 'MENGANTUK'
+                print("[+] Target Label: MENGANTUK (Drowsy / Closed Eyes)")
+            elif key == ord('3'):
+                current_label = 'MENGUAP'
+                print("[+] Target Label: MENGUAP (Yawn)")
+            elif key == 32: # SPASI: Rekam 10 detik
+                is_recording = not is_recording
+                if is_recording:
+                    auto_record_end_time = time.time() + 10.0
+                    print(f"[!] Memulai perekaman otomatis 10 detik untuk label: {current_label}...")
+                else:
+                    auto_record_end_time = 0.0
+                    print("[!] Perekaman dihentikan.")
+            elif key in [ord('r'), ord('R')]: # Manual 1 frame
+                if results.get('face_detected', False):
+                    row = results['features_vector'] + [current_label]
+                    csv_writer.writerow(row)
+                    recorded_samples += 1
+                    csv_file.flush()
+                    print(f"[+] 1 sample manual tersimpan ({current_label}). Total: {recorded_samples}")
+    finally:
+        csv_file.close()
+        if cap is not None and cap.isOpened():
+            cap.release()
+        cv2.destroyAllWindows()
     print(f"\n[SELESAI] Data berhasil disimpan ke: {csv_path}")
 
 if __name__ == '__main__':

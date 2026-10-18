@@ -1,13 +1,22 @@
 import os
 import sys
+
+# Auto-switch ke virtual environment jika dijalankan langsung dengan Python global
+ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
+_VENV_PY = os.path.join(ROOT_DIR, 'venv', 'Scripts', 'python.exe')
+if not os.path.exists(_VENV_PY):
+    _VENV_PY = os.path.join(ROOT_DIR, 'venv', 'bin', 'python')
+if os.path.exists(_VENV_PY) and os.path.abspath(sys.executable).lower() != os.path.abspath(_VENV_PY).lower():
+    import subprocess
+    sys.exit(subprocess.run([_VENV_PY] + sys.argv).returncode)
+
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
 import unittest
 import base64
 import numpy as np
 import cv2
-
-ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
 
 class TestDMSSystem(unittest.TestCase):
     """Pengujian Unit dan Integrasi Otomatis untuk Seluruh Modul DMS."""

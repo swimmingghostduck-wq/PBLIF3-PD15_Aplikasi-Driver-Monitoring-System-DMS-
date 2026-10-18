@@ -1,7 +1,7 @@
 # Driver Monitoring System (DMS) & Model Training Suite
 **Proyek PBL IF3-PD15 — Teknik Informatika, Politeknik Negeri Batam**
 
-Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. Dilengkapi dengan **Training Suite Mandiri** untuk merekam dataset dan melatih model AI kustom.
+Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. Dilengkapi dengan **Training Suite Mandiri** untuk merekam dataset dan melatih model AI kustom, serta fitur **Kalibrasi Sensitivitas Mata Adaptif** untuk menangani variasi bentuk mata dan rambut/poni panjang.
 
 ---
 
@@ -38,83 +38,147 @@ Sistem ini mengimplementasikan seluruh kebutuhan fungsional (FR) dan non-fungsio
 ## 📂 Struktur Direktori Proyek
 
 ```
-c:\GIT\apri\
-├── app\                           # Aplikasi Web Flask
-│   ├── routes\
+dmsgacorsekali/
+├── app/                           # Aplikasi Web Flask
+│   ├── routes/
 │   │   ├── auth.py                # Login, Register, Logout
-│   │   ├── driver.py              # Video Streaming, Status API, Riwayat Driver
+│   │   ├── driver.py              # Monitoring Webcam, Telemetri, Riwayat Insiden
 │   │   └── admin.py               # Dashboard Admin, Kelola Driver, Manajemen Model
-│   ├── templates\                 # Antarmuka HTML5 Tailwind CSS
-│   ├── static\snapshots\          # Foto bukti insiden otomatis
+│   ├── templates/                 # Antarmuka HTML5 Tailwind CSS Responsive
+│   ├── static/snapshots/          # Foto bukti insiden otomatis
 │   ├── models.py                  # Model Database SQLAlchemy (User, AlertLog, Session)
-│   └── __init__.py                # Factory Flask & Auto-Fallback Database
-├── dms_core\                      # Core Engine Computer Vision
+│   └── __init__.py                # Factory Flask & Auto-Fallback Database (MySQL/SQLite)
+├── dms_core/                      # Core Engine Computer Vision
 │   ├── detector.py                # MediaPipe Face Mesh, EAR, MAR, Head Pose (solvePnP)
-│   ├── classifier.py              # Inferensi Model Custom (Scikit-Learn/PyTorch) & Baseline
-│   ├── tracker.py                 # Pelacak frame kantuk/distraksi & pemicu alarm
+│   ├── classifier.py              # Inferensi Model Custom (Scikit-Learn/PyTorch) & Proteksi Rambut
+│   ├── tracker.py                 # Pelacak durasi frame kantuk/distraksi & pemicu alarm
 │   └── alert_manager.py           # Penyimpan snapshot & log insiden
-├── training_suite\                # Suite Pelatihan Model Mandiri
-│   ├── data_collector.py          # Tool webcam untuk merekam sampel dataset
-│   ├── dataset_loader.py          # Pemuat dataset, split train-test, & bootstrap
+├── training_suite/                # Suite Pelatihan Model Mandiri
+│   ├── data_collector.py          # GUI Webcam untuk merekam sampel dataset wajah
+│   ├── dataset_loader.py          # Pemuat dataset, stratified train-test, & bootstrap sintetis
 │   ├── train_sklearn.py           # Pelatihan Random Forest / SVM / Gradient Boosting
 │   ├── train_pytorch.py           # Pelatihan Deep Learning PyTorch MLP
 │   └── evaluate.py                # Evaluasi akurasi & pembuatan grafik Confusion Matrix
-├── dataset\                       # Folder dataset CSV dan gambar
-├── models\                        # Folder file bobot model (.joblib, .pt) dan grafik
+├── dataset/                       # Folder dataset CSV dan data rekaman
+├── models/                        # Folder file bobot model (.joblib, .pt) dan grafik PNG
 ├── config.py                      # Konfigurasi aplikasi dan koneksi MySQL/SQLite
 ├── init_db.py                     # Skrip inisialisasi tabel dan akun default
-├── run.py                         # Skrip peluncur server web
-├── test_system.py                 # Unit test otomatis
+├── run.py                         # Skrip peluncur server web Flask
+├── test_system.py                 # Unit test otomatis komprehensif (9 Test Cases)
 └── requirements.txt               # Daftar dependensi Python
 ```
 
 ---
 
-## 🚀 Panduan Instalasi & Menjalankan Sistem
+## 💻 Panduan Instalasi & Menjalankan di Laptop Baru
 
-### 1. Persiapan Lingkungan (Environment)
-Pastikan Python telah terpasang. Pasang seluruh dependensi:
+Ikuti langkah-langkah berikut untuk menjalankan sistem di laptop:
+
+### 1. Prasyarat Sistem
+- **Python**: Disarankan menggunakan **Python 3.10** atau **Python 3.11** *(Hindari Python 3.14 karena beberapa pustaka Computer Vision seperti MediaPipe & PyTorch belum menyediakan prebuilt wheel stabil untuk Windows di Python 3.14)*.
+- **Git** terpasang di laptop.
+- Kamera/Webcam laptop berfungsi normal.
+- *(Opsional)* **MySQL (XAMPP / Laragon)**. Jika tidak menyalakan MySQL, sistem otomatis menggunakan **SQLite lokal (`dms.db`)** tanpa konfigurasi tambahan!
+
+### 2. Clone Repositori & Buat Virtual Environment
+Buka PowerShell atau Terminal di laptop Anda:
 ```powershell
-python -m pip install -r requirements.txt
+# 1. Masuk ke folder proyek
+cd dmsgacorsekali
+
+# 2. Buat virtual environment bernama 'venv'
+python -m venv venv
+
+# 3. Aktifkan virtual environment
+.\venv\Scripts\Activate.ps1
+```
+> **💡 Catatan PowerShell:** Jika muncul pesan `cannot be loaded because running scripts is disabled on this system`, jalankan perintah berikut sekali saja lalu ulangi aktivasi:
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> .\venv\Scripts\Activate.ps1
+> ```
+
+### 3. Instalasi Dependensi Pustaka
+Untuk menghemat kuota dan mempercepat proses download (versi CPU ~180MB vs versi CUDA ~2.5GB):
+```powershell
+# Pasang PyTorch versi CPU yang hemat penyimpanan
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Pasang seluruh dependensi proyek
+pip install -r requirements.txt
 ```
 
-### 2. Inisialisasi Database
-Jalankan skrip inisialisasi database (otomatis mendeteksi MySQL XAMPP atau membuat SQLite lokal):
+> **✨ Fitur Auto-Switch Venv:** Seluruh skrip (`run.py`, `init_db.py`, `test_system.py`, dan seluruh skrip di folder `training_suite/`) telah dilengkapi pendeteksi otomatis. Jika Anda lupa mengaktifkan venv dan mengetik `python <skrip>.py`, skrip akan otomatis dialihkan untuk dieksekusi di dalam virtual environment proyek.
+
+### 4. Inisialisasi Database
+Jalankan skrip inisialisasi untuk membuat seluruh tabel dan akun pengguna bawaan:
 ```powershell
 python init_db.py
 ```
-**Akun Bawaan (Default):**
-- **Admin**: Username: `admin` | Password: `admin123`
-- **Driver**: Username: `driver` | Password: `driver123`
+**Akun Bawaan (Default) yang Tersedia:**
+- **Administrator**:
+  - Username: `admin`
+  - Password: `admin123`
+- **Driver Utama (Apri Catur)**:
+  - Username: `driver`
+  - Password: `driver123`
+- **Driver Rekan (Nayla Azkyah)**:
+  - Username: `nayla`
+  - Password: `driver123`
 
-### 3. Menjalankan Aplikasi Web DMS
+### 5. Verifikasi Pengujian Sistem (Testing)
+Pastikan semua modul berjalan sempurna 100%:
+```powershell
+python test_system.py
+```
+*(Hasil yang diharapkan: `Ran 9 tests ... OK`)*.
+
+### 6. Menjalankan Aplikasi Web DMS
 ```powershell
 python run.py
 ```
-Buka browser pada: [http://localhost:5000](http://localhost:5000)
+Buka browser favorit Anda (Google Chrome / Microsoft Edge) dan akses alamat:
+👉 **[http://localhost:5000](http://localhost:5000)** atau **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
 
 ---
 
-## 🧠 Cara Mengumpulkan Data & Melatih Model AI Sendiri
+## 🎯 Fitur Baru: Kalibrasi Mata Otomatis & Penanganan Rambut/Poni
 
-Anda dapat melatih model AI Anda sendiri menggunakan langkah-langkah berikut:
+Pada kondisi nyata berkendara, banyak pengemudi memiliki rambut atau poni yang menutupi sebagian dahi dan mata, atau bentuk mata yang berbeda (*monolid/hooded eyes*).
 
-### Langkah 1: Kumpulkan Data Pengemudi via Webcam
+Sistem DMS ini telah dilengkapi **dua perlindungan cerdas**:
+1. **Perlindungan Oklusi Rambut Satu Mata (*Dual-Eye Occlusion Protection*)**:
+   Jika poni hanya menutupi satu sisi mata (mata kiri EAR rendah tapi mata kanan melek normal), sistem **tidak akan memicu alarm kantuk keliru** (*false alarm*), karena orang tertidur pasti menutup kedua matanya sekaligus.
+2. **Tombol `🎯 Kalibrasi Otomatis (3 Detik)` pada Web UI**:
+   - Buka halaman **Monitoring Pengemudi** (`/driver/monitor`).
+   - Nyalakan kamera webcam.
+   - Buka mata Anda secara wajar dengan gaya rambut sehari-hari, lalu klik tombol **"Kalibrasi Otomatis (3 Detik)"**.
+   - Sistem akan mengukur bukaan mata Anda dan otomatis menetapkan ambang batas kantuk ($72\%$ dari bukaan normal Anda) yang tersimpan langsung di browser Anda.
+
+---
+
+## 🧠 Panduan Mengumpulkan Data & Melatih Model AI Mandiri
+
+Anda dapat melatih model AI Anda sendiri menggunakan wajah Anda atau rekan tim:
+
+### Langkah 1: Kumpulkan Data Wajah via Webcam
+Pastikan aplikasi web sedang tidak menggunakan kamera, lalu jalankan:
 ```powershell
 python training_suite/data_collector.py
 ```
-- Tekan `[1]` untuk mengatur label kelas **TERJAGA** (mata terbuka normal).
-- Tekan `[2]` untuk mengatur label kelas **MENGANTUK** (mata terpejam/sayu).
-- Tekan `[3]` untuk mengatur label kelas **MENGUAP** (mulut terbuka lebar).
-- Tekan `[SPASI]` untuk merekam otomatis selama 10 detik.
-- Tekan `[Q]` untuk selesai. Data tersimpan di `dataset/dataset_features.csv`.
+Jendela pop-up kamera akan muncul di layar monitor Anda:
+- Tekan **`[1]`** untuk mengatur label kelas **TERJAGA** (mata terbuka normal).
+- Tekan **`[2]`** untuk mengatur label kelas **MENGANTUK** (mata terpejam/sayu).
+- Tekan **`[3]`** untuk mengatur label kelas **MENGUAP** (mulut terbuka lebar).
+- Tekan **`[SPASI]`** untuk merekam kontinu selama 10 detik.
+- Tekan **`[Q]`** atau **`[ESC]`** untuk selesai. Data tersimpan di `dataset/dataset_features.csv`.
 
 ### Langkah 2: Latih Model AI (Scikit-Learn atau PyTorch)
-Untuk melatih model Random Forest (Direkomendasikan):
+Untuk melatih model Random Forest (**Direkomendasikan** — akurasi $\ge 95\%$):
 ```powershell
 python training_suite/train_sklearn.py --model rf
 ```
-Atau untuk melatih model Deep Learning PyTorch:
+Atau melatih model Deep Learning PyTorch MLP:
 ```powershell
 python training_suite/train_pytorch.py --epochs 25
 ```
@@ -127,13 +191,19 @@ python training_suite/evaluate.py
 Grafik akurasi dan matriks konfusi tersimpan di `models/confusion_matrix.png`, siap digunakan untuk laporan, poster, dan presentasi PBL Anda!
 
 ### Langkah 4: Aktifkan Model pada Aplikasi Web
-Buka menu **Admin -> Model AI** di aplikasi web, lalu klik tombol **"Muat Ulang Model ke Memory"**. Aplikasi akan langsung menggunakan model baru Anda untuk inferensi real-time!
+Buka menu **Admin -> Manajemen Model** di aplikasi web (`http://localhost:5000/admin/models`), lalu klik tombol **"Muat Ulang Model ke Memory"**. Aplikasi akan langsung menggunakan model baru Anda untuk inferensi real-time!
 
 ---
 
-## 🧪 Menjalankan Pengujian Otomatis (Testing)
-Untuk memastikan seluruh modul berfungsi 100%:
-```powershell
-python test_system.py
-```
+## ❓ FAQ & Solusi Masalah Teknis (Troubleshooting)
 
+1. **Webcam terdeteksi sibuk / lampu kamera laptop menyala terus:**
+   - Tutup aplikasi lain yang mungkin memakai kamera (seperti Zoom, Google Meet, Skype, atau tab browser lain).
+   - Jika proses Python lama masih menggantung di latar belakang, buka PowerShell dan jalankan:
+     ```powershell
+     Stop-Process -Name python, pythonw -Force -ErrorAction SilentlyContinue
+     ```
+2. **Port 5000 sudah digunakan aplikasi lain:**
+   - Anda dapat mengubah port di baris terakhir `run.py` menjadi port lain, misalnya `port=5001`.
+3. **Database MySQL tidak terhubung:**
+   - Tidak perlu khawatir! Sistem telah dilengkapi **Auto-Fallback**. Jika MySQL tidak menyala, sistem otomatis beralih ke database lokal SQLite (`sqlite:///dms.db`) sehingga aplikasi tetap dapat berjalan normal 100%.

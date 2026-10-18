@@ -175,7 +175,36 @@
                     <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
                         <div id="earBar" class="bg-blue-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
-                    <span class="text-[10px] text-slate-500">Ambang Batas Tertutup: &lt; 0.220</span>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-[10px] text-slate-500">Ambang Batas Kantuk:</span>
+                        <span id="earThreshNotice" class="text-[10px] text-emerald-400 font-mono font-semibold">&lt; 0.220</span>
+                    </div>
+                </div>
+
+                <!-- Kontrol Kalibrasi Sensitivitas Mata & Poni Rambut -->
+                <div class="p-3 bg-slate-900/80 rounded-xl border border-slate-700/80 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-300 font-semibold flex items-center gap-1.5">
+                            <span>⚙️</span> Kalibrasi Ambang Batas EAR:
+                        </span>
+                        <span id="earThreshVal" class="font-mono font-bold text-emerald-400">0.220</span>
+                    </div>
+                    <input type="range" id="earThreshSlider" min="0.12" max="0.30" step="0.01" value="0.22"
+                           oninput="updateEarThreshold(this.value)"
+                           class="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+                    <div class="flex justify-between text-[10px] text-slate-400">
+                        <span>Poni/Rambut (0.16)</span>
+                        <span>Standar (0.22)</span>
+                        <span>Peka (0.26)</span>
+                    </div>
+                    
+                    <button id="autoCalibrateBtn" onclick="startAutoCalibration()"
+                            class="w-full mt-1.5 py-1.5 px-3 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 border border-blue-500/40 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition">
+                        <span>🎯</span> <span id="autoCalibrateText">Kalibrasi Otomatis (3 Detik)</span>
+                    </button>
+                    <p class="text-[9px] text-slate-400 text-center leading-tight">
+                        Tatap kamera normal & klik tombol di atas jika mata sering terdeteksi mengantuk karena tertutup rambut/poni.
+                    </p>
                 </div>
 
                 <!-- MAR (Mouth Aspect Ratio) -->
@@ -225,6 +254,69 @@
     let isBeeping = false;
     let fpsFrames = 0;
     let lastFpsTime = Date.now();
+
+    // State Kalibrasi Ambang Batas EAR Pengemudi
+    let currentEarThresh = parseFloat(localStorage.getItem('dms_ear_thresh')) || 0.22;
+    let isCalibrating = false;
+    let calibrationSamples = [];
+
+    function updateEarThreshold(val) {
+        currentEarThresh = parseFloat(val);
+        localStorage.setItem('dms_ear_thresh', currentEarThresh.toFixed(3));
+        const threshValEl = document.getElementById('earThreshVal');
+        const sliderEl = document.getElementById('earThreshSlider');
+        const noticeEl = document.getElementById('earThreshNotice');
+        if (threshValEl) threshValEl.innerText = currentEarThresh.toFixed(3);
+        if (sliderEl) sliderEl.value = currentEarThresh.toFixed(3);
+        if (noticeEl) noticeEl.innerText = `< ${currentEarThresh.toFixed(3)}`;
+    }
+
+    function startAutoCalibration() {
+        if (!currentStream) {
+            alert("Silakan klik 'Nyalakan Kamera & Izinkan' terlebih dahulu sebelum kalibrasi.");
+            return;
+        }
+        isCalibrating = true;
+        calibrationSamples = [];
+        let countdown = 3;
+        const btnText = document.getElementById('autoCalibrateText');
+        const btn = document.getElementById('autoCalibrateBtn');
+        btn.disabled = true;
+        
+        btnText.innerText = `Menatap kamera dalam kondisi normal... (${countdown}s)`;
+        const timer = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                btnText.innerText = `Menatap kamera dalam kondisi normal... (${countdown}s)`;
+            } else {
+                clearInterval(timer);
+                isCalibrating = false;
+                btn.disabled = false;
+                
+                if (calibrationSamples.length >= 8) {
+                    const sum = calibrationSamples.reduce((a, b) => a + b, 0);
+                    const avgOpenEar = sum / calibrationSamples.length;
+                    // Ambang batas kantuk proporsional: 72% dari bukaan mata normal pengemudi
+                    const recommendedThresh = Math.max(0.13, Math.min(0.26, avgOpenEar * 0.72));
+                    updateEarThreshold(recommendedThresh);
+                    btnText.innerText = `✅ Terkalibrasi (${recommendedThresh.toFixed(3)})`;
+                    setTimeout(() => {
+                        btnText.innerText = "Kalibrasi Otomatis (3 Detik)";
+                    }, 4000);
+                } else {
+                    btnText.innerText = "⚠️ Gagal: Wajah belum stabil di depan kamera";
+                    setTimeout(() => {
+                        btnText.innerText = "Kalibrasi Otomatis (3 Detik)";
+                    }, 3000);
+                }
+            }
+        }, 1000);
+    }
+
+    // Terapkan ambang batas tersimpan saat pertama kali dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+        updateEarThreshold(currentEarThresh);
+    });
 
     const videoEl = document.getElementById('webcamVideo');
     const captureCanvas = document.getElementById('captureCanvas');
@@ -451,11 +543,14 @@
                 lastFpsTime = now;
             }
 
-            // Kirim frame ke endpoint /driver/process_frame
+            // Kirim frame ke endpoint /driver/process_frame beserta ambang batas EAR terkalibrasi
             const res = await fetch("{{ url_for('driver.process_frame') }}", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ image: dataUrl })
+                body: JSON.stringify({ 
+                    image: dataUrl,
+                    ear_thresh: currentEarThresh
+                })
             });
 
             if (!res.ok) {
@@ -464,6 +559,11 @@
             }
 
             const data = await res.json();
+
+            // Tangkap sample EAR jika sedang dalam mode kalibrasi
+            if (isCalibrating && data.face_detected && data.ear_avg > 0.05) {
+                calibrationSamples.push(data.ear_avg);
+            }
 
             // Render ke canvas tampilan utama
             displayCtx.drawImage(videoEl, 0, 0, 640, 480);
