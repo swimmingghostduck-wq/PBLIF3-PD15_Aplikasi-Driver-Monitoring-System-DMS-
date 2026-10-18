@@ -2,6 +2,7 @@ import os
 import cv2
 import time
 import json
+import base64
 import numpy as np
 from flask import Blueprint, render_template, Response, jsonify, request, current_app
 from flask_login import login_required, current_user
@@ -13,12 +14,10 @@ from dms_core.alert_manager import AlertManager
 
 driver_bp = Blueprint('driver', __name__)
 
-# Instansiasi Global Engine Vision untuk video streaming
 detector = None
 classifier = None
 tracker = None
 alert_manager = None
-camera_capture = None
 latest_status = {
     'face_detected': False,
     'status_label': 'STANDBY',
@@ -38,7 +37,6 @@ def init_dms_engine(app):
     if detector is None:
         detector = FaceLandmarkDetector()
         
-        # Cari apakah model custom sudah dilatih di folder models/
         model_path = os.path.join(app.config['MODELS_DIR'], 'trained_model.joblib')
         if not os.path.exists(model_path):
             model_path = os.path.join(app.config['MODELS_DIR'], 'trained_model.pt')
@@ -56,22 +54,107 @@ def init_dms_engine(app):
         )
         alert_manager = AlertManager(snapshots_dir=app.config['SNAPSHOTS_DIR'])
 
+@driver_bp.route('/monitor')
+@login_required
+def monitor():
+    """Halaman Dashboard Utama Monitoring Pengemudi."""
+    return render_template('driver_monitor.html', user=current_user)
+
+@driver_bp.route('/process_frame', methods=['POST'])
+@login_required
+def process_frame():
+    """
+    Menerima frame video langsung dari webcam browser (HTML5 getUserMedia),
+    memproses deteksi landmark wajah, inferensi AI, dan status kantuk.
+    """
+    app = current_app._get_current_object()
+    init_dms_engine(app)
+
+    data = request.get_json(silent=True) or {}
+    image_data = data.get('image', '')
+    if not image_data:
+        return jsonify({'error': 'Tidak ada data gambar'}), 400
+
+    if ',' in image_data:
+        image_data = image_data.split(',', 1)[1]
+
+    try:
+        image_bytes = base64.b64decode(image_data)
+        nparr = np.frombuffer(image_bytes, np.uint8)
+        frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if frame is None:
+            return jsonify({'error': 'Gagal decode gambar'}), 400
+
+        # Deteksi landmark wajah & mata
+        detection_res = detector.process_frame(frame)
+
+        # Inferensi model
+        pred_res = classifier.predict(detection_res)
+
+        # Update tracker durasi
+        track_status = tracker.update(detection_res, pred_res)
+
+        # Simpan log jika ada event bahaya
+        if track_status['should_record_event']:
+            snapshot_file = alert_manager.save_snapshot(
+                frame, current_user.id, track_status['new_event_type']
+            )
+            with app.app_context():
+                new_log = AlertLog(
+                    driver_id=current_user.id,
+                    alert_type=track_status['new_event_type'],
+                    severity='BAHAYA' if track_status['new_event_type'] == 'kantuk' else 'PERINGATAN',
+                    duration_seconds=2.0,
+                    snapshot_path=snapshot_file,
+                    notes=f"Metode: {classifier.model_name} | EAR: {detection_res.get('ear_avg', 0.0):.3f}"
+                )
+                db.session.add(new_log)
+                db.session.commit()
+
+        # Format respon ke client
+        return jsonify({
+            'success': True,
+            'face_detected': detection_res.get('face_detected', False),
+            'status_message': detection_res.get('status_message', ''),
+            'bbox': detection_res.get('bbox', None),
+            'left_eye_pts': detection_res.get('left_eye_pts', []),
+            'right_eye_pts': detection_res.get('right_eye_pts', []),
+            'ear_avg': detection_res.get('ear_avg', 0.0),
+            'ear_left': detection_res.get('ear_left', 0.0),
+            'ear_right': detection_res.get('ear_right', 0.0),
+            'mar': detection_res.get('mar', 0.0),
+            'yaw': detection_res.get('yaw', 0.0),
+            'pitch': detection_res.get('pitch', 0.0),
+            'roll': detection_res.get('roll', 0.0),
+            'is_alarm_active': track_status['is_alarm_active'],
+            'alarm_type': track_status['alarm_type'],
+            'alarm_message': track_status['alarm_message'],
+            'drowsy_score': track_status['drowsy_score'],
+            'drowsy_progress': track_status['drowsy_progress'],
+            'distraction_progress': track_status['distraction_progress'],
+            'status_label': track_status['status_label'],
+            'method': classifier.model_name
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 def generate_frames(driver_id, app):
-    """
-    Generator video stream real-time (MJPEG) dengan anotasi landmark,
-    prediksi model, dan pencatatan event log ke database.
-    """
-    global camera_capture, latest_status
+    """Fallback generator video stream real-time (MJPEG) backend."""
+    global latest_status
     with app.app_context():
         init_dms_engine(app)
 
     camera = cv2.VideoCapture(0)
     if not camera.isOpened():
-        latest_status['alarm_message'] = 'Kamera tidak dapat diakses!'
-        # Yield frame placeholder jika kamera gagal
-        black_frame = 20 * (np.ones((480, 640, 3), dtype=np.uint8))
-        cv2.putText(black_frame, "KAMERA TIDAK TERDETEKSI", (120, 240),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+        camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
+    if not camera.isOpened():
+        latest_status['alarm_message'] = 'Kamera backend tidak terdeteksi. Gunakan Kamera Browser (WebRTC).'
+        black_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        cv2.putText(black_frame, "KAMERA SERVER TIDAK TERSEDIA", (80, 220),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+        cv2.putText(black_frame, "Gunakan Mode Kamera Browser di bawah", (100, 260),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200, 200, 200), 1)
         _, buffer = cv2.imencode('.jpg', black_frame)
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
@@ -83,20 +166,13 @@ def generate_frames(driver_id, app):
             if not success:
                 break
 
-            # Mirroring
             frame = cv2.flip(frame, 1)
             h, w = frame.shape[:2]
 
-            # 1. Deteksi Landmark Wajah & Mata
             detection_res = detector.process_frame(frame)
-
-            # 2. Inferensi Status Kantuk (Model Custom / Baseline)
             pred_res = classifier.predict(detection_res)
-
-            # 3. Update Tracker Durasi
             track_status = tracker.update(detection_res, pred_res)
 
-            # Update status global untuk API frontend
             latest_status.update({
                 'face_detected': detection_res.get('face_detected', False),
                 'status_label': track_status['status_label'],
@@ -113,7 +189,6 @@ def generate_frames(driver_id, app):
                 'method': classifier.model_name
             })
 
-            # 4. Pencatatan Event ke Database jika kondisi bahaya terpicu
             if track_status['should_record_event']:
                 snapshot_file = alert_manager.save_snapshot(
                     frame, driver_id, track_status['new_event_type']
@@ -130,21 +205,17 @@ def generate_frames(driver_id, app):
                     db.session.add(new_log)
                     db.session.commit()
 
-            # 5. Render Visual Overlay pada Frame Video
             annotated_frame = frame.copy()
             if detection_res.get('face_detected', False):
-                # Landmark mata
                 for pt in detection_res['left_eye_pts']:
                     cv2.circle(annotated_frame, pt, 2, (0, 255, 0), -1)
                 for pt in detection_res['right_eye_pts']:
                     cv2.circle(annotated_frame, pt, 2, (0, 255, 0), -1)
 
-                # Kotak Wajah
                 x1, y1, x2, y2 = detection_res['bbox']
                 box_color = (0, 0, 255) if track_status['is_alarm_active'] else (0, 255, 0)
                 cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), box_color, 2)
 
-            # Banner Notifikasi Visual Merah jika Alarm Aktif
             if track_status['is_alarm_active']:
                 overlay_banner = annotated_frame.copy()
                 cv2.rectangle(overlay_banner, (0, 0), (w, 55), (0, 0, 220), -1)
@@ -161,16 +232,10 @@ def generate_frames(driver_id, app):
     finally:
         camera.release()
 
-@driver_bp.route('/monitor')
-@login_required
-def monitor():
-    """Halaman Dashboard Utama Monitoring Pengemudi."""
-    return render_template('driver_monitor.html', user=current_user)
-
 @driver_bp.route('/video_feed')
 @login_required
 def video_feed():
-    """Endpoint Video Streaming MJPEG Real-Time."""
+    """Endpoint Video Streaming MJPEG Backend."""
     app = current_app._get_current_object()
     return Response(
         generate_frames(current_user.id, app),
@@ -180,7 +245,7 @@ def video_feed():
 @driver_bp.route('/status_feed')
 @login_required
 def status_feed():
-    """Endpoint API Real-time untuk polling status alarm dan Web Audio."""
+    """Endpoint API Real-time untuk polling status alarm backend."""
     return jsonify(latest_status)
 
 @driver_bp.route('/history')
@@ -192,7 +257,6 @@ def history():
                            .order_by(AlertLog.timestamp.desc())\
                            .paginate(page=page, per_page=15, error_out=False)
     
-    # Hitung total statistik driver ini
     total_kantuk = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='kantuk').count()
     total_distraksi = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='tidak_fokus').count()
     total_menguap = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='menguap').count()

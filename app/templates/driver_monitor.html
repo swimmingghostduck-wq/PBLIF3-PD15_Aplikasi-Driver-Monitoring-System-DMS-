@@ -3,28 +3,62 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header Ringkasan Status -->
+    <!-- Header Ringkasan Status & Kontrol Kamera -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/80 gap-4">
         <div>
             <h1 class="text-2xl font-bold text-white flex items-center gap-2">
                 <span>Pemantauan Kamera Real-Time</span>
                 <span id="liveBadge" class="flex h-3 w-3 relative">
-                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+                    <span id="livePing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 hidden"></span>
+                    <span id="liveDot" class="relative inline-flex rounded-full h-3 w-3 bg-slate-500"></span>
                 </span>
             </h1>
-            <p class="text-sm text-slate-400 mt-0.5">Pengemudi: <strong class="text-slate-200">{{ user.full_name }}</strong> | Input: Kamera / Webcam</p>
+            <p class="text-sm text-slate-400 mt-0.5">Pengemudi: <strong class="text-slate-200">{{ user.full_name }}</strong> | Mode: <span class="text-blue-400 font-semibold" id="modeText">Kamera Browser (WebRTC)</span></p>
         </div>
 
-        <div class="flex items-center space-x-3">
-            <!-- Audio Toggle -->
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Audio Alarm Toggle -->
             <button id="toggleAudioBtn" onclick="toggleAudio()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition">
                 <span id="audioIcon">🔊</span>
                 <span id="audioText">Audio Alarm: AKTIF</span>
             </button>
             <a href="{{ url_for('driver.history') }}" class="px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/30 transition">
-                📋 Riwayat Peringatan Saya
+                📋 Riwayat Peringatan
             </a>
+        </div>
+    </div>
+
+    <!-- Panel Izin & Pemilihan Perangkat Webcam -->
+    <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex items-center space-x-3">
+            <div id="camStatusIcon" class="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center text-xl">
+                📷
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Kamera:</span>
+                    <span id="camStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-900/60 text-amber-300 border border-amber-700">
+                        Menunggu Izin Akses...
+                    </span>
+                </div>
+                <div class="text-xs text-slate-400 mt-0.5" id="camDetailText">
+                    Klik tombol untuk meminta izin akses webcam laptop Anda.
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Dropdown Pilihan Kamera -->
+            <select id="cameraSelect" onchange="switchCamera()" 
+                    class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                <option value="">Mencari kamera aktif...</option>
+            </select>
+
+            <!-- Tombol Minta Izin & Nyalakan Kamera -->
+            <button id="startCamBtn" onclick="requestAndStartCamera()" 
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+                <span>📹</span> Nyalakan Kamera & Izinkan
+            </button>
         </div>
     </div>
 
@@ -44,34 +78,59 @@
 
     <!-- Grid Konten: Video Stream & Panel Telemetri -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Kolom Kiri: Video Feed Stream -->
+        <!-- Kolom Kiri: Video Feed Stream & Canvas Overlay -->
         <div class="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col">
             <div class="bg-slate-900/80 px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
                 <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Feed MediaPipe & Computer Vision
+                    <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-500"></span> Feed MediaPipe & AI Detection
                 </span>
                 <span id="modelBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700 font-mono">
                     Model: Memuat...
                 </span>
             </div>
 
-            <div class="relative bg-black flex items-center justify-center min-h-[380px] sm:min-h-[440px]">
-                <img id="videoFeed" src="{{ url_for('driver.video_feed') }}" 
-                     alt="Video Stream Driver Monitoring" 
-                     class="w-full h-auto object-contain max-h-[520px]">
-                
-                <!-- Overlay Status Wajah jika tidak ada wajah -->
-                <div id="noFaceNotice" class="hidden absolute inset-0 bg-black/75 flex flex-col items-center justify-center text-center p-6">
-                    <div class="w-16 h-16 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center text-3xl mb-3">
-                        👤
+            <div class="relative bg-black flex items-center justify-center min-h-[380px] sm:min-h-[460px] overflow-hidden">
+                <!-- Video Element Tersembunyi (Input Stream dari Browser) -->
+                <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
+                <canvas id="captureCanvas" width="640" height="480" class="hidden"></canvas>
+
+                <!-- Canvas Utama Tampilan dengan Anotasi Landmark -->
+                <canvas id="displayCanvas" width="640" height="480" class="w-full h-auto object-contain max-h-[520px] hidden"></canvas>
+
+                <!-- Placeholder Standby Sebelum Izin Diberikan -->
+                <div id="standbyPlaceholder" class="p-8 text-center flex flex-col items-center justify-center space-y-4">
+                    <div class="w-20 h-20 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-4xl shadow-inner">
+                        📹
                     </div>
-                    <h4 class="text-lg font-bold text-white">Wajah Pengemudi Tidak Terdeteksi</h4>
-                    <p class="text-xs text-slate-400 mt-1 max-w-sm">Pastikan wajah Anda berada di depan kamera dengan pencahayaan yang cukup.</p>
+                    <div>
+                        <h3 class="text-lg font-bold text-white">Kamera Belum Diaktifkan</h3>
+                        <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
+                            Klik tombol hijau <strong>"Nyalakan Kamera & Izinkan"</strong> di atas. Browser Anda akan memunculkan pop-up izin akses kamera laptop.
+                        </p>
+                    </div>
+                    <button onclick="requestAndStartCamera()" 
+                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/30 transition">
+                        Klik di Sini untuk Meminta Izin Kamera
+                    </button>
+                </div>
+
+                <!-- Petunjuk jika izin ditolak browser -->
+                <div id="permissionDeniedNotice" class="hidden p-6 text-center bg-red-950/80 border border-red-800 rounded-2xl m-4 max-w-md">
+                    <span class="text-3xl block mb-2">🚫</span>
+                    <h4 class="text-base font-bold text-red-300">Akses Kamera Diblokir Browser</h4>
+                    <p class="text-xs text-slate-300 mt-2 leading-relaxed">
+                        Browser Anda memblokir akses ke webcam. Untuk mengizinkan:
+                    </p>
+                    <ol class="text-xs text-slate-400 text-left mt-2 space-y-1 list-decimal list-inside bg-slate-900/60 p-3 rounded-lg">
+                        <li>Klik ikon <strong>Gembok 🔒</strong> atau <strong>Kamera 📹</strong> di sebelah kiri URL browser (samping <code class="text-blue-300">localhost:5000</code>).</li>
+                        <li>Ubah izin Kamera menjadi <strong>Izinkan (Allow)</strong>.</li>
+                        <li>Refresh halaman ini.</li>
+                    </ol>
                 </div>
             </div>
 
             <div class="bg-slate-900/80 px-4 py-2.5 border-t border-slate-700/60 text-xs text-slate-400 flex items-center justify-between">
-                <span>FPS: Real-Time (~25-30 FPS)</span>
+                <span id="fpsCounter">FPS: 0 | Resolusi: 640x480</span>
                 <span class="text-slate-500">PBL IF3-PD15 Simulation Mode</span>
             </div>
         </div>
@@ -83,11 +142,11 @@
                 <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Status Kewaspadaan Saat Ini</h3>
                 <div class="flex items-center justify-between">
                     <div>
-                        <div id="statusText" class="text-2xl font-black text-emerald-400">TERJAGA</div>
-                        <p id="statusSub" class="text-xs text-slate-400 mt-0.5">Pengemudi fokus pada jalan</p>
+                        <div id="statusText" class="text-2xl font-black text-slate-400">STANDBY</div>
+                        <p id="statusSub" class="text-xs text-slate-400 mt-0.5">Menunggu kamera aktif</p>
                     </div>
-                    <div id="statusIcon" class="w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl">
-                        👁️
+                    <div id="statusIcon" class="w-14 h-14 rounded-2xl bg-slate-700/50 border border-slate-600 flex items-center justify-center text-3xl">
+                        👤
                     </div>
                 </div>
 
@@ -98,7 +157,7 @@
                         <span id="drowsyScoreText" class="font-bold text-slate-200">0%</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
-                        <div id="drowsyScoreBar" class="bg-emerald-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        <div id="drowsyScoreBar" class="bg-slate-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -114,7 +173,7 @@
                         <span id="earVal" class="font-mono font-bold text-blue-400">0.000</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-                        <div id="earBar" class="bg-blue-500 h-2 rounded-full transition-all duration-150" style="width: 70%"></div>
+                        <div id="earBar" class="bg-blue-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                     <span class="text-[10px] text-slate-500">Ambang Batas Tertutup: &lt; 0.220</span>
                 </div>
@@ -126,7 +185,7 @@
                         <span id="marVal" class="font-mono font-bold text-amber-400">0.000</span>
                     </div>
                     <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-                        <div id="marBar" class="bg-amber-500 h-2 rounded-full transition-all duration-150" style="width: 25%"></div>
+                        <div id="marBar" class="bg-amber-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
                     <span class="text-[10px] text-slate-500">Ambang Batas Menguap: &gt; 0.650</span>
                 </div>
@@ -141,13 +200,13 @@
                 </div>
             </div>
 
-            <!-- Kartu Petunjuk Pengujian -->
+            <!-- Petunjuk Pengujian -->
             <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs text-slate-400 space-y-1.5">
                 <div class="font-semibold text-slate-300 flex items-center gap-1.5">
                     <span>💡</span> Cara Menguji Sistem:
                 </div>
-                <p>1. Pejamkan mata selama &gt; 1.5 detik untuk menguji alarm kantuk.</p>
-                <p>2. Menoleh ke kiri/kanan selama &gt; 2.5 detik untuk menguji alarm distraksi.</p>
+                <p>1. Pejamkan mata &gt; 1.5 detik untuk menguji alarm kantuk.</p>
+                <p>2. Menoleh ke samping &gt; 2.5 detik untuk menguji alarm distraksi.</p>
                 <p>3. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
             </div>
         </div>
@@ -157,13 +216,52 @@
 
 {% block scripts %}
 <script>
-    // Inisialisasi Web Audio API Synthesizer untuk Audio Alarm (NFR-03 & FR-10)
+    // Inisialisasi State Kamera dan Audio
+    let currentStream = null;
+    let isProcessing = false;
+    let frameInterval = null;
     let audioCtx = null;
     let isAudioEnabled = true;
-    let alarmOscillator = null;
-    let alarmGain = null;
     let isBeeping = false;
+    let fpsFrames = 0;
+    let lastFpsTime = Date.now();
 
+    const videoEl = document.getElementById('webcamVideo');
+    const captureCanvas = document.getElementById('captureCanvas');
+    const captureCtx = captureCanvas.getContext('2d');
+    const displayCanvas = document.getElementById('displayCanvas');
+    const displayCtx = displayCanvas.getContext('2d');
+
+    const camSelect = document.getElementById('cameraSelect');
+    const startCamBtn = document.getElementById('startCamBtn');
+    const camStatusBadge = document.getElementById('camStatusBadge');
+    const camStatusIcon = document.getElementById('camStatusIcon');
+    const camDetailText = document.getElementById('camDetailText');
+    const standbyPlaceholder = document.getElementById('standbyPlaceholder');
+    const permissionDeniedNotice = document.getElementById('permissionDeniedNotice');
+    const livePing = document.getElementById('livePing');
+    const liveDot = document.getElementById('liveDot');
+    const streamIndicator = document.getElementById('streamIndicator');
+    const fpsCounter = document.getElementById('fpsCounter');
+
+    // Telemetri Elemen
+    const alarmBanner = document.getElementById('alarmBanner');
+    const alarmTitle = document.getElementById('alarmTitle');
+    const alarmDesc = document.getElementById('alarmDesc');
+    const statusText = document.getElementById('statusText');
+    const statusSub = document.getElementById('statusSub');
+    const statusIcon = document.getElementById('statusIcon');
+    const modelBadge = document.getElementById('modelBadge');
+    const earVal = document.getElementById('earVal');
+    const earBar = document.getElementById('earBar');
+    const marVal = document.getElementById('marVal');
+    const marBar = document.getElementById('marBar');
+    const yawVal = document.getElementById('yawVal');
+    const poseNotice = document.getElementById('poseNotice');
+    const drowsyScoreText = document.getElementById('drowsyScoreText');
+    const drowsyScoreBar = document.getElementById('drowsyScoreBar');
+
+    // Web Audio Synthesizer
     function initAudioContext() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -185,7 +283,6 @@
             const gain = audioCtx.createGain();
 
             osc.type = 'sawtooth';
-            // Frekuensi nada tinggi peringatan bahaya (880 Hz - 440 Hz modulasi)
             osc.frequency.setValueAtTime(880, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
 
@@ -225,127 +322,307 @@
         }
     }
 
-    // Polling Status API setiap 200ms
-    const alarmBanner = document.getElementById('alarmBanner');
-    const alarmTitle = document.getElementById('alarmTitle');
-    const alarmDesc = document.getElementById('alarmDesc');
-    const statusText = document.getElementById('statusText');
-    const statusSub = document.getElementById('statusSub');
-    const statusIcon = document.getElementById('statusIcon');
-    const modelBadge = document.getElementById('modelBadge');
-    const earVal = document.getElementById('earVal');
-    const earBar = document.getElementById('earBar');
-    const marVal = document.getElementById('marVal');
-    const marBar = document.getElementById('marBar');
-    const yawVal = document.getElementById('yawVal');
-    const poseNotice = document.getElementById('poseNotice');
-    const drowsyScoreText = document.getElementById('drowsyScoreText');
-    const drowsyScoreBar = document.getElementById('drowsyScoreBar');
-    const noFaceNotice = document.getElementById('noFaceNotice');
+    // Enumerasi dan Pindai Daftar Perangkat Kamera
+    async function enumerateCameras() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            camDetailText.innerText = "Browser ini tidak mendukung navigator.mediaDevices API.";
+            return;
+        }
 
-    async function updateDMSStatus() {
         try {
-            const res = await fetch("{{ url_for('driver.status_feed') }}");
-            if (!res.ok) return;
-            const data = await res.json();
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const videoDevices = devices.filter(d => d.kind === 'videoinput');
 
-            // 1. Model Name
-            modelBadge.innerText = "Model: " + (data.method || "Baseline");
-
-            // 2. Status Wajah
-            if (!data.face_detected) {
-                noFaceNotice.classList.remove('hidden');
+            camSelect.innerHTML = '';
+            if (videoDevices.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = 'Tidak ada webcam terdeteksi';
+                camSelect.appendChild(opt);
             } else {
-                noFaceNotice.classList.add('hidden');
-            }
-
-            // 3. Metrik EAR & MAR
-            const ear = data.ear_avg || 0.0;
-            const mar = data.mar || 0.0;
-            earVal.innerText = ear.toFixed(3);
-            marVal.innerText = mar.toFixed(3);
-
-            // Persentase bar (normalisasi)
-            const earPct = Math.min(100, Math.max(0, (ear / 0.40) * 100));
-            const marPct = Math.min(100, Math.max(0, (mar / 1.00) * 100));
-            earBar.style.width = earPct + "%";
-            marBar.style.width = marPct + "%";
-
-            // 4. Pose Kepala
-            const yaw = data.yaw || 0.0;
-            let yawText = `${yaw.toFixed(1)}° `;
-            if (yaw > 20) {
-                yawText += "(Menoleh Kanan)";
-                poseNotice.innerText = "Pengemudi menoleh ke kanan";
-            } else if (yaw < -20) {
-                yawText += "(Menoleh Kiri)";
-                poseNotice.innerText = "Pengemudi menoleh ke kiri";
-            } else {
-                yawText += "(Tengah)";
-                poseNotice.innerText = "Menghadap lurus ke depan";
-            }
-            yawVal.innerText = yawText;
-
-            // 5. Skor Kantuk
-            const score = (data.drowsy_score || 0.0) * 100;
-            drowsyScoreText.innerText = Math.round(score) + "%";
-            drowsyScoreBar.style.width = Math.round(score) + "%";
-
-            if (score > 70) {
-                drowsyScoreBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-300";
-            } else if (score > 40) {
-                drowsyScoreBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
-            } else {
-                drowsyScoreBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-300";
-            }
-
-            // 6. Label Status & Alarm
-            if (data.is_alarm_active) {
-                alarmBanner.classList.remove('hidden');
-                alarmTitle.innerText = "PERINGATAN: " + (data.alarm_type || "BAHAYA");
-                alarmDesc.innerText = data.alarm_message || "Kondisi berbahaya terdeteksi!";
-                statusText.innerText = data.alarm_type || "BAHAYA";
-                statusText.className = "text-2xl font-black text-red-500";
-                statusIcon.className = "w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-3xl";
-                statusIcon.innerText = "🚨";
-                statusSub.innerText = data.alarm_message;
-
-                // Bunyikan Web Audio alarm
-                playAlarmSound();
-            } else {
-                alarmBanner.classList.add('hidden');
-                const label = data.status_label || "TERJAGA";
-                statusText.innerText = label;
-
-                if (label === 'TERJAGA') {
-                    statusText.className = "text-2xl font-black text-emerald-400";
-                    statusIcon.className = "w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl";
-                    statusIcon.innerText = "👁️";
-                    statusSub.innerText = "Pengemudi fokus pada jalan";
-                } else if (label === 'MENGUAP') {
-                    statusText.className = "text-2xl font-black text-amber-400";
-                    statusIcon.className = "w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl";
-                    statusIcon.innerText = "🥱";
-                    statusSub.innerText = "Mulai terindikasi kelelahan";
-                } else {
-                    statusText.className = "text-2xl font-black text-blue-400";
-                    statusIcon.className = "w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-3xl";
-                    statusIcon.innerText = "👤";
-                    statusSub.innerText = "Kondisi stabil";
-                }
+                videoDevices.forEach((dev, idx) => {
+                    const opt = document.createElement('option');
+                    opt.value = dev.deviceId;
+                    opt.innerText = dev.label || `Kamera ${idx + 1}`;
+                    camSelect.appendChild(opt);
+                });
             }
         } catch (err) {
-            console.error("Poll error:", err);
+            console.error("Gagal mendata kamera:", err);
         }
     }
 
-    // Jalankan polling setiap 250 milidetik
-    setInterval(updateDMSStatus, 250);
-
-    // Aktifkan audio context pada klik pertama halaman
-    document.addEventListener('click', () => {
+    // Meminta Izin dan Menyalakan Kamera (HTML5 getUserMedia)
+    async function requestAndStartCamera(deviceId = null) {
         initAudioContext();
-    }, { once: true });
+        permissionDeniedNotice.classList.add('hidden');
+
+        camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-900/60 text-amber-300 border border-amber-700";
+        camStatusBadge.innerText = "Meminta Izin Browser...";
+        camDetailText.innerText = "Silakan klik 'Allow / Izinkan' pada pop-up browser.";
+
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+
+        const constraints = {
+            video: {
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                facingMode: 'user'
+            },
+            audio: false
+        };
+
+        if (deviceId) {
+            constraints.video.deviceId = { exact: deviceId };
+        }
+
+        try {
+            // Minta Izin Kamera ke Browser
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            currentStream = stream;
+            videoEl.srcObject = stream;
+
+            await new Promise((resolve) => {
+                videoEl.onloadedmetadata = () => {
+                    videoEl.play();
+                    resolve();
+                };
+            });
+
+            // Update UI status sukses
+            camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700";
+            camStatusBadge.innerText = "Kamera Aktif (Izin Diberikan)";
+            camStatusIcon.className = "w-10 h-10 rounded-xl bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-xl";
+            camDetailText.innerText = "Webcam terhubung dan mengirim frame ke AI detector.";
+
+            startCamBtn.className = "px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition flex items-center gap-2";
+            startCamBtn.innerHTML = "<span>🔄</span> Ganti / Refresh Kamera";
+
+            standbyPlaceholder.classList.add('hidden');
+            displayCanvas.classList.remove('hidden');
+            livePing.classList.remove('hidden');
+            liveDot.className = "relative inline-flex rounded-full h-3 w-3 bg-emerald-500";
+            streamIndicator.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+
+            // Update daftar kamera setelah izin diperoleh (nama perangkat akan muncul)
+            await enumerateCameras();
+
+            // Mulai loop inferensi frame
+            if (frameInterval) clearInterval(frameInterval);
+            frameInterval = setInterval(sendFrameToAI, 80); // ~12-15 FPS
+
+        } catch (err) {
+            console.error("Gagal mendapatkan izin webcam:", err);
+            camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-red-900/60 text-red-300 border border-red-700";
+            camStatusBadge.innerText = "Izin Ditolak / Kamera Sibuk";
+            camStatusIcon.className = "w-10 h-10 rounded-xl bg-red-600/30 text-red-400 flex items-center justify-center text-xl";
+            camDetailText.innerText = "Browser tidak diizinkan membuka kamera atau webcam sedang dipakai aplikasi lain.";
+            standbyPlaceholder.classList.add('hidden');
+            permissionDeniedNotice.classList.remove('hidden');
+        }
+    }
+
+    function switchCamera() {
+        const selectedDevId = camSelect.value;
+        if (selectedDevId) {
+            requestAndStartCamera(selectedDevId);
+        }
+    }
+
+    // Mengambil frame dari video, mengirim ke backend Flask, dan menggambar overlay
+    async function sendFrameToAI() {
+        if (!currentStream || isProcessing || videoEl.paused || videoEl.ended) return;
+
+        isProcessing = true;
+        try {
+            // Gambar frame video ke canvas offscreen
+            captureCtx.drawImage(videoEl, 0, 0, 640, 480);
+            const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.7);
+
+            // Hitung FPS
+            fpsFrames++;
+            const now = Date.now();
+            if (now - lastFpsTime >= 1000) {
+                fpsCounter.innerText = `FPS: ${fpsFrames} | Resolusi: 640x480`;
+                fpsFrames = 0;
+                lastFpsTime = now;
+            }
+
+            // Kirim frame ke endpoint /driver/process_frame
+            const res = await fetch("{{ url_for('driver.process_frame') }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ image: dataUrl })
+            });
+
+            if (!res.ok) {
+                isProcessing = false;
+                return;
+            }
+
+            const data = await res.json();
+
+            // Render ke canvas tampilan utama
+            displayCtx.drawImage(videoEl, 0, 0, 640, 480);
+
+            // Anotasi Landmark & Bounding Box Wajah
+            if (data.face_detected) {
+                // Gambar titik hijau pada mata
+                displayCtx.fillStyle = "#10B981";
+                if (data.left_eye_pts) {
+                    data.left_eye_pts.forEach(pt => {
+                        displayCtx.beginPath();
+                        displayCtx.arc(pt[0], pt[1], 3, 0, 2 * Math.PI);
+                        displayCtx.fill();
+                    });
+                }
+                if (data.right_eye_pts) {
+                    data.right_eye_pts.forEach(pt => {
+                        displayCtx.beginPath();
+                        displayCtx.arc(pt[0], pt[1], 3, 0, 2 * Math.PI);
+                        displayCtx.fill();
+                    });
+                }
+
+                // Kotak Wajah (Bounding Box)
+                if (data.bbox) {
+                    const [x1, y1, x2, y2] = data.bbox;
+                    displayCtx.lineWidth = 2.5;
+                    displayCtx.strokeStyle = data.is_alarm_active ? "#EF4444" : "#10B981";
+                    displayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                }
+            } else {
+                // Banner transparan jika wajah hilang
+                displayCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                displayCtx.fillRect(100, 200, 440, 80);
+                displayCtx.fillStyle = "#F59E0B";
+                displayCtx.font = "bold 16px sans-serif";
+                displayCtx.textAlign = "center";
+                displayCtx.fillText("Wajah Pengemudi Tidak Terdeteksi", 320, 235);
+                displayCtx.fillStyle = "#E2E8F0";
+                displayCtx.font = "12px sans-serif";
+                displayCtx.fillText("Pastikan wajah Anda berada di depan kamera", 320, 260);
+                displayCtx.textAlign = "left";
+            }
+
+            // Banner Visual Merah jika Alarm Aktif
+            if (data.is_alarm_active) {
+                displayCtx.fillStyle = "rgba(220, 38, 38, 0.85)";
+                displayCtx.fillRect(0, 0, 640, 50);
+                displayCtx.fillStyle = "#FFFFFF";
+                displayCtx.font = "bold 16px sans-serif";
+                displayCtx.fillText("! " + (data.alarm_message || "PERINGATAN BAHAYA"), 20, 32);
+            }
+
+            // Update Panel Telemetri UI
+            updateTelemetryUI(data);
+
+        } catch (err) {
+            console.error("Proses frame error:", err);
+        } finally {
+            isProcessing = false;
+        }
+    }
+
+    function updateTelemetryUI(data) {
+        // Model badge
+        modelBadge.innerText = "Model: " + (data.method || "Baseline");
+
+        // Metrik EAR & MAR
+        const ear = data.ear_avg || 0.0;
+        const mar = data.mar || 0.0;
+        earVal.innerText = ear.toFixed(3);
+        marVal.innerText = mar.toFixed(3);
+
+        const earPct = Math.min(100, Math.max(0, (ear / 0.40) * 100));
+        const marPct = Math.min(100, Math.max(0, (mar / 1.00) * 100));
+        earBar.style.width = earPct + "%";
+        marBar.style.width = marPct + "%";
+
+        // Pose Kepala
+        const yaw = data.yaw || 0.0;
+        let yawText = `${yaw.toFixed(1)}° `;
+        if (yaw > 20) {
+            yawText += "(Menoleh Kanan)";
+            poseNotice.innerText = "Pengemudi menoleh ke kanan";
+        } else if (yaw < -20) {
+            yawText += "(Menoleh Kiri)";
+            poseNotice.innerText = "Pengemudi menoleh ke kiri";
+        } else {
+            yawText += "(Tengah)";
+            poseNotice.innerText = "Menghadap lurus ke depan";
+        }
+        yawVal.innerText = yawText;
+
+        // Skor Kantuk
+        const score = (data.drowsy_score || 0.0) * 100;
+        drowsyScoreText.innerText = Math.round(score) + "%";
+        drowsyScoreBar.style.width = Math.round(score) + "%";
+
+        if (score > 70) {
+            drowsyScoreBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-300";
+        } else if (score > 40) {
+            drowsyScoreBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
+        } else {
+            drowsyScoreBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-300";
+        }
+
+        // Status Alarm & Notifikasi
+        if (data.is_alarm_active) {
+            alarmBanner.classList.remove('hidden');
+            alarmTitle.innerText = "PERINGATAN: " + (data.alarm_type || "BAHAYA");
+            alarmDesc.innerText = data.alarm_message || "Kondisi berbahaya terdeteksi!";
+            statusText.innerText = data.alarm_type || "BAHAYA";
+            statusText.className = "text-2xl font-black text-red-500";
+            statusIcon.className = "w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-3xl";
+            statusIcon.innerText = "🚨";
+            statusSub.innerText = data.alarm_message;
+
+            playAlarmSound();
+        } else {
+            alarmBanner.classList.add('hidden');
+            const label = data.status_label || "TERJAGA";
+            statusText.innerText = label;
+
+            if (label === 'TERJAGA') {
+                statusText.className = "text-2xl font-black text-emerald-400";
+                statusIcon.className = "w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl";
+                statusIcon.innerText = "👁️";
+                statusSub.innerText = "Pengemudi fokus pada jalan";
+            } else if (label === 'MENGUAP') {
+                statusText.className = "text-2xl font-black text-amber-400";
+                statusIcon.className = "w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl";
+                statusIcon.innerText = "🥱";
+                statusSub.innerText = "Mulai terindikasi kelelahan";
+            } else {
+                statusText.className = "text-2xl font-black text-blue-400";
+                statusIcon.className = "w-14 h-14 rounded-2xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-3xl";
+                statusIcon.innerText = "👤";
+                statusSub.innerText = "Kondisi stabil";
+            }
+        }
+    }
+
+    // Inisialisasi saat halaman selesai dimuat
+    document.addEventListener('DOMContentLoaded', () => {
+        enumerateCameras();
+
+        // Cek apakah permission sudah pernah diberikan sebelumnya
+        if (navigator.permissions && navigator.permissions.query) {
+            navigator.permissions.query({ name: 'camera' }).then(permStatus => {
+                if (permStatus.state === 'granted') {
+                    requestAndStartCamera();
+                }
+                permStatus.onchange = () => {
+                    if (permStatus.state === 'granted') {
+                        requestAndStartCamera();
+                    }
+                };
+            }).catch(() => {});
+        }
+    });
 </script>
 {% endblock %}
-

@@ -1,7 +1,9 @@
 import os
 import sys
 import unittest
+import base64
 import numpy as np
+import cv2
 
 ROOT_DIR = os.path.abspath(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
@@ -46,11 +48,9 @@ class TestDMSSystem(unittest.TestCase):
         from dms_core.detector import FaceLandmarkDetector
         detector = FaceLandmarkDetector()
         
-        # Test frame kosong
         empty_res = detector.process_frame(None)
         self.assertFalse(empty_res['face_detected'])
 
-        # Test frame hitam (tidak ada wajah)
         black_frame = np.zeros((480, 640, 3), dtype=np.uint8)
         res = detector.process_frame(black_frame)
         self.assertFalse(res['face_detected'])
@@ -61,7 +61,7 @@ class TestDMSSystem(unittest.TestCase):
         from training_suite.dataset_loader import DatasetLoader
         loader = DatasetLoader()
         df = loader.generate_synthetic_baseline_dataset(samples_per_class=50)
-        self.assertEqual(len(df), 125) # 50 + 50 + 25
+        self.assertEqual(len(df), 125)
         self.assertIn('label', df.columns)
 
         X_train, X_test, y_train, y_test, scaler = loader.load_data()
@@ -87,7 +87,6 @@ class TestDMSSystem(unittest.TestCase):
         clf = DrowsinessClassifier(model_path=model_path)
         self.assertEqual(clf.model_type, 'sklearn')
 
-        # Simulasi fitur mata tertutup (EAR rendah: 0.12)
         mock_drowsy_features = {
             'face_detected': True,
             'ear_avg': 0.12,
@@ -105,31 +104,50 @@ class TestDMSSystem(unittest.TestCase):
         mock_features = {'face_detected': True, 'yaw': 0.0, 'pitch': 0.0}
         mock_pred = {'is_drowsy': True, 'is_yawning': False, 'status': 'MENGANTUK'}
 
-        # Update 4 frame (belum alarm)
         for _ in range(4):
             status = tracker.update(mock_features, mock_pred)
             self.assertFalse(status['is_alarm_active'])
 
-        # Frame ke-5 -> Alarm harus aktif!
         status = tracker.update(mock_features, mock_pred)
         self.assertTrue(status['is_alarm_active'])
         self.assertEqual(status['alarm_type'], 'KANTUK')
 
     def test_08_flask_endpoints(self):
-        """Memastikan route Flask (Login, Register, Monitor, Dashboard) merespons dengan HTTP 200."""
+        """Memastikan route Flask (Login, Register) merespons dengan HTTP 200."""
         from app import create_app
         app = create_app()
         app.config['TESTING'] = True
         client = app.test_client()
 
-        # Test Login Page
         r_login = client.get('/auth/login')
         self.assertEqual(r_login.status_code, 200)
 
-        # Test Register Page
         r_reg = client.get('/auth/register')
         self.assertEqual(r_reg.status_code, 200)
 
+    def test_09_process_frame_endpoint(self):
+        """Memastikan endpoint /driver/process_frame menerima base64 frame dari browser dan merespons JSON."""
+        from app import create_app
+        from app.models import User
+        app = create_app()
+        app.config['TESTING'] = True
+        client = app.test_client()
+
+        # Login sebagai driver
+        client.post('/auth/login', data={'username': 'driver', 'password': 'driver123'})
+
+        # Siapkan gambar uji frame
+        test_img = np.zeros((480, 640, 3), dtype=np.uint8)
+        _, buf = cv2.imencode('.jpg', test_img)
+        b64_data = 'data:image/jpeg;base64,' + base64.b64encode(buf).decode('utf-8')
+
+        res = client.post('/driver/process_frame', json={'image': b64_data})
+        self.assertEqual(res.status_code, 200)
+        json_data = res.get_json()
+        self.assertTrue(json_data['success'])
+        self.assertIn('face_detected', json_data)
+        self.assertIn('ear_avg', json_data)
+        self.assertIn('status_label', json_data)
+
 if __name__ == '__main__':
     unittest.main()
-
