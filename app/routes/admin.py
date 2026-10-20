@@ -7,9 +7,10 @@ from app.models import db, User, AlertLog, MonitoringSession
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.before_request
-@login_required
 def ensure_admin():
     """Memastikan hanya user dengan role 'admin' yang dapat mengakses modul ini."""
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login', next=request.path))
     if not current_user.is_admin():
         flash('Akses ditolak. Halaman ini khusus Administrator.', 'danger')
         return redirect(url_for('driver.monitor'))
@@ -84,6 +85,10 @@ def create_driver():
         flash('Username, Nama Lengkap, dan Password wajib diisi.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
 
+    if len(password) < 6:
+        flash('Password minimal harus terdiri dari 6 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
     if User.query.filter_by(username=username).first():
         flash('Username sudah digunakan.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
@@ -99,8 +104,12 @@ def create_driver():
 @admin_bp.route('/drivers/delete/<int:driver_id>', methods=['POST'])
 def delete_driver(driver_id):
     """FR-12: Hapus data driver."""
-    driver = User.query.get_or_404(driver_id)
-    if driver.role == 'admin':
+    driver = db.session.get(User, driver_id)
+    if not driver:
+        flash('Data driver tidak ditemukan.', 'warning')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if driver.role == 'admin' or driver.id == current_user.id:
         flash('Akun Administrator tidak dapat dihapus.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
 
@@ -127,6 +136,13 @@ def manage_models():
 
     cm_exists = os.path.exists(os.path.join(models_dir, 'confusion_matrix.png'))
     return render_template('admin_models.html', models_list=models_list, cm_exists=cm_exists, user=current_user)
+
+@admin_bp.route('/models/confusion_matrix')
+def view_confusion_matrix():
+    """Menampilkan grafik evaluasi model (Confusion Matrix) secara aman."""
+    from flask import send_from_directory
+    models_dir = current_app.config['MODELS_DIR']
+    return send_from_directory(models_dir, 'confusion_matrix.png')
 
 @admin_bp.route('/models/reload', methods=['POST'])
 def reload_model():

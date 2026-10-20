@@ -1,7 +1,7 @@
 # Driver Monitoring System (DMS) & Model Training Suite
 **Proyek PBL IF3-PD15 — Teknik Informatika, Politeknik Negeri Batam**
 
-Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. Dilengkapi dengan **Training Suite Mandiri** untuk merekam dataset dan melatih model AI kustom, serta fitur **Kalibrasi Sensitivitas Mata Adaptif** untuk menangani variasi bentuk mata dan rambut/poni panjang.
+Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. Dilengkapi dengan **Training Suite Mandiri** untuk merekam dataset dan melatih model AI kustom.
 
 ---
 
@@ -142,18 +142,12 @@ Buka browser favorit Anda (Google Chrome / Microsoft Edge) dan akses alamat:
 
 ---
 
-## 🎯 Fitur Baru: Kalibrasi Mata Otomatis & Penanganan Rambut/Poni
-
-Pada kondisi nyata berkendara, banyak pengemudi memiliki rambut atau poni yang menutupi sebagian dahi dan mata, atau bentuk mata yang berbeda (*monolid/hooded eyes*).
-
-Sistem DMS ini telah dilengkapi **dua perlindungan cerdas**:
-1. **Perlindungan Oklusi Rambut Satu Mata (*Dual-Eye Occlusion Protection*)**:
-   Jika poni hanya menutupi satu sisi mata (mata kiri EAR rendah tapi mata kanan melek normal), sistem **tidak akan memicu alarm kantuk keliru** (*false alarm*), karena orang tertidur pasti menutup kedua matanya sekaligus.
-2. **Tombol `🎯 Kalibrasi Otomatis (3 Detik)` pada Web UI**:
-   - Buka halaman **Monitoring Pengemudi** (`/driver/monitor`).
-   - Nyalakan kamera webcam.
-   - Buka mata Anda secara wajar dengan gaya rambut sehari-hari, lalu klik tombol **"Kalibrasi Otomatis (3 Detik)"**.
-   - Sistem akan mengukur bukaan mata Anda dan otomatis menetapkan ambang batas kantuk ($72\%$ dari bukaan normal Anda) yang tersimpan langsung di browser Anda.
+## 🔒 Keamanan Sesi & Akun (Session Security)
+Sistem dilengkapi fitur keamanan sesi:
+- **Proteksi Sesi Kuat (*Strong Session Protection*)**: Mencegah serangan *Session Hijacking* dan *Session Fixation*.
+- **Batas Waktu Inaktivitas Otomatis (*Session Inactivity Timeout*)**: Sesi pengguna otomatis berakhir setelah 30 menit tidak aktif demi keamanan.
+- **Cookie Aman**: Menggunakan atribut `HttpOnly` dan `SameSite=Lax` untuk mencegah pencurian cookie via XSS dan serangan CSRF.
+- **Validasi Pengalihan URL**: Melindungi sistem dari kerentanan *Open Redirect*.
 
 ---
 

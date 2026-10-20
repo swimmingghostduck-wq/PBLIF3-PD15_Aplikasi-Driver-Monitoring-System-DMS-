@@ -158,5 +158,42 @@ class TestDMSSystem(unittest.TestCase):
         self.assertIn('ear_avg', json_data)
         self.assertIn('status_label', json_data)
 
+    def test_10_session_security_and_auth(self):
+        """Memastikan fitur keamanan sesi: timeout inaktivitas, logout, dan validasi password."""
+        import time
+        from app import create_app
+        app = create_app()
+        app.config['TESTING'] = True
+        app.config['SESSION_INACTIVITY_TIMEOUT'] = 2  # 2 detik untuk pengujian timeout cepat
+        client = app.test_client()
+
+        # 1. Login
+        r_login = client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
+        self.assertEqual(r_login.status_code, 302)
+
+        # 2. Akses halaman admin saat sesi aktif
+        r_dash = client.get('/admin/dashboard')
+        self.assertEqual(r_dash.status_code, 200)
+
+        # 3. Akses grafik confusion matrix lewat endpoint aman
+        r_cm = client.get('/admin/models/confusion_matrix')
+        self.assertEqual(r_cm.status_code, 200)
+
+        # 4. Uji Session Inactivity Timeout (tunggu > 2 detik)
+        time.sleep(2.5)
+        r_timeout = client.get('/admin/dashboard', follow_redirects=False)
+        self.assertEqual(r_timeout.status_code, 302)
+        self.assertIn('/auth/login', r_timeout.headers.get('Location', ''))
+
+        # 5. Uji validasi panjang password pada registrasi (< 6 karakter ditolak)
+        r_short_pass = client.post('/auth/register', data={
+            'username': 'shortuser',
+            'full_name': 'Short Password User',
+            'nim_nik': '12345',
+            'password': '123',
+            'confirm_password': '123'
+        }, follow_redirects=True)
+        self.assertIn(b'minimal harus terdiri dari 6 karakter', r_short_pass.data)
+
 if __name__ == '__main__':
     unittest.main()

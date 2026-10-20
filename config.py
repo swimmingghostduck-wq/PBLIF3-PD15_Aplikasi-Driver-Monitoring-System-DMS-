@@ -1,8 +1,23 @@
 import os
+from datetime import timedelta
 
 class Config:
     """Konfigurasi Aplikasi Driver Monitoring System (DMS)"""
     SECRET_KEY = os.environ.get('SECRET_KEY', 'dms-secret-key-pbl-if3pd15-2026')
+
+    # Keamanan Cookie & Sesi (Session Security)
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    SESSION_COOKIE_SECURE = False  # Set True jika menggunakan HTTPS pada production
+    PERMANENT_SESSION_LIFETIME = timedelta(minutes=60)
+    
+    # Keamanan Remember-Me Cookie (Flask-Login)
+    REMEMBER_COOKIE_HTTPONLY = True
+    REMEMBER_COOKIE_SAMESITE = 'Lax'
+    REMEMBER_COOKIE_DURATION = timedelta(days=1)
+    
+    # Batas Waktu Inaktivitas Sesi Pengguna (detik)
+    SESSION_INACTIVITY_TIMEOUT = 1800  # 30 menit inaktivitas otomatis logout
     
     # Konfigurasi Database: Prioritas MySQL (XAMPP default: root tanpa password)
     # Jika koneksi MySQL gagal, aplikasi otomatis beralih ke SQLite lokal.

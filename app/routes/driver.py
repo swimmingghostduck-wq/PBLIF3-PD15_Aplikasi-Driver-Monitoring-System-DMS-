@@ -72,7 +72,6 @@ def process_frame():
 
     data = request.get_json(silent=True) or {}
     image_data = data.get('image', '')
-    custom_ear_thresh = data.get('ear_thresh', None)
     if not image_data:
         return jsonify({'error': 'Tidak ada data gambar'}), 400
 
@@ -89,8 +88,8 @@ def process_frame():
         # Deteksi landmark wajah & mata
         detection_res = detector.process_frame(frame)
 
-        # Inferensi model dengan ambang batas EAR yang disesuaikan
-        pred_res = classifier.predict(detection_res, custom_ear_thresh=custom_ear_thresh)
+        # Inferensi model
+        pred_res = classifier.predict(detection_res)
 
         # Update tracker durasi
         track_status = tracker.update(detection_res, pred_res)
@@ -230,8 +229,11 @@ def generate_frames(driver_id, app):
 
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+    except (GeneratorExit, Exception):
+        pass
     finally:
-        camera.release()
+        if camera is not None and camera.isOpened():
+            camera.release()
 
 @driver_bp.route('/video_feed')
 @login_required

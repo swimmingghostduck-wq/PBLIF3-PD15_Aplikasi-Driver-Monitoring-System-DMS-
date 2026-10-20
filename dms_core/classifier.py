@@ -67,7 +67,7 @@ class DrowsinessClassifier:
             self.model_type = 'geometric_baseline'
             return False
 
-    def predict(self, features_dict, custom_ear_thresh=None):
+    def predict(self, features_dict):
         """
         Melakukan prediksi kondisi driver berdasarkan hasil ekstraksi fitur.
         Input: dict hasil dari FaceLandmarkDetector.process_frame()
@@ -83,13 +83,8 @@ class DrowsinessClassifier:
             }
 
         ear_avg = features_dict.get('ear_avg', 0.0)
-        ear_left = features_dict.get('ear_left', ear_avg)
-        ear_right = features_dict.get('ear_right', ear_avg)
         mar = features_dict.get('mar', 0.0)
         features_vector = features_dict.get('features_vector', [])
-
-        # Ambang batas dinamis (dapat disesuaikan dari kalibrasi pengguna)
-        effective_ear_thresh = float(custom_ear_thresh) if (custom_ear_thresh is not None and 0.10 <= float(custom_ear_thresh) <= 0.40) else self.ear_thresh
 
         # 1. Jika model Machine Learning (Scikit-Learn) tersedia
         if self.model_type == 'sklearn' and self.model is not None and len(features_vector) > 0:
@@ -109,11 +104,6 @@ class DrowsinessClassifier:
                 is_drowsy = ('MENGANTUK' in pred_label or 'DROWSY' in pred_label or 'CLOSED' in pred_label or pred_label == '1')
                 is_yawning = (mar > self.mar_thresh or 'YAWN' in pred_label or 'MENGUAP' in pred_label)
 
-                # Perlindungan terhadap oklusi rambut pada satu mata:
-                # Jika salah satu mata masih terbuka jelas, jangan anggap mengantuk
-                if is_drowsy and max(ear_left, ear_right) >= (effective_ear_thresh + 0.04):
-                    is_drowsy = False
-
                 status = self.LABEL_MENGANTUK if is_drowsy else (self.LABEL_MENGUAP if is_yawning else self.LABEL_TERJAGA)
                 
                 return {
@@ -127,24 +117,16 @@ class DrowsinessClassifier:
                 print(f"[DMS Classifier] Error inferensi model: {e}. Menggunakan fallback.")
 
         # 2. Heuristik Baseline Geometris (Rule-Based Cerdas)
-        # Perlindungan terhadap oklusi rambut/poni:
-        # Jika salah satu mata terbuka jelas di atas ambang batas, bukan kondisi tidur
-        if max(ear_left, ear_right) >= (effective_ear_thresh + 0.03):
-            is_eyes_closed = False
-        else:
-            is_eyes_closed = ear_avg < effective_ear_thresh
-
+        is_eyes_closed = ear_avg < self.ear_thresh
         is_yawning = mar > self.mar_thresh
 
         # Perhitungan skor kantuk continuous (0.0 sampai 1.0)
-        open_ref = max(0.28, effective_ear_thresh + 0.08)
-        close_ref = max(0.10, effective_ear_thresh - 0.08)
-        if ear_avg <= close_ref:
+        if ear_avg <= 0.10:
             drowsy_score = 1.0
-        elif ear_avg >= open_ref:
+        elif ear_avg >= 0.35:
             drowsy_score = 0.0
         else:
-            drowsy_score = max(0.0, min(1.0, (open_ref - ear_avg) / (open_ref - close_ref)))
+            drowsy_score = max(0.0, min(1.0, (0.35 - ear_avg) / (0.35 - 0.10)))
 
         if is_eyes_closed and is_yawning:
             status = self.LABEL_MENGANTUK

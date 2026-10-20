@@ -85,7 +85,7 @@
 
             <div class="flex-grow flex items-center justify-center bg-slate-900 rounded-xl border border-slate-700 p-4 min-h-[300px]">
                 {% if cm_exists %}
-                    <img src="{{ url_for('static', filename='../models/confusion_matrix.png') }}"
+                    <img src="{{ url_for('admin.view_confusion_matrix') }}"
                          alt="Grafik Confusion Matrix"
                          class="max-w-full h-auto rounded-lg shadow-lg">
                 {% else %}

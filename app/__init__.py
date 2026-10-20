@@ -1,6 +1,7 @@
 import os
-from flask import Flask, redirect, url_for
-from flask_login import LoginManager, current_user
+import time
+from flask import Flask, redirect, url_for, session, flash, request
+from flask_login import LoginManager, current_user, logout_user
 from config import Config
 from app.models import db, User
 
@@ -8,6 +9,7 @@ login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
 login_manager.login_message = 'Silakan login terlebih dahulu untuk mengakses sistem.'
 login_manager.login_message_category = 'warning'
+login_manager.session_protection = 'strong'
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -54,6 +56,26 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(driver_bp, url_prefix='/driver')
     app.register_blueprint(admin_bp, url_prefix='/admin')
+
+    @app.before_request
+    def enforce_session_security():
+        """Memeriksa batas waktu inaktivitas sesi pengguna untuk keamanan sistem."""
+        if current_user.is_authenticated:
+            # Kecualikan file statis dari update waktu aktivitas
+            if request.endpoint and request.endpoint.startswith('static'):
+                return
+
+            now = time.time()
+            last_active = session.get('_last_active')
+            timeout = app.config.get('SESSION_INACTIVITY_TIMEOUT', 1800)
+
+            if last_active and (now - last_active > timeout):
+                logout_user()
+                session.clear()
+                flash('Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan masuk kembali.', 'warning')
+                return redirect(url_for('auth.login', next=request.path if request.method == 'GET' else None))
+
+            session['_last_active'] = now
 
     @app.route('/')
     def index():
