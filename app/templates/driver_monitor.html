@@ -47,17 +47,23 @@
             </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
             <!-- Dropdown Pilihan Kamera -->
             <select id="cameraSelect" onchange="switchCamera()" 
                     class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
                 <option value="">Mencari kamera aktif...</option>
             </select>
 
-            <!-- Tombol Minta Izin & Nyalakan Kamera -->
-            <button id="startCamBtn" onclick="requestAndStartCamera()" 
+            <!-- Tombol Utama ON / OFF Kamera -->
+            <button id="toggleCamBtn" onclick="toggleCamera()" 
                     class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
-                <span>📹</span> Nyalakan Kamera & Izinkan
+                <span id="toggleCamIcon">📹</span> <span id="toggleCamText">Nyalakan Kamera</span>
+            </button>
+
+            <!-- Tombol Minta Izin Kamera Eksplisit -->
+            <button id="requestPermBtn" onclick="requestAndStartCamera()" title="Minta ulang izin akses kamera browser"
+                    class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition flex items-center gap-1.5">
+                <span>🔒</span> Izin Kamera
             </button>
         </div>
     </div>
@@ -97,21 +103,23 @@
                 <!-- Canvas Utama Tampilan dengan Anotasi Landmark -->
                 <canvas id="displayCanvas" width="640" height="480" class="w-full h-auto object-contain max-h-[520px] hidden"></canvas>
 
-                <!-- Placeholder Standby Sebelum Izin Diberikan -->
+                <!-- Placeholder Standby Sebelum Izin Diberikan / Saat Kamera Mati -->
                 <div id="standbyPlaceholder" class="p-8 text-center flex flex-col items-center justify-center space-y-4">
-                    <div class="w-20 h-20 rounded-full bg-blue-600/20 text-blue-400 flex items-center justify-center text-4xl shadow-inner">
+                    <div class="w-20 h-20 rounded-full bg-slate-700/60 text-slate-300 flex items-center justify-center text-4xl shadow-inner border border-slate-600/50">
                         📹
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-white">Kamera Belum Diaktifkan</h3>
+                        <h3 class="text-lg font-bold text-white">Kamera Sedang Nonaktif</h3>
                         <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                            Klik tombol hijau <strong>"Nyalakan Kamera & Izinkan"</strong> di atas. Browser Anda akan memunculkan pop-up izin akses kamera laptop.
+                            Klik tombol hijau <strong>"Nyalakan Kamera"</strong> untuk memulai streaming dan deteksi AI secara real-time.
                         </p>
                     </div>
-                    <button onclick="requestAndStartCamera()" 
-                            class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/30 transition">
-                        Klik di Sini untuk Meminta Izin Kamera
-                    </button>
+                    <div class="flex flex-wrap items-center justify-center gap-3">
+                        <button onclick="requestAndStartCamera()" 
+                                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
+                            <span>📹</span> Nyalakan Kamera & Izinkan Akses
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Petunjuk jika izin ditolak browser -->
@@ -124,8 +132,14 @@
                     <ol class="text-xs text-slate-400 text-left mt-2 space-y-1 list-decimal list-inside bg-slate-900/60 p-3 rounded-lg">
                         <li>Klik ikon <strong>Gembok 🔒</strong> atau <strong>Kamera 📹</strong> di sebelah kiri URL browser (samping <code class="text-blue-300">localhost:5000</code>).</li>
                         <li>Ubah izin Kamera menjadi <strong>Izinkan (Allow)</strong>.</li>
-                        <li>Refresh halaman ini.</li>
+                        <li>Klik tombol coba izin lagi di bawah.</li>
                     </ol>
+                    <div class="mt-4">
+                        <button onclick="requestAndStartCamera()"
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow transition">
+                            🔄 Coba Minta Izin Ulang
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -233,7 +247,10 @@
     const displayCtx = displayCanvas.getContext('2d');
 
     const camSelect = document.getElementById('cameraSelect');
-    const startCamBtn = document.getElementById('startCamBtn');
+    const toggleCamBtn = document.getElementById('toggleCamBtn');
+    const toggleCamIcon = document.getElementById('toggleCamIcon');
+    const toggleCamText = document.getElementById('toggleCamText');
+    const requestPermBtn = document.getElementById('requestPermBtn');
     const camStatusBadge = document.getElementById('camStatusBadge');
     const camStatusIcon = document.getElementById('camStatusIcon');
     const camDetailText = document.getElementById('camDetailText');
@@ -394,12 +411,14 @@
 
             // Update UI status sukses
             camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-emerald-900/60 text-emerald-300 border border-emerald-700";
-            camStatusBadge.innerText = "Kamera Aktif (Izin Diberikan)";
+            camStatusBadge.innerText = "Kamera Aktif (On)";
             camStatusIcon.className = "w-10 h-10 rounded-xl bg-emerald-600/30 text-emerald-400 flex items-center justify-center text-xl";
             camDetailText.innerText = "Webcam terhubung dan mengirim frame ke AI detector.";
 
-            startCamBtn.className = "px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition flex items-center gap-2";
-            startCamBtn.innerHTML = "<span>🔄</span> Ganti / Refresh Kamera";
+            // Ubah tombol toggle menjadi merah (Matikan Kamera)
+            toggleCamBtn.className = "px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/20 transition flex items-center gap-2";
+            toggleCamIcon.innerText = "⏹️";
+            toggleCamText.innerText = "Matikan Kamera";
 
             standbyPlaceholder.classList.add('hidden');
             displayCanvas.classList.remove('hidden');
@@ -422,6 +441,61 @@
             camDetailText.innerText = "Browser tidak diizinkan membuka kamera atau webcam sedang dipakai aplikasi lain.";
             standbyPlaceholder.classList.add('hidden');
             permissionDeniedNotice.classList.remove('hidden');
+
+            toggleCamBtn.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2";
+            toggleCamIcon.innerText = "📹";
+            toggleCamText.innerText = "Coba Nyalakan Lagi";
+        }
+    }
+
+    // Mematikan Kamera Secara Total (OFF)
+    function stopCamera() {
+        if (frameInterval) {
+            clearInterval(frameInterval);
+            frameInterval = null;
+        }
+        if (currentStream) {
+            currentStream.getTracks().forEach(track => track.stop());
+            currentStream = null;
+        }
+        if (videoEl) {
+            videoEl.srcObject = null;
+        }
+        isProcessing = false;
+
+        // Reset UI status
+        camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700";
+        camStatusBadge.innerText = "Kamera Mati (Off)";
+        camStatusIcon.className = "w-10 h-10 rounded-xl bg-slate-700 text-slate-400 flex items-center justify-center text-xl";
+        camDetailText.innerText = "Kamera dinonaktifkan. Klik 'Nyalakan Kamera' untuk memulai pemantauan.";
+
+        toggleCamBtn.className = "px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2";
+        toggleCamIcon.innerText = "📹";
+        toggleCamText.innerText = "Nyalakan Kamera";
+
+        standbyPlaceholder.classList.remove('hidden');
+        displayCanvas.classList.add('hidden');
+        permissionDeniedNotice.classList.add('hidden');
+
+        livePing.classList.add('hidden');
+        liveDot.className = "relative inline-flex rounded-full h-3 w-3 bg-slate-500";
+        streamIndicator.className = "w-2 h-2 rounded-full bg-slate-500";
+        fpsCounter.innerText = "FPS: 0 | Resolusi: 640x480";
+
+        statusText.innerText = "Standby (Kamera Mati)";
+        statusSub.innerText = "Kamera sedang dinonaktifkan";
+        statusText.className = "text-2xl font-black text-slate-400";
+        statusIcon.innerText = "⚪";
+        alarmBanner.classList.add('hidden');
+        stopBuzzer();
+    }
+
+    // Toggle Nyala / Mati Kamera
+    function toggleCamera() {
+        if (currentStream && currentStream.active) {
+            stopCamera();
+        } else {
+            requestAndStartCamera();
         }
     }
 
