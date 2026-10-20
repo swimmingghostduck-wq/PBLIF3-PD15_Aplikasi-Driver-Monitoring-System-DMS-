@@ -28,6 +28,8 @@ dataset/*.csv
 dataset/*.jpg
 dataset/*.jpeg
 dataset/*.png
+dataset/raw_images/**
+!dataset/raw_images/.gitkeep
 !dataset/.gitkeep
 
 # Virtual Environments

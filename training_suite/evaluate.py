@@ -44,8 +44,7 @@ def evaluate_model(model_path=None, csv_path=None):
     model_name = bundle.get('name', 'Model')
 
     loader = DatasetLoader(csv_path)
-    _, X_test, _, y_test, _ = loader.load_data()
-    X_test_scaled = scaler.transform(X_test)
+    _, X_test_scaled, _, y_test, _ = loader.load_data()
 
     y_pred = model.predict(X_test_scaled)
     acc = accuracy_score(y_test, y_pred) * 100
