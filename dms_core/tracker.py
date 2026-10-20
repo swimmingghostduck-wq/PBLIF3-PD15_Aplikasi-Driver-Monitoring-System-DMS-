@@ -13,7 +13,7 @@ class DrowsinessTracker:
                  drowsy_consec_frames=20, 
                  distraction_consec_frames=35,
                  yaw_threshold=22.0,
-                 pitch_threshold=20.0):
+                 pitch_threshold=25.0):
         self.drowsy_consec_frames = drowsy_consec_frames
         self.distraction_consec_frames = distraction_consec_frames
         self.yaw_threshold = yaw_threshold
@@ -87,7 +87,8 @@ class DrowsinessTracker:
         if is_distracted:
             self.distraction_frames += 1
         else:
-            self.distraction_frames = max(0, self.distraction_frames - 2)
+            # Pengemudi kembali fokus menatap jalan -> kurangi counter dengan cepat
+            self.distraction_frames = max(0, self.distraction_frames - 3)
 
         # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers)
         if self.closed_eyes_frames >= self.drowsy_consec_frames:
@@ -104,7 +105,12 @@ class DrowsinessTracker:
         elif self.distraction_frames >= self.distraction_consec_frames:
             self.is_alarm_active = True
             self.alarm_type = 'TIDAK_FOKUS'
-            direction = 'Kanan' if yaw > 0 else 'Kiri' if yaw < -self.yaw_threshold else 'Bawah'
+            if yaw > self.yaw_threshold:
+                direction = 'Kanan'
+            elif yaw < -self.yaw_threshold:
+                direction = 'Kiri'
+            else:
+                direction = 'Bawah'
             self.alarm_message = f'PERINGATAN: Tetap Fokus Menatap Jalan! (Menoleh ke {direction})'
             
             if (current_time - self.last_alert_time) > self.alert_cooldown:

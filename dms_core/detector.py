@@ -25,11 +25,11 @@ class FaceLandmarkDetector:
     
     MODEL_POINTS_3D = np.array([
         (0.0, 0.0, 0.0),          # Hidung (Nose tip) - 1
-        (0.0, -330.0, -65.0),     # Dagu (Chin) - 199
-        (-225.0, 170.0, -135.0),  # Sudut mata kiri - 33
-        (225.0, 170.0, -135.0),   # Sudut mata kanan - 263
-        (-150.0, -150.0, -125.0), # Sudut mulut kiri - 61
-        (150.0, -150.0, -125.0)   # Sudut mulut kanan - 291
+        (0.0, 330.0, -65.0),      # Dagu (Chin) - 199
+        (-225.0, -170.0, -135.0), # Sudut mata kiri - 33
+        (225.0, -170.0, -135.0),  # Sudut mata kanan - 263
+        (-150.0, 150.0, -125.0),  # Sudut mulut kiri - 61
+        (150.0, 150.0, -125.0)    # Sudut mulut kanan - 291
     ], dtype=np.float64)
 
     POSE_LANDMARK_IDX = [1, 199, 33, 263, 61, 291]
@@ -168,9 +168,12 @@ class FaceLandmarkDetector:
 
         rmat, _ = cv2.Rodrigues(rvec)
         angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
-        pitch = angles[0] * 360
-        yaw = angles[1] * 360
-        roll = angles[2] * 360
+        # RQDecomp3x3 sudah mengembalikan sudut dalam derajat.
+        # Yaw diinversi agar perspektif pengemudi intuitif:
+        # Menoleh Kanan -> yaw positif (+), Menoleh Kiri -> yaw negatif (-)
+        pitch = float(angles[0])
+        yaw = float(-angles[1])
+        roll = float(angles[2])
 
         return pitch, yaw, roll
 

@@ -121,6 +121,43 @@ class TestDMSSystem(unittest.TestCase):
         self.assertTrue(status['is_alarm_active'])
         self.assertEqual(status['alarm_type'], 'KANTUK')
 
+    def test_07b_distraction_and_head_pose(self):
+        """Memastikan estimasi pose kepala (solvePnP) dan deteksi distraksi bekerja presisi."""
+        from dms_core.detector import FaceLandmarkDetector
+        from dms_core.tracker import DrowsinessTracker
+        import numpy as np
+
+        det = FaceLandmarkDetector()
+        # Mock 6 titik wajah posisi menatap lurus
+        landmarks_pixel = {
+            1: (320, 240),
+            199: (320, 360),
+            33: (240, 180),
+            263: (400, 180),
+            61: (260, 300),
+            291: (380, 300)
+        }
+        pitch, yaw, roll = det.estimate_head_pose(landmarks_pixel, (480, 640))
+        # Sudut menatap lurus harus mendekati 0 derajat (< 5 deg), bukan ribuan derajat
+        self.assertLess(abs(pitch), 5.0)
+        self.assertLess(abs(yaw), 5.0)
+
+        # Uji tracker saat menoleh ke kanan (> 22 deg)
+        tracker = DrowsinessTracker(distraction_consec_frames=2)
+        distracted_features = {'face_detected': True, 'yaw': 30.0, 'pitch': -5.0}
+        pred_normal = {'is_drowsy': False, 'is_yawning': False, 'status': 'TERJAGA'}
+        tracker.update(distracted_features, pred_normal)
+        status = tracker.update(distracted_features, pred_normal)
+        self.assertTrue(status['is_alarm_active'])
+        self.assertEqual(status['alarm_type'], 'TIDAK_FOKUS')
+        self.assertIn('Kanan', status['alarm_message'])
+
+        # Uji saat kembali fokus menatap jalan
+        focus_features = {'face_detected': True, 'yaw': 2.0, 'pitch': -10.0}
+        tracker.update(focus_features, pred_normal)
+        status = tracker.update(focus_features, pred_normal)
+        self.assertFalse(status['is_alarm_active'])
+
     def test_08_flask_endpoints(self):
         """Memastikan route Flask (Login, Register) merespons dengan HTTP 200."""
         from app import create_app
