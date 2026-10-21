@@ -69,9 +69,9 @@ class FaceLandmarkDetector:
                     base_options=BaseOptions(model_asset_path=model_asset_path),
                     running_mode=VisionRunningMode.IMAGE,
                     num_faces=1,
-                    min_face_detection_confidence=0.5,
-                    min_face_presence_confidence=0.5,
-                    min_tracking_confidence=0.5
+                    min_face_detection_confidence=0.35,
+                    min_face_presence_confidence=0.35,
+                    min_tracking_confidence=0.35
                 )
                 self.landmarker = FaceLandmarker.create_from_options(options)
                 self.use_tasks_api = True
@@ -84,8 +84,8 @@ class FaceLandmarkDetector:
                 self.legacy_mesh = mp.solutions.face_mesh.FaceMesh(
                     max_num_faces=1,
                     refine_landmarks=True,
-                    min_detection_confidence=0.5,
-                    min_tracking_confidence=0.5
+                    min_detection_confidence=0.35,
+                    min_tracking_confidence=0.35
                 )
             except Exception as e:
                 print(f"[WARN] Inisialisasi legacy face_mesh gagal: {e}")

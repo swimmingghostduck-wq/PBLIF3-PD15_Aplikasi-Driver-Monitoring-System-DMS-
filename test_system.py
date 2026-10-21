@@ -152,6 +152,14 @@ class TestDMSSystem(unittest.TestCase):
         self.assertEqual(status['alarm_type'], 'TIDAK_FOKUS')
         self.assertIn('Kanan', status['alarm_message'])
 
+        # Uji saat menoleh terlalu jauh (profil samping) sehingga face_detected = False
+        tracker2 = DrowsinessTracker(distraction_consec_frames=2)
+        tracker2.update({'face_detected': True, 'yaw': 35.0, 'pitch': 0.0}, pred_normal)
+        status_side = tracker2.update({'face_detected': False}, pred_normal)
+        self.assertTrue(status_side['is_alarm_active'])
+        self.assertEqual(status_side['alarm_type'], 'TIDAK_FOKUS')
+        self.assertIn('Kanan', status_side['alarm_message'])
+
         # Uji saat kembali fokus menatap jalan
         focus_features = {'face_detected': True, 'yaw': 2.0, 'pitch': -10.0}
         tracker.update(focus_features, pred_normal)

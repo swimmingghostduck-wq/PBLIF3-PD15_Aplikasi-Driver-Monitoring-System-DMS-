@@ -10,8 +10,8 @@ class DrowsinessTracker:
     """
 
     def __init__(self, 
-                 drowsy_consec_frames=20, 
-                 distraction_consec_frames=35,
+                 drowsy_consec_frames=10, 
+                 distraction_consec_frames=15,
                  yaw_threshold=22.0,
                  pitch_threshold=25.0):
         self.drowsy_consec_frames = drowsy_consec_frames
@@ -24,6 +24,11 @@ class DrowsinessTracker:
         self.yawn_frames = 0
         self.distraction_frames = 0
         self.no_face_frames = 0
+
+        # Memory orientasi terakhir (untuk menangani saat menoleh jauh / profil samping)
+        self.last_yaw = 0.0
+        self.last_pitch = 0.0
+        self.last_direction = 'Kanan'
 
         # State flags
         self.is_alarm_active = False
@@ -49,11 +54,31 @@ class DrowsinessTracker:
         # 1. Periksa apakah wajah terdeteksi
         if not features_dict.get('face_detected', False):
             self.no_face_frames += 1
-            self.closed_eyes_frames = 0
-            self.distraction_frames = 0
-            self.yawn_frames = 0
+
+            # Logika Cerdas: Jika pengemudi sebelumnya sedang menoleh atau yaw terakhir tinggi,
+            # kehilangan wajah disebabkan pengemudi menoleh terlalu jauh (profil samping).
+            # Tetap akumulasikan frame distraksi hingga ~30 frame (~2.5 detik) tanpa mereset.
+            was_distracted = (self.distraction_frames > 0) or (abs(self.last_yaw) > self.yaw_threshold)
+            if was_distracted and self.no_face_frames <= 30:
+                self.distraction_frames += 1
+                if self.distraction_frames >= self.distraction_consec_frames:
+                    self.is_alarm_active = True
+                    self.alarm_type = 'TIDAK_FOKUS'
+                    self.alarm_message = f'PERINGATAN: Tetap Fokus Menatap Jalan! (Menoleh ke {self.last_direction})'
+                    if (current_time - self.last_alert_time) > self.alert_cooldown:
+                        self.total_distraction_events += 1
+                        self.last_alert_time = current_time
+                        should_record_event = True
+                        new_event_type = 'tidak_fokus'
+                return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type)
+
+            # Jika bukan karena menoleh, berikan grace period 3 frame sebelum mereset closed_eyes_frames
+            if self.no_face_frames > 3:
+                self.closed_eyes_frames = 0
+                self.distraction_frames = 0
+                self.yawn_frames = 0
             
-            if self.no_face_frames > 40: # ~2 detik tidak ada wajah
+            if self.no_face_frames > 35: # ~2.5-3 detik benar-benar tidak ada orang di depan kamera
                 self.is_alarm_active = True
                 self.alarm_type = 'WAJAH_HILANG'
                 self.alarm_message = 'Peringatan: Wajah Pengemudi Tidak Terdeteksi!'
@@ -69,6 +94,16 @@ class DrowsinessTracker:
         pitch = features_dict.get('pitch', 0.0)
         is_drowsy_pred = prediction_dict.get('is_drowsy', False)
         is_yawning_pred = prediction_dict.get('is_yawning', False)
+
+        # Simpan orientasi terakhir untuk kontinuitas pose
+        self.last_yaw = yaw
+        self.last_pitch = pitch
+        if yaw > self.yaw_threshold:
+            self.last_direction = 'Kanan'
+        elif yaw < -self.yaw_threshold:
+            self.last_direction = 'Kiri'
+        elif pitch < -self.pitch_threshold:
+            self.last_direction = 'Bawah'
 
         # 2. Logika Kantuk / Mata Tertutup
         if is_drowsy_pred:
@@ -105,12 +140,7 @@ class DrowsinessTracker:
         elif self.distraction_frames >= self.distraction_consec_frames:
             self.is_alarm_active = True
             self.alarm_type = 'TIDAK_FOKUS'
-            if yaw > self.yaw_threshold:
-                direction = 'Kanan'
-            elif yaw < -self.yaw_threshold:
-                direction = 'Kiri'
-            else:
-                direction = 'Bawah'
+            direction = self.last_direction
             self.alarm_message = f'PERINGATAN: Tetap Fokus Menatap Jalan! (Menoleh ke {direction})'
             
             if (current_time - self.last_alert_time) > self.alert_cooldown:

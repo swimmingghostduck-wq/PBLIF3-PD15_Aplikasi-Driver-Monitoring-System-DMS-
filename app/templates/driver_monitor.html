@@ -22,6 +22,11 @@
                 <span id="audioIcon">🔊</span>
                 <span id="audioText">Audio Alarm: AKTIF</span>
             </button>
+            <!-- Tombol Tes Suara Alarm -->
+            <button id="testAlarmBtn" onclick="testAlarm()" title="Uji coba suara alarm buzzer" class="px-3.5 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 flex items-center gap-1.5 transition">
+                <span>🔔</span>
+                <span>Tes Alarm</span>
+            </button>
             <a href="{{ url_for('driver.history') }}" class="px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/30 transition">
                 📋 Riwayat Peringatan
             </a>
@@ -278,14 +283,20 @@
     const drowsyScoreText = document.getElementById('drowsyScoreText');
     const drowsyScoreBar = document.getElementById('drowsyScoreBar');
 
+    let consecNoFaceFrames = 0;
+
     // Web Audio Synthesizer
-    function initAudioContext() {
+    async function initAudioContext() {
         if (!audioCtx) {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             audioCtx = new AudioContext();
         }
         if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+            try {
+                await audioCtx.resume();
+            } catch (e) {
+                console.warn("AudioContext resume pending user interaction:", e);
+            }
         }
     }
 
@@ -299,26 +310,45 @@
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
 
+            // Sirine nada ganda tajam (920Hz -> 680Hz -> 920Hz)
             osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(880, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(440, audioCtx.currentTime + 0.3);
+            const now = audioCtx.currentTime;
+            osc.frequency.setValueAtTime(920, now);
+            osc.frequency.linearRampToValueAtTime(680, now + 0.15);
+            osc.frequency.linearRampToValueAtTime(920, now + 0.3);
 
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+            gain.gain.setValueAtTime(0.4, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
 
             osc.connect(gain);
             gain.connect(audioCtx.destination);
 
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.4);
+            osc.start(now);
+            osc.stop(now + 0.36);
 
             setTimeout(() => {
                 isBeeping = false;
-            }, 450);
+            }, 380);
         } catch (e) {
             console.error("Audio error:", e);
             isBeeping = false;
         }
+    }
+
+    function stopBuzzer() {
+        isBeeping = false;
+    }
+
+    function testAlarm() {
+        initAudioContext();
+        isAudioEnabled = true;
+        const icon = document.getElementById('audioIcon');
+        const text = document.getElementById('audioText');
+        const btn = document.getElementById('toggleAudioBtn');
+        if (icon) icon.innerText = '🔊';
+        if (text) text.innerText = 'Audio Alarm: AKTIF';
+        if (btn) btn.className = "px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition";
+        playAlarmSound();
     }
 
     function toggleAudio() {
@@ -544,6 +574,7 @@
 
             // Anotasi Landmark & Bounding Box Wajah
             if (data.face_detected) {
+                consecNoFaceFrames = 0;
                 // Gambar titik hijau pada mata
                 displayCtx.fillStyle = "#10B981";
                 if (data.left_eye_pts) {
@@ -569,17 +600,21 @@
                     displayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 }
             } else {
-                // Banner transparan jika wajah hilang
-                displayCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
-                displayCtx.fillRect(100, 200, 440, 80);
-                displayCtx.fillStyle = "#F59E0B";
-                displayCtx.font = "bold 16px sans-serif";
-                displayCtx.textAlign = "center";
-                displayCtx.fillText("Wajah Pengemudi Tidak Terdeteksi", 320, 235);
-                displayCtx.fillStyle = "#E2E8F0";
-                displayCtx.font = "12px sans-serif";
-                displayCtx.fillText("Pastikan wajah Anda berada di depan kamera", 320, 260);
-                displayCtx.textAlign = "left";
+                consecNoFaceFrames++;
+                // Hanya tampilkan banner "Wajah Tidak Terdeteksi" jika wajah hilang stabil > 6 frame (~0.5 detik)
+                // Ini mencegah banner berkedip saat pengemudi menoleh atau mata berkedip sekejap
+                if (consecNoFaceFrames > 6) {
+                    displayCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                    displayCtx.fillRect(100, 200, 440, 80);
+                    displayCtx.fillStyle = "#F59E0B";
+                    displayCtx.font = "bold 16px sans-serif";
+                    displayCtx.textAlign = "center";
+                    displayCtx.fillText("Wajah Pengemudi Tidak Terdeteksi", 320, 235);
+                    displayCtx.fillStyle = "#E2E8F0";
+                    displayCtx.font = "12px sans-serif";
+                    displayCtx.fillText("Pastikan wajah Anda berada di depan kamera", 320, 260);
+                    displayCtx.textAlign = "left";
+                }
             }
 
             // Banner Visual Merah jika Alarm Aktif
