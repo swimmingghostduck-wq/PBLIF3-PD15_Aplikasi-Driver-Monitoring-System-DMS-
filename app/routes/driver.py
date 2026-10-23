@@ -50,9 +50,9 @@ def init_dms_engine(app):
         )
         tracker = DrowsinessTracker(
             drowsy_consec_frames=app.config.get('DROWSY_CONSEC_FRAMES', 12),
-            distraction_consec_frames=app.config.get('DISTRACTION_CONSEC_FRAMES', 8),
-            yaw_threshold=app.config.get('YAW_THRESHOLD', 12.0),
-            pitch_threshold=app.config.get('PITCH_THRESHOLD', 12.0)
+            distraction_consec_frames=app.config.get('DISTRACTION_CONSEC_FRAMES', 20),
+            yaw_threshold=app.config.get('YAW_THRESHOLD', 20.0),
+            pitch_threshold=app.config.get('PITCH_THRESHOLD', 20.0)
         )
         alert_manager = AlertManager(snapshots_dir=app.config['SNAPSHOTS_DIR'])
 

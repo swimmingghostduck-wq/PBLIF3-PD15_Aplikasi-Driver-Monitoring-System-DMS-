@@ -173,7 +173,7 @@ class TestDMSSystem(unittest.TestCase):
 
         # Uji tracker saat menunduk (melihat ponsel / bawah)
         tracker_nod = DrowsinessTracker(distraction_consec_frames=2)
-        nod_features = {'face_detected': True, 'yaw': 0.0, 'pitch': 20.0}
+        nod_features = {'face_detected': True, 'yaw': 0.0, 'pitch': 25.0}
         tracker_nod.update(nod_features, pred_normal)
         status_nod = tracker_nod.update(nod_features, pred_normal)
         self.assertTrue(status_nod['is_alarm_active'])

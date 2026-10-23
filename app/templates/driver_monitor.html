@@ -240,8 +240,8 @@
                     <span>💡</span> Cara Menguji Sistem:
                 </div>
                 <p>1. Pejamkan mata &gt; 1.2 detik untuk menguji alarm kantuk.</p>
-                <p>2. Menoleh ke samping &gt; 0.8 detik untuk menguji alarm menoleh.</p>
-                <p>3. Menunduk ke bawah &gt; 0.8 detik untuk menguji alarm menunduk.</p>
+                <p>2. Menoleh ke samping &gt; 2.0 detik untuk menguji alarm menoleh.</p>
+                <p>3. Menunduk ke bawah &gt; 2.0 detik untuk menguji alarm menunduk.</p>
                 <p>4. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
             </div>
         </div>
@@ -678,19 +678,19 @@
         let poseClass = "text-[10px] text-slate-400";
         let poseDesc = "Menghadap lurus ke depan";
 
-        if (yaw > 12) {
+        if (yaw > 20) {
             poseDirection = "Menoleh Kanan";
             poseDesc = "Pengemudi menoleh ke kanan";
             poseClass = "text-[10px] text-amber-400 font-medium";
-        } else if (yaw < -12) {
+        } else if (yaw < -20) {
             poseDirection = "Menoleh Kiri";
             poseDesc = "Pengemudi menoleh ke kiri";
             poseClass = "text-[10px] text-amber-400 font-medium";
-        } else if (pitch > 12) {
+        } else if (pitch > 20) {
             poseDirection = "Menunduk";
             poseDesc = "Pengemudi menunduk / melihat ke bawah";
             poseClass = "text-[10px] text-amber-400 font-medium";
-        } else if (pitch < -15) {
+        } else if (pitch < -18) {
             poseDirection = "Mendongak";
             poseDesc = "Pengemudi mendongak ke atas";
             poseClass = "text-[10px] text-amber-400 font-medium";
