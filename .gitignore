@@ -42,6 +42,9 @@ venv.bak/
 
 # Agent, Tooling & IDE internal caches
 .agents/
+.impeccable/
+DESIGN.md
+PRODUCT.md
 .gemini/
 .idea/
 .vscode/
