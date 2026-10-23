@@ -43,6 +43,6 @@ class Config:
     EAR_THRESHOLD = 0.22         # Eye Aspect Ratio di bawah ini dihitung mata tertutup
     MAR_THRESHOLD = 0.65         # Mouth Aspect Ratio di atas ini dihitung menguap
     DROWSY_CONSEC_FRAMES = 12    # ~1.2 detik berturut-turut untuk alarm kantuk
-    DISTRACTION_CONSEC_FRAMES = 20 # ~2.0 detik menoleh/menunduk untuk alarm tidak fokus
-    YAW_THRESHOLD = 20.0         # Derajat sudut menoleh ke samping (kiri / kanan)
-    PITCH_THRESHOLD = 20.0       # Derajat sudut menunduk (bawah)
+    DISTRACTION_CONSEC_FRAMES = 28 # ~3.0 detik menoleh/menunduk untuk alarm tidak fokus
+    YAW_THRESHOLD = 25.0         # Derajat sudut menoleh ke samping (kiri / kanan)
+    PITCH_THRESHOLD = 22.0       # Derajat sudut menunduk (bawah)

@@ -11,9 +11,9 @@ class DrowsinessTracker:
 
     def __init__(self, 
                  drowsy_consec_frames=12, 
-                 distraction_consec_frames=20,
-                 yaw_threshold=20.0,
-                 pitch_threshold=20.0):
+                 distraction_consec_frames=28,
+                 yaw_threshold=25.0,
+                 pitch_threshold=22.0):
         self.drowsy_consec_frames = drowsy_consec_frames
         self.distraction_consec_frames = distraction_consec_frames
         self.yaw_threshold = yaw_threshold
@@ -57,8 +57,8 @@ class DrowsinessTracker:
 
             # Logika Cerdas: Jika pengemudi sebelumnya sedang menoleh atau yaw/pitch tinggi,
             # kehilangan wajah terjadi karena profil samping (menoleh jauh) atau menunduk (melihat ponsel/bawah).
-            was_turning = (abs(self.last_yaw) >= 16.0) or (self.last_direction in ['Kanan', 'Kiri'])
-            was_nodding = (self.last_pitch >= 16.0) or ('Bawah' in self.last_direction)
+            was_turning = (abs(self.last_yaw) >= 20.0) or (self.last_direction in ['Kanan', 'Kiri'])
+            was_nodding = (self.last_pitch >= 18.0) or ('Bawah' in self.last_direction)
             was_distracted = (self.distraction_frames > 0) or was_turning or was_nodding
 
             if was_distracted:
