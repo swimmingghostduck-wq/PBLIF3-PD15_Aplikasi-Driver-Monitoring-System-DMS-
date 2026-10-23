@@ -220,11 +220,15 @@
                     <span class="text-[10px] text-slate-500">Ambang Batas Menguap: &gt; 0.650</span>
                 </div>
 
-                <!-- Head Pose Yaw -->
+                <!-- Head Pose Yaw & Pitch -->
                 <div class="pt-2 border-t border-slate-700/60">
                     <div class="flex justify-between items-center text-xs mb-1">
-                        <span class="text-slate-300 font-medium">Arah Pandangan (Yaw)</span>
+                        <span class="text-slate-300 font-medium">Arah Pandangan (Pose)</span>
                         <span id="yawVal" class="font-mono font-bold text-purple-400">0.0° (Tengah)</span>
+                    </div>
+                    <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+                        <span>Sudut Vertikal (Pitch):</span>
+                        <span id="pitchVal" class="font-mono text-slate-300">0.0°</span>
                     </div>
                     <p id="poseNotice" class="text-[10px] text-slate-400">Menghadap lurus ke depan</p>
                 </div>
@@ -236,8 +240,9 @@
                     <span>💡</span> Cara Menguji Sistem:
                 </div>
                 <p>1. Pejamkan mata &gt; 1.2 detik untuk menguji alarm kantuk.</p>
-                <p>2. Menoleh ke samping &gt; 1.0 detik untuk menguji alarm distraksi.</p>
-                <p>3. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
+                <p>2. Menoleh ke samping &gt; 0.8 detik untuk menguji alarm menoleh.</p>
+                <p>3. Menunduk ke bawah &gt; 0.8 detik untuk menguji alarm menunduk.</p>
+                <p>4. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
             </div>
         </div>
     </div>
@@ -290,6 +295,7 @@
     const marVal = document.getElementById('marVal');
     const marBar = document.getElementById('marBar');
     const yawVal = document.getElementById('yawVal');
+    const pitchVal = document.getElementById('pitchVal');
     const poseNotice = document.getElementById('poseNotice');
     const drowsyScoreText = document.getElementById('drowsyScoreText');
     const drowsyScoreBar = document.getElementById('drowsyScoreBar');
@@ -614,18 +620,17 @@
                 }
             } else {
                 consecNoFaceFrames++;
-                // Hanya tampilkan banner "Wajah Tidak Terdeteksi" jika wajah hilang stabil > 6 frame (~0.5 detik)
-                // dan tidak sedang dalam kondisi distraksi/alarm menoleh
-                if (consecNoFaceFrames > 6 && !data.is_alarm_active && data.status_label !== 'TIDAK_FOKUS') {
-                    displayCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
+                // Hanya tampilkan banner jika wajah hilang sejenak tanpa kondisi alarm/peringatan distraksi aktif
+                if (consecNoFaceFrames > 4 && !data.is_alarm_active && data.status_label !== 'TIDAK_FOKUS') {
+                    displayCtx.fillStyle = "rgba(0, 0, 0, 0.65)";
                     displayCtx.fillRect(100, 200, 440, 80);
                     displayCtx.fillStyle = "#F59E0B";
                     displayCtx.font = "bold 16px sans-serif";
                     displayCtx.textAlign = "center";
-                    displayCtx.fillText("Wajah Pengemudi Tidak Terdeteksi", 320, 235);
+                    displayCtx.fillText("Mencari Posisi Wajah Pengemudi...", 320, 235);
                     displayCtx.fillStyle = "#E2E8F0";
                     displayCtx.font = "12px sans-serif";
-                    displayCtx.fillText("Pastikan wajah Anda berada di depan kamera", 320, 260);
+                    displayCtx.fillText("Pastikan wajah menghadap lurus ke depan jalan", 320, 260);
                     displayCtx.textAlign = "left";
                 }
             }
@@ -664,23 +669,36 @@
         earBar.style.width = earPct + "%";
         marBar.style.width = marPct + "%";
 
-        // Pose Kepala
+        // Pose Kepala (Yaw & Pitch)
         const yaw = data.yaw || 0.0;
-        let yawText = `${yaw.toFixed(1)}° `;
-        if (yaw > 15) {
-            yawText += "(Menoleh Kanan)";
-            poseNotice.innerText = "Pengemudi menoleh ke kanan";
-            poseNotice.className = "text-[10px] text-amber-400 font-medium";
-        } else if (yaw < -15) {
-            yawText += "(Menoleh Kiri)";
-            poseNotice.innerText = "Pengemudi menoleh ke kiri";
-            poseNotice.className = "text-[10px] text-amber-400 font-medium";
-        } else {
-            yawText += "(Tengah)";
-            poseNotice.innerText = "Menghadap lurus ke depan";
-            poseNotice.className = "text-[10px] text-slate-400";
+        const pitch = data.pitch || 0.0;
+        if (pitchVal) pitchVal.innerText = `${pitch.toFixed(1)}°`;
+
+        let poseDirection = "Tengah";
+        let poseClass = "text-[10px] text-slate-400";
+        let poseDesc = "Menghadap lurus ke depan";
+
+        if (yaw > 12) {
+            poseDirection = "Menoleh Kanan";
+            poseDesc = "Pengemudi menoleh ke kanan";
+            poseClass = "text-[10px] text-amber-400 font-medium";
+        } else if (yaw < -12) {
+            poseDirection = "Menoleh Kiri";
+            poseDesc = "Pengemudi menoleh ke kiri";
+            poseClass = "text-[10px] text-amber-400 font-medium";
+        } else if (pitch > 12) {
+            poseDirection = "Menunduk";
+            poseDesc = "Pengemudi menunduk / melihat ke bawah";
+            poseClass = "text-[10px] text-amber-400 font-medium";
+        } else if (pitch < -15) {
+            poseDirection = "Mendongak";
+            poseDesc = "Pengemudi mendongak ke atas";
+            poseClass = "text-[10px] text-amber-400 font-medium";
         }
-        yawVal.innerText = yawText;
+
+        yawVal.innerText = `${yaw.toFixed(1)}° (${poseDirection})`;
+        poseNotice.innerText = poseDesc;
+        poseNotice.className = poseClass;
 
         // Skor Kantuk
         const score = (data.drowsy_score || 0.0) * 100;

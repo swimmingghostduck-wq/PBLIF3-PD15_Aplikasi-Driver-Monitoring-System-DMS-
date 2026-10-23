@@ -166,10 +166,26 @@ class TestDMSSystem(unittest.TestCase):
         self.assertIn('Kanan', status_side['alarm_message'])
 
         # Uji saat kembali fokus menatap jalan
-        focus_features = {'face_detected': True, 'yaw': 2.0, 'pitch': -10.0}
+        focus_features = {'face_detected': True, 'yaw': 2.0, 'pitch': 0.0}
         tracker.update(focus_features, pred_normal)
         status = tracker.update(focus_features, pred_normal)
         self.assertFalse(status['is_alarm_active'])
+
+        # Uji tracker saat menunduk (melihat ponsel / bawah)
+        tracker_nod = DrowsinessTracker(distraction_consec_frames=2)
+        nod_features = {'face_detected': True, 'yaw': 0.0, 'pitch': 20.0}
+        tracker_nod.update(nod_features, pred_normal)
+        status_nod = tracker_nod.update(nod_features, pred_normal)
+        self.assertTrue(status_nod['is_alarm_active'])
+        self.assertEqual(status_nod['alarm_type'], 'TIDAK_FOKUS')
+        self.assertIn('Menunduk', status_nod['alarm_message'])
+
+        # Uji saat wajah benar-benar tidak terdeteksi
+        tracker_noface = DrowsinessTracker(distraction_consec_frames=2)
+        tracker_noface.update({'face_detected': False}, pred_normal)
+        status_nf = tracker_noface.update({'face_detected': False}, pred_normal)
+        self.assertTrue(status_nf['is_alarm_active'])
+        self.assertEqual(status_nf['alarm_type'], 'WAJAH_HILANG')
 
     def test_08_flask_endpoints(self):
         """Memastikan route Flask (Login, Register) merespons dengan HTTP 200."""
