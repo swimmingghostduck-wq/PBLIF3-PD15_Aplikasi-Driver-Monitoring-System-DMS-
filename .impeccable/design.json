@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-23T23:40:00Z",
+  "title": "Design System: Driver Monitoring System (DMS)",
+  "extensions": {
+    "colorMeta": {
+      "primary": { "role": "primary", "displayName": "Cobalt Cockpit Blue", "canonical": "#1E40AF", "tonalRamp": ["#08173E", "#0F2A6B", "#173B94", "#1E40AF", "#2563EB", "#60A5FA", "#BFDBFE", "#EFF6FF"] },
+      "primary-hover": { "role": "primary", "displayName": "Electric Cobalt", "canonical": "#2563EB", "tonalRamp": ["#08173E", "#0F2A6B", "#173B94", "#1E40AF", "#2563EB", "#60A5FA", "#BFDBFE", "#EFF6FF"] },
+      "neutral-bg": { "role": "neutral", "displayName": "Deep Cockpit Obsidian", "canonical": "#0F172A", "tonalRamp": ["#020617", "#0F172A", "#1E293B", "#334155", "#475569", "#64748B", "#94A3B8", "#F8FAFC"] },
+      "neutral-surface": { "role": "neutral", "displayName": "Instrument Panel Surface", "canonical": "#1E293B", "tonalRamp": ["#020617", "#0F172A", "#1E293B", "#334155", "#475569", "#64748B", "#94A3B8", "#F8FAFC"] },
+      "status-safe": { "role": "status", "displayName": "Vigilant Emerald", "canonical": "#10B981", "tonalRamp": ["#022C22", "#064E3B", "#065F46", "#047857", "#059669", "#10B981", "#34D399", "#D1FAE5"] },
+      "status-warning": { "role": "status", "displayName": "Cautionary Amber", "canonical": "#F59E0B", "tonalRamp": ["#451A03", "#78350F", "#92400E", "#B45309", "#D97706", "#F59E0B", "#FBBF24", "#FEF3C7"] },
+      "status-danger": { "role": "status", "displayName": "Hazard Crimson", "canonical": "#EF4444", "tonalRamp": ["#450A0A", "#7F1D1D", "#991B1B", "#B91C1C", "#DC2626", "#EF4444", "#F87171", "#FEE2E2"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display Telemetry", "purpose": "High-visibility alert banners and primary KPI counters." },
+      "headline": { "displayName": "Headline", "purpose": "Card headers and section titles." },
+      "title": { "displayName": "Title", "purpose": "Sub-headers and modal titles." },
+      "body": { "displayName": "Body", "purpose": "Explanatory text and status subtitles." },
+      "label": { "displayName": "Monospace Metric Label", "purpose": "Tabular streaming metrics and coordinates." }
+    },
+    "shadows": [
+      { "name": "panel-ambient", "value": "0 10px 15px -3px rgba(0,0,0,0.3)", "purpose": "Grounding shadow for dark instrument cards." },
+      { "name": "emergency-glow", "value": "0 0 25px rgba(239, 68, 68, 0.45)", "purpose": "Peripheral beacon for active hazard alarms." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default state transition easing." },
+      { "name": "alarm-pulse", "value": "0.6s infinite ease-in-out", "purpose": "Rhythmic pulsing beacon on critical alarms." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Cockpit Action Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Primary action button with subtle elevated cobalt glow.",
+      "html": "<button class=\"ds-btn-primary\">Nyalakan Kamera</button>",
+      "css": ".ds-btn-primary { background: #1E40AF; color: #F8FAFC; padding: 10px 16px; border-radius: 12px; font-weight: 700; font-size: 0.75rem; border: none; cursor: pointer; transition: background 0.15s, box-shadow 0.15s; box-shadow: 0 4px 14px rgba(30,64,175,0.3); } .ds-btn-primary:hover { background: #2563EB; box-shadow: 0 6px 20px rgba(37,99,235,0.4); }"
+    },
+    {
+      "name": "Safe Status Badge",
+      "kind": "chip",
+      "refersTo": "badge-safe",
+      "description": "Status badge indicating verified vigilant driver state.",
+      "html": "<div class=\"ds-badge-safe\"><span class=\"ds-badge-icon\">👁️</span><span class=\"ds-badge-text\">TERJAGA</span></div>",
+      "css": ".ds-badge-safe { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9999px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #10B981; font-weight: 800; font-size: 0.875rem; }"
+    },
+    {
+      "name": "Hazard Alert Badge",
+      "kind": "chip",
+      "refersTo": "badge-danger",
+      "description": "High-urgency pulsing warning badge for critical driver state.",
+      "html": "<div class=\"ds-badge-danger\"><span class=\"ds-badge-icon\">🚨</span><span class=\"ds-badge-text\">BAHAYA: KANTUK</span></div>",
+      "css": ".ds-badge-danger { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 9999px; background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.5); color: #EF4444; font-weight: 900; font-size: 0.875rem; animation: ds-pulse 0.6s infinite ease-in-out; } @keyframes ds-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }"
+    },
+    {
+      "name": "Telemetry Instrument Card",
+      "kind": "card",
+      "refersTo": "card-instrument",
+      "description": "Dark container for grouping metrics and real-time streams.",
+      "html": "<div class=\"ds-card-telemetry\"><div class=\"ds-card-header\">Eye Aspect Ratio (EAR)</div><div class=\"ds-card-value\">0.285</div><div class=\"ds-progress-track\"><div class=\"ds-progress-fill\" style=\"width: 65%;\"></div></div></div>",
+      "css": ".ds-card-telemetry { background: #1E293B; border: 1px solid rgba(51, 65, 85, 0.8); border-radius: 16px; padding: 20px; color: #F8FAFC; } .ds-card-header { font-size: 0.75rem; font-weight: 600; color: #94A3B8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; } .ds-card-value { font-family: ui-monospace, monospace; font-size: 1.5rem; font-weight: 700; color: #60A5FA; margin-bottom: 10px; } .ds-progress-track { width: 100%; height: 8px; background: #0F172A; border-radius: 9999px; overflow: hidden; } .ds-progress-fill { height: 100%; background: #3B82F6; border-radius: 9999px; transition: width 0.3s; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Avionics Cockpit",
+    "overview": "The visual language of the Driver Monitoring System is modeled after high-reliability modern flight deck telemetry: dark-mode by default, high-contrast, razor-sharp hierarchy, and designed for sub-second glanceable comprehension. When a vehicle is moving at highway speed, the driver's interface must communicate status unequivocally without demanding cognitive load or causing optical fatigue under day and night lighting.",
+    "keyCharacteristics": [
+      "Zero Ambiguity Glancability: Telemetry metrics feature prominent numerical values paired with analog micro-bars.",
+      "Tonal Elevation Hierarchy: Depth is created via layered dark slate tones with subtle luminous glowing borders on alert states.",
+      "Calm at Rest, Assertive on Alarm: The UI remains subdued and non-distracting during safe driving, converting into a pulsing beacon only when safety thresholds are breached."
+    ],
+    "rules": [
+      { "name": "The Rarity of Red Rule", "body": "The Hazard Crimson (#EF4444) is strictly prohibited in decorative, branding, or non-hazardous contexts. Its appearance is a direct signal of active safety intervention.", "section": "Colors" },
+      { "name": "The Tabular Metric Rule", "body": "Every real-time floating-point number (EAR, MAR, Yaw, Pitch) MUST use monospaced figures to guarantee zero layout shifts during continuous inference rendering.", "section": "Typography" },
+      { "name": "The Signal-Responsive Glow Rule", "body": "Glowing colored shadows are never persistent; they exist solely as dynamic state reactions to active warnings or primary touch interactions.", "section": "Elevation & Depth" }
+    ],
+    "dos": [
+      "Do maintain dark cockpit palette (#0F172A background) across all authenticated screens to preserve nighttime driver night-vision.",
+      "Do format real-time metric floats with exactly three decimal places inside font-mono containers.",
+      "Do pair color changes with iconography so colorblind drivers never miss an alert state.",
+      "Do ensure critical alarm sirens can be toggled or tested on-demand via audio context activation."
+    ],
+    "donts": [
+      "Don't introduce bright white background containers in the driver cockpit interface.",
+      "Don't use Red (#EF4444) for non-emergency UI decoration, illustrations, or secondary buttons.",
+      "Don't let live video or telemetry canvas elements shift layout when values transition between two-digit and three-digit percentages.",
+      "Don't use decorative serif fonts or novelty typefaces anywhere in the operational monitoring flow."
+    ]
+  }
+}

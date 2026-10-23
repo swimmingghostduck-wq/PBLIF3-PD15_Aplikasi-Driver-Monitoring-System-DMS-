@@ -53,3 +53,4 @@ Sistem DMS cerdas berbasis browser lokal yang mengombinasikan pelacakan landmark
 2. **Instant Clarity (Glanceable Telemetry)**: Informasi status (Aman, Waspada, Bahaya) harus dapat dipahami dalam waktu kurang dari 0.5 detik melalui kode warna dan ikonografi yang tegas.
 3. **Local & Resilient Execution**: Pemrosesan inferensi dan fallback basis data berjalan sepenuhnya di perangkat lokal pengemudi tanpa ketergantungan koneksi internet eksternal saat berkendara.
 4. **Actionable Accountability**: Setiap insiden bahaya terdokumentasi lengkap dengan timestamp, snapshot foto, dan metrik fisiologis untuk keperluan audit keselamatan.
+
