@@ -113,7 +113,12 @@ class TestDMSSystem(unittest.TestCase):
         mock_features = {'face_detected': True, 'yaw': 0.0, 'pitch': 0.0}
         mock_pred = {'is_drowsy': True, 'is_yawning': False, 'status': 'MENGANTUK'}
 
-        for _ in range(4):
+        # Uji kedipan singkat (frame 1): status harus tetap TERJAGA dan alarm tidak aktif
+        blink_status = tracker.update(mock_features, mock_pred)
+        self.assertFalse(blink_status['is_alarm_active'])
+        self.assertEqual(blink_status['status_label'], 'TERJAGA')
+
+        for _ in range(3):
             status = tracker.update(mock_features, mock_pred)
             self.assertFalse(status['is_alarm_active'])
 

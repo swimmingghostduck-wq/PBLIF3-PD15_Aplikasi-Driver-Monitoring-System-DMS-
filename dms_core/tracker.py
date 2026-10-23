@@ -10,7 +10,7 @@ class DrowsinessTracker:
     """
 
     def __init__(self, 
-                 drowsy_consec_frames=10, 
+                 drowsy_consec_frames=12, 
                  distraction_consec_frames=15,
                  yaw_threshold=22.0,
                  pitch_threshold=25.0):
@@ -109,7 +109,7 @@ class DrowsinessTracker:
         if is_drowsy_pred:
             self.closed_eyes_frames += 1
         else:
-            self.closed_eyes_frames = max(0, self.closed_eyes_frames - 2)
+            self.closed_eyes_frames = max(0, self.closed_eyes_frames - 3)
 
         # 3. Logika Menguap
         if is_yawning_pred:
@@ -169,6 +169,25 @@ class DrowsinessTracker:
 
     def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type):
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
+        # Penentuan label status yang stabil:
+        # Kedipan mata normal (1-4 frame, ~100-300 ms) TETAP berstatus TERJAGA.
+        # Hanya jika mata terpejam >= 5 frame (~400 ms ke atas), status bertransisi ke MENGANTUK.
+        if self.is_alarm_active:
+            status_label = self.alarm_type
+        elif self.closed_eyes_frames >= 5:
+            status_label = 'MENGANTUK'
+        elif self.distraction_frames >= self.distraction_consec_frames:
+            status_label = 'TIDAK_FOKUS'
+        elif prediction_dict.get('is_yawning', False) or self.yawn_frames >= 12:
+            status_label = 'MENGUAP'
+        else:
+            status_label = 'TERJAGA'
+
+        # Skor kantuk dihitung secara proporsional terhadap durasi akumulasi mata terpejam
+        # Kedipan normal (1-2 frame) hanya menghasilkan skor 8-15% (hijau aman), tidak loncat ke 100%
+        drowsy_progress = min(100, int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100))
+        drowsy_score = round(drowsy_progress / 100.0, 2)
+
         return {
             'is_alarm_active': self.is_alarm_active,
             'alarm_type': self.alarm_type,
@@ -176,14 +195,14 @@ class DrowsinessTracker:
             'closed_eyes_frames': self.closed_eyes_frames,
             'distraction_frames': self.distraction_frames,
             'yawn_frames': self.yawn_frames,
-            'drowsy_progress': min(100, int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100)),
+            'drowsy_progress': drowsy_progress,
             'distraction_progress': min(100, int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100)),
             'total_drowsy_events': self.total_drowsy_events,
             'total_distraction_events': self.total_distraction_events,
             'total_yawn_events': self.total_yawn_events,
             'should_record_event': should_record_event,
             'new_event_type': new_event_type,
-            'status_label': prediction_dict.get('status', 'TERJAGA'),
-            'drowsy_score': prediction_dict.get('drowsy_score', 0.0),
+            'status_label': status_label,
+            'drowsy_score': drowsy_score,
             'method': prediction_dict.get('method', 'Baseline')
         }

@@ -104,6 +104,12 @@ class DrowsinessClassifier:
                 is_drowsy = ('MENGANTUK' in pred_label or 'DROWSY' in pred_label or 'CLOSED' in pred_label or pred_label == '1')
                 is_yawning = (mar > self.mar_thresh or 'YAWN' in pred_label or 'MENGUAP' in pred_label)
 
+                # Proteksi fisiologis: Jika kelopak mata terbuka jelas (EAR >= 0.23), mata tidak terpejam
+                if ear_avg >= 0.23:
+                    is_drowsy = False
+                elif ear_avg <= 0.16:
+                    is_drowsy = True
+
                 status = self.LABEL_MENGANTUK if is_drowsy else (self.LABEL_MENGUAP if is_yawning else self.LABEL_TERJAGA)
                 
                 return {
