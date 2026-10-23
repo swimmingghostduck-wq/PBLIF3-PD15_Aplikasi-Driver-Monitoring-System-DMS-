@@ -206,3 +206,4 @@ Shapes feature precision engineered rounded corners that balance rugged technica
 - **Don't** use Red (`#EF4444`) for non-emergency UI decoration, illustrations, or secondary buttons.
 - **Don't** let live video or telemetry canvas elements shift layout when values transition between two-digit and three-digit percentages.
 - **Don't** use decorative serif fonts or novelty typefaces anywhere in the operational monitoring flow.
+
