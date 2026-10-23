@@ -1,154 +1,135 @@
 {% extends 'base.html' %}
-{% block title %}Masuk - DriveSafe Driver Monitoring System{% endblock %}
+{% block title %}Masuk - DriveSafe{% endblock %}
+
+{% block body_class %}bg-[#F8FAFC] text-slate-900 min-h-screen flex flex-col justify-center items-center font-sans antialiased p-4{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block main_class %}w-full flex items-center justify-center py-10{% endblock %}
 
 {% block content %}
-<div class="min-h-[calc(100vh-10rem)] flex items-center justify-center py-6 px-4">
-    <div class="w-full max-w-md bg-white rounded-3xl p-8 sm:p-9 border border-[#D7DBE2] shadow-2xl shadow-slate-950/30 relative overflow-hidden">
-        
-        <!-- Subtle Ambient Background Glow -->
-        <div class="absolute -top-24 -right-24 w-56 h-56 bg-blue-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
-        <div class="absolute -bottom-24 -left-24 w-56 h-56 bg-sky-100 rounded-full blur-3xl pointer-events-none opacity-60"></div>
-
-        <!-- Header Section -->
-        <div class="text-center relative z-10 mb-6">
-            <!-- Brand Icon -->
-            <div class="w-16 h-16 bg-[#1E3A8A] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-blue-900/25 transition-transform hover:scale-105 duration-200">
-                <svg class="w-9 h-9 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
-                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"></circle>
-                    <path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="1.8"></path>
-                    <circle cx="12" cy="12" r="3" fill="currentColor"></circle>
-                </svg>
-            </div>
-
-            <!-- Titles (Poppins + Inter) -->
-            <h1 class="text-2xl sm:text-3xl font-heading font-extrabold text-[#1F2430] tracking-tight">
-                Welcome Back
-            </h1>
-            <p class="font-sans text-sm text-[#6B7280] mt-1.5 leading-relaxed">
-                Masuk ke akun <span class="font-semibold text-[#1E3A8A]">DriveSafe</span> Anda untuk mulai monitoring berkendara
-            </p>
+<div class="w-full max-w-[380px] mx-auto">
+    
+    <!-- Brand Header -->
+    <div class="text-center mb-7">
+        <div class="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white shadow-sm">
+            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9"></circle>
+                <path d="M12 3v18M3 12h18"></path>
+            </svg>
         </div>
+        <h1 class="text-2xl font-heading font-bold text-slate-900 tracking-tight">
+            Masuk ke DriveSafe
+        </h1>
+        <p class="text-sm text-slate-500 mt-1 font-sans">
+            Masukkan akun Anda untuk melanjutkan
+        </p>
+    </div>
 
-        <!-- Safety Notice Tip (Sesuai Panduan PDF IMK) -->
-        <div class="mb-6 relative z-10 bg-[#FEF3C7] border border-[#FDE68A] rounded-2xl p-3.5 flex items-start gap-3 shadow-xs">
-            <div class="w-6 h-6 rounded-full bg-[#F59E0B]/20 text-[#B45309] flex-shrink-0 flex items-center justify-center text-sm font-bold mt-0.5">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                </svg>
+    <!-- Flash Error Alert -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="mb-4 space-y-2">
+                {% for category, message in messages %}
+                    <div class="p-3 rounded-xl text-xs font-medium border flex items-center justify-between {% if category == 'danger' %}bg-red-50 border-red-200 text-red-700{% else %}bg-blue-50 border-blue-200 text-blue-700{% endif %}">
+                        <span>{{ message }}</span>
+                        <button type="button" onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-600 ml-2 font-bold leading-none">&times;</button>
+                    </div>
+                {% endfor %}
             </div>
-            <p class="text-xs font-medium text-[#92400E] leading-relaxed">
-                <strong class="font-bold">Tips Keselamatan:</strong> Pastikan pencahayaan wajah cukup sebelum memulai sesi monitoring kamera.
-            </p>
-        </div>
+        {% endif %}
+    {% endwith %}
 
-        <!-- Form Login -->
-        <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-4 relative z-10">
+    <!-- Card Form -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-7 sm:p-8">
+        <form method="POST" action="{{ url_for('auth.login') }}" class="space-y-4">
+            
             <!-- Username Input -->
             <div>
-                <label for="username" class="block text-xs font-semibold text-[#1F2430] uppercase tracking-wider mb-1.5 font-heading">
-                    Username / Akun
+                <label for="username" class="block text-sm font-medium text-slate-700 mb-1.5">
+                    Username
                 </label>
-                <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                        </svg>
-                    </div>
-                    <input type="text" id="username" name="username" value="{{ username or '' }}" required autofocus
-                           class="w-full bg-[#F8FAFC] border border-[#D7DBE2] rounded-xl pl-10 pr-4 py-3 text-sm text-[#1F2430] font-sans placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/25 focus:border-[#1E3A8A] transition-all"
-                           placeholder="Contoh: driver atau admin">
-                </div>
+                <input type="text" id="username" name="username" value="{{ username or '' }}" required autofocus
+                       class="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+                       placeholder="Masukkan username">
             </div>
 
             <!-- Password Input -->
             <div>
                 <div class="flex items-center justify-between mb-1.5">
-                    <label for="password" class="block text-xs font-semibold text-[#1F2430] uppercase tracking-wider font-heading">
-                        Kata Sandi
+                    <label for="password" class="block text-sm font-medium text-slate-700">
+                        Password
                     </label>
-                    <a href="javascript:void(0)" onclick="alert('Silakan hubungi administrator armada untuk reset kata sandi Anda.')" 
-                       class="text-xs font-semibold text-[#0369A1] hover:text-[#0284C7] transition-colors">
-                        Lupa kata sandi?
+                    <a href="javascript:void(0)" onclick="alert('Silakan hubungi administrator untuk mereset password Anda.')"
+                       class="text-xs text-blue-600 hover:text-blue-700 font-medium transition-colors">
+                        Lupa password?
                     </a>
                 </div>
                 <div class="relative">
-                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-                        </svg>
-                    </div>
                     <input type="password" id="password" name="password" required
-                           class="w-full bg-[#F8FAFC] border border-[#D7DBE2] rounded-xl pl-10 pr-11 py-3 text-sm text-[#1F2430] font-sans placeholder-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/25 focus:border-[#1E3A8A] transition-all"
-                           placeholder="••••••••">
-                    <button type="button" onclick="togglePasswordVisibility()" 
-                            class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors">
-                        <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                           class="w-full h-11 bg-white border border-slate-300 rounded-xl px-3.5 pr-10 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
+                           placeholder="Masukkan password">
+                    <button type="button" onclick="togglePassword()" 
+                            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none cursor-pointer"
+                            aria-label="Tampilkan atau sembunyikan password">
+                        <svg id="eyeSvg" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <!-- Remember Me & Demo Shortcuts -->
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2 pt-1">
-                <label class="flex items-center text-[#6B7280] cursor-pointer select-none">
-                    <input type="checkbox" name="remember" class="w-4 h-4 rounded border-[#D7DBE2] text-[#1E3A8A] focus:ring-[#1E3A8A]/20 mr-2">
+            <!-- Remember Me Checkbox -->
+            <div class="flex items-center pt-0.5">
+                <label class="flex items-center text-xs text-slate-600 cursor-pointer select-none">
+                    <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 mr-2">
                     Ingat saya di perangkat ini
                 </label>
-                
-                <!-- Quick Fill Pill Buttons (Sangat praktis saat presentasi PBL) -->
-                <div class="flex items-center gap-1.5 text-[11px] text-slate-500">
-                    <span>Demo:</span>
-                    <button type="button" onclick="quickFill('driver', 'driver123')" 
-                            class="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-[#0369A1] font-semibold transition">
-                        Driver
-                    </button>
-                    <button type="button" onclick="quickFill('admin', 'admin123')" 
-                            class="px-2 py-0.5 rounded-md bg-slate-100 hover:bg-slate-200 text-[#1E3A8A] font-semibold transition">
-                        Admin
-                    </button>
-                </div>
             </div>
 
-            <!-- Submit Button (Deep Navy #1E3A8A) -->
-            <button type="submit"
-                    class="w-full bg-[#1E3A8A] hover:bg-[#1D4ED8] active:scale-[0.99] text-white font-heading font-bold text-sm tracking-wider uppercase py-3.5 px-6 rounded-xl shadow-lg shadow-blue-900/20 transition-all duration-150 flex items-center justify-center gap-2 mt-2">
-                <span>MASUK KE SISTEM</span>
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
-                </svg>
-            </button>
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="submit"
+                        class="w-full h-11 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-xl font-medium text-sm transition-colors shadow-xs flex items-center justify-center cursor-pointer">
+                    Masuk
+                </button>
+            </div>
         </form>
+    </div>
 
-        <!-- Footer Link (Sesuai PDF IMK) -->
-        <div class="mt-6 pt-5 border-t border-[#D7DBE2] text-center text-sm text-[#6B7280] relative z-10">
-            Belum memiliki akun driver?
-            <a href="{{ url_for('auth.register') }}" class="font-bold text-[#0369A1] hover:text-[#0284C7] ml-1 transition-colors">
-                Daftar Akun Driver
-            </a>
-        </div>
+    <!-- Registration Link -->
+    <div class="text-center mt-6 text-sm text-slate-500">
+        Belum punya akun?
+        <a href="{{ url_for('auth.register') }}" class="font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors ml-1">
+            Daftar
+        </a>
+    </div>
+
+    <!-- Info Akun Demo -->
+    <div class="mt-8 text-center text-xs text-slate-400">
+        <span>Akun demo: <span class="font-mono text-slate-500">driver / driver123</span> &middot; <span class="font-mono text-slate-500">admin / admin123</span></span>
     </div>
 </div>
 
 <script>
-    function togglePasswordVisibility() {
+    function togglePassword() {
         const input = document.getElementById('password');
-        const eyeIcon = document.getElementById('eyeIcon');
+        const icon = document.getElementById('eyeSvg');
         if (input.type === 'password') {
             input.type = 'text';
-            eyeIcon.classList.add('text-blue-600');
+            icon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>
+            `;
         } else {
             input.type = 'password';
-            eyeIcon.classList.remove('text-blue-600');
+            icon.innerHTML = `
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+            `;
         }
-    }
-
-    function quickFill(user, pass) {
-        document.getElementById('username').value = user;
-        document.getElementById('password').value = pass;
     }
 </script>
 {% endblock %}

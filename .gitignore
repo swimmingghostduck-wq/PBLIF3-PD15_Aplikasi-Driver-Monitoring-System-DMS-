@@ -60,6 +60,22 @@ yarn-error.log*
 htmlcov/
 .tox/
 
+# Academic reports, documents, PDFs, presentations & assignments
+*.docx
+*.doc
+*.pdf
+*.pptx
+*.ppt
+*.bak
+*.csv.bak
+
+# Report generation scripts & extracted assets
+extracted_pdf_assets/
+extracted_rpp_images/
+models/report_assets/
+generate_report_docx.py
+skills-lock.json
+
 # OS generated files
 .DS_Store
 Thumbs.db
