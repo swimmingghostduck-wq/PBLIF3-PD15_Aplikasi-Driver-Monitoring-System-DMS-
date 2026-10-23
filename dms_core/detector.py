@@ -177,6 +177,34 @@ class FaceLandmarkDetector:
 
         return pitch, yaw, roll
 
+    def calculate_gaze_ratio(self, landmarks_pixel):
+        """
+        Menghitung rasio arah pandangan mata (Gaze Tracking) via posisi horizontal iris.
+        Nilai ~0.50 (toleransi 0.36 - 0.64) berarti bola mata fokus menatap lurus ke depan jalan.
+        """
+        if len(landmarks_pixel) < 478:
+            return 0.50, True
+
+        p33 = landmarks_pixel[33]
+        p133 = landmarks_pixel[133]
+        p468 = landmarks_pixel[468]
+
+        p362 = landmarks_pixel[362]
+        p263 = landmarks_pixel[263]
+        p473 = landmarks_pixel[473]
+
+        left_width = max(1, abs(p133[0] - p33[0]))
+        right_width = max(1, abs(p263[0] - p362[0]))
+
+        left_ratio = (p468[0] - min(p33[0], p133[0])) / left_width
+        right_ratio = (p473[0] - min(p362[0], p263[0])) / right_width
+
+        gaze_h = round((left_ratio + right_ratio) / 2.0, 3)
+        # Pandangan mata lurus ke depan
+        is_gaze_forward = bool(0.36 <= gaze_h <= 0.64)
+
+        return float(gaze_h), is_gaze_forward
+
     def process_frame(self, frame):
         """
         Memproses 1 frame video kamera secara komprehensif:
@@ -227,6 +255,8 @@ class FaceLandmarkDetector:
                 'pitch': 0.0,
                 'yaw': 0.0,
                 'roll': 0.0,
+                'gaze_h': 0.50,
+                'is_gaze_forward': False,
                 'features_vector': []
             }
 
@@ -248,6 +278,9 @@ class FaceLandmarkDetector:
 
         # Ekstraksi pose kepala (Pitch, Yaw, Roll)
         pitch, yaw, roll = self.estimate_head_pose(landmarks_pixel, (h, w))
+
+        # Ekstraksi arah pandangan mata (Iris Gaze)
+        gaze_h, is_gaze_forward = self.calculate_gaze_ratio(landmarks_pixel)
 
         eye_diff = abs(ear_left - ear_right)
         ear_mar_ratio = ear_avg / (mar + 1e-6)
@@ -275,6 +308,8 @@ class FaceLandmarkDetector:
             'pitch': round(pitch, 2),
             'yaw': round(yaw, 2),
             'roll': round(roll, 2),
+            'gaze_h': gaze_h,
+            'is_gaze_forward': is_gaze_forward,
             'features_vector': features_vector,
             'bbox': bbox
         }

@@ -187,6 +187,14 @@ class TestDMSSystem(unittest.TestCase):
         self.assertTrue(status_nf['is_alarm_active'])
         self.assertEqual(status_nf['alarm_type'], 'WAJAH_HILANG')
 
+        # Uji saat kepala miring/menggaruk kepala tetapi mata tetap fokus ke jalan
+        tracker_gaze = DrowsinessTracker(distraction_consec_frames=5)
+        scratch_features = {'face_detected': True, 'yaw': 26.0, 'pitch': 15.0, 'is_gaze_forward': True}
+        for _ in range(5):
+            status_scratch = tracker_gaze.update(scratch_features, pred_normal)
+        self.assertFalse(status_scratch['is_alarm_active'])
+        self.assertEqual(status_scratch['status_label'], 'TERJAGA')
+
     def test_08_flask_endpoints(self):
         """Memastikan route Flask (Login, Register) merespons dengan HTTP 200."""
         from app import create_app

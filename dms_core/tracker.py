@@ -25,10 +25,13 @@ class DrowsinessTracker:
         self.distraction_frames = 0
         self.no_face_frames = 0
 
-        # Memory orientasi terakhir (untuk menangani saat menoleh jauh / profil samping / menunduk)
+        # Memory orientasi & smoothing pose (EMA filter agar gerakan menggaruk kepala tidak membuat spike)
+        self.smooth_yaw = 0.0
+        self.smooth_pitch = 0.0
         self.last_yaw = 0.0
         self.last_pitch = 0.0
         self.last_direction = 'Tengah'
+        self.is_gaze_forward = True
 
         # State flags
         self.is_alarm_active = False
@@ -55,18 +58,17 @@ class DrowsinessTracker:
         if not features_dict.get('face_detected', False):
             self.no_face_frames += 1
 
-            # Logika Cerdas: Jika pengemudi sebelumnya sedang menoleh atau yaw/pitch tinggi,
-            # kehilangan wajah terjadi karena profil samping (menoleh jauh) atau menunduk (melihat ponsel/bawah).
-            was_turning = (abs(self.last_yaw) >= 20.0) or (self.last_direction in ['Kanan', 'Kiri'])
-            was_nodding = (self.last_pitch >= 18.0) or ('Bawah' in self.last_direction)
-            was_distracted = (self.distraction_frames > 0) or was_turning or was_nodding
+            # Logika Cerdas: Hanya anggap sebagai menoleh/menunduk jika sebelum wajah hilang,
+            # pengemudi memang terbukti sedang menoleh/menunduk dengan durasi akumulasi nyata atau sudut >= threshold
+            was_really_turning = (self.distraction_frames >= 1) or (abs(self.last_yaw) >= self.yaw_threshold)
+            was_really_nodding = (self.distraction_frames >= 1) or (self.last_pitch >= self.pitch_threshold)
 
-            if was_distracted:
+            if was_really_turning or was_really_nodding:
                 self.distraction_frames += 1
                 if self.distraction_frames >= self.distraction_consec_frames:
                     self.is_alarm_active = True
                     self.alarm_type = 'TIDAK_FOKUS'
-                    if was_nodding and not was_turning:
+                    if was_really_nodding and not was_really_turning:
                         self.alarm_message = 'PERINGATAN: Terlalu Lama Menunduk! Tetap Fokus Menatap Jalan!'
                     else:
                         direction = self.last_direction if self.last_direction in ['Kanan', 'Kiri'] else 'Samping'
@@ -79,13 +81,8 @@ class DrowsinessTracker:
                         new_event_type = 'tidak_fokus'
                 return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type)
 
-            # Jika bukan karena menoleh/menunduk terdeteksi sebelumnya,
-            # berikan toleransi beberapa frame sebelum mereset closed_eyes_frames
-            if self.no_face_frames > 4:
-                self.closed_eyes_frames = 0
-                self.yawn_frames = 0
-
-            # Jika wajah benar-benar hilang >= distraction_consec_frames (~2 detik tidak ada pengemudi)
+            # Jika bukan karena menoleh nyata (misal tangan menggaruk kepala / melintas sebentar),
+            # jangan menaikkan distraction_frames! Berikan toleransi hingga distraction_consec_frames (~3 detik)
             if self.no_face_frames >= self.distraction_consec_frames:
                 self.is_alarm_active = True
                 self.alarm_type = 'WAJAH_HILANG'
@@ -109,19 +106,52 @@ class DrowsinessTracker:
         is_drowsy_pred = prediction_dict.get('is_drowsy', False)
         is_yawning_pred = prediction_dict.get('is_yawning', False)
 
-        # Simpan orientasi terakhir untuk kontinuitas pose
-        self.last_yaw = yaw
-        self.last_pitch = pitch
-        if yaw >= self.yaw_threshold:
-            self.last_direction = 'Kanan'
-        elif yaw <= -self.yaw_threshold:
-            self.last_direction = 'Kiri'
-        elif pitch >= self.pitch_threshold:
-            self.last_direction = 'Bawah (Menunduk)'
-        elif pitch < -18.0:
-            self.last_direction = 'Atas'
+        # Cek arah pandangan mata (Iris Gaze Priority)
+        # Jika mata fokus menatap lurus ke jalan, gerakan kepala kecil / menggaruk kepala tidak dianggap distraksi
+        is_gaze_forward = features_dict.get('is_gaze_forward', None)
+        if is_gaze_forward is None:
+            is_gaze_forward = (abs(yaw) < 20.0 and abs(pitch) < 18.0)
+        self.is_gaze_forward = is_gaze_forward
+
+        # EMA filter pada pose kepala untuk meredam glitch saat tangan mendekati wajah/kepala
+        if self.smooth_yaw == 0.0 and self.smooth_pitch == 0.0:
+            self.smooth_yaw = yaw
+            self.smooth_pitch = pitch
         else:
+            alpha = 0.45
+            self.smooth_yaw = alpha * yaw + (1 - alpha) * self.smooth_yaw
+            self.smooth_pitch = alpha * pitch + (1 - alpha) * self.smooth_pitch
+
+        self.last_yaw = self.smooth_yaw
+        self.last_pitch = self.smooth_pitch
+
+        # 4. Logika Distraksi (Prioritas Pandangan Mata + Pose Kepala)
+        # Jika mata tetap fokus ke depan dan kepala tidak menoleh ekstrem (> 35 deg), pengemudi tetap aman (TERJAGA)
+        if is_gaze_forward and abs(self.smooth_yaw) < 35.0 and self.smooth_pitch < 25.0:
             self.last_direction = 'Tengah'
+            is_distracted = False
+        else:
+            if self.smooth_yaw >= self.yaw_threshold:
+                self.last_direction = 'Kanan'
+                is_distracted = True
+            elif self.smooth_yaw <= -self.yaw_threshold:
+                self.last_direction = 'Kiri'
+                is_distracted = True
+            elif self.smooth_pitch >= self.pitch_threshold:
+                self.last_direction = 'Bawah (Menunduk)'
+                is_distracted = True
+            elif self.smooth_pitch < -20.0:
+                self.last_direction = 'Atas'
+                is_distracted = True
+            else:
+                self.last_direction = 'Tengah'
+                is_distracted = False
+
+        if is_distracted:
+            self.distraction_frames += 1
+        else:
+            # Pengemudi kembali fokus menatap jalan -> kurangi counter secara bertahap
+            self.distraction_frames = max(0, self.distraction_frames - 2)
 
         # 2. Logika Kantuk / Mata Tertutup
         if is_drowsy_pred:
@@ -134,15 +164,6 @@ class DrowsinessTracker:
             self.yawn_frames += 1
         else:
             self.yawn_frames = max(0, self.yawn_frames - 1)
-
-        # 4. Logika Distraksi (Menoleh ke Kanan/Kiri, Menunduk ke Bawah, atau Mendongak ke Atas)
-        # Menoleh wajar / melirik kaca spion (< yaw_threshold) tidak dihitung distraksi
-        is_distracted = (abs(yaw) >= self.yaw_threshold) or (pitch >= self.pitch_threshold) or (pitch < -18.0)
-        if is_distracted:
-            self.distraction_frames += 1
-        else:
-            # Pengemudi kembali fokus menatap jalan -> kurangi counter secara bertahap
-            self.distraction_frames = max(0, self.distraction_frames - 2)
 
         # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers)
         if self.closed_eyes_frames >= self.drowsy_consec_frames:
@@ -192,19 +213,17 @@ class DrowsinessTracker:
 
     def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type):
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
-        effective_distract_frames = max(self.distraction_frames, self.no_face_frames)
-
-        # Penentuan label status yang proporsional:
-        # Melirik wajar (< 60% durasi bahaya, misal < 12 frame / ~1.2 detik) TETAP berstatus TERJAGA.
-        # Hanya jika menoleh lama (>= 12 frame, ~1.2 detik), status beralih ke peringatan visual TIDAK_FOKUS.
-        # Dan jika >= distraction_consec_frames (20 frame, ~2.0 detik), ALARM BAHAYA aktif.
+        # Ambang batas transisi status visual:
+        # Melirik wajar / menggaruk kepala (< 60% durasi bahaya, misal < 16 frame / ~1.8 detik) TETAP berstatus TERJAGA.
         warning_frame_thresh = max(2, int(self.distraction_consec_frames * 0.6))
 
         if self.is_alarm_active:
             status_label = self.alarm_type
         elif self.closed_eyes_frames >= 5:
             status_label = 'MENGANTUK'
-        elif effective_distract_frames >= warning_frame_thresh:
+        elif self.distraction_frames >= warning_frame_thresh:
+            status_label = 'TIDAK_FOKUS'
+        elif self.no_face_frames >= warning_frame_thresh:
             status_label = 'TIDAK_FOKUS'
         elif prediction_dict.get('is_yawning', False) or self.yawn_frames >= 12:
             status_label = 'MENGUAP'
@@ -214,7 +233,7 @@ class DrowsinessTracker:
         # Skor kantuk dihitung secara proporsional terhadap durasi akumulasi mata terpejam
         drowsy_progress = min(100, int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100))
         drowsy_score = round(drowsy_progress / 100.0, 2)
-        distraction_progress = min(100, int((effective_distract_frames / max(1, self.distraction_consec_frames)) * 100))
+        distraction_progress = min(100, int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100))
 
         return {
             'is_alarm_active': self.is_alarm_active,

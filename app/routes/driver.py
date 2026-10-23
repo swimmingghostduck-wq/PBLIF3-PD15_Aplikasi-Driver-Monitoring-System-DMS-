@@ -128,6 +128,8 @@ def process_frame():
             'yaw': detection_res.get('yaw', 0.0),
             'pitch': detection_res.get('pitch', 0.0),
             'roll': detection_res.get('roll', 0.0),
+            'gaze_h': detection_res.get('gaze_h', 0.50),
+            'is_gaze_forward': detection_res.get('is_gaze_forward', True),
             'is_alarm_active': track_status['is_alarm_active'],
             'alarm_type': track_status['alarm_type'],
             'alarm_message': track_status['alarm_message'],

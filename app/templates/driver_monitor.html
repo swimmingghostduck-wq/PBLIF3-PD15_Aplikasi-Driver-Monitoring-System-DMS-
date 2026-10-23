@@ -669,16 +669,21 @@
         earBar.style.width = earPct + "%";
         marBar.style.width = marPct + "%";
 
-        // Pose Kepala (Yaw & Pitch)
+        // Pose Kepala (Yaw & Pitch) & Pandangan Mata (Gaze Priority)
         const yaw = data.yaw || 0.0;
         const pitch = data.pitch || 0.0;
+        const isGazeForward = data.is_gaze_forward !== false;
         if (pitchVal) pitchVal.innerText = `${pitch.toFixed(1)}°`;
 
         let poseDirection = "Tengah";
         let poseClass = "text-[10px] text-slate-400";
         let poseDesc = "Menghadap lurus ke depan";
 
-        if (yaw > 25) {
+        if (isGazeForward && Math.abs(yaw) < 35 && pitch < 25) {
+            poseDirection = "Fokus Depan";
+            poseDesc = "Mata fokus menatap jalan ke depan";
+            poseClass = "text-[10px] text-emerald-400 font-medium";
+        } else if (yaw > 25) {
             poseDirection = "Menoleh Kanan";
             poseDesc = "Pengemudi menoleh ke kanan";
             poseClass = "text-[10px] text-amber-400 font-medium";
