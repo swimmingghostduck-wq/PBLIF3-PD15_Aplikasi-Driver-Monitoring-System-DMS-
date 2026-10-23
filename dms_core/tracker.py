@@ -11,9 +11,9 @@ class DrowsinessTracker:
 
     def __init__(self, 
                  drowsy_consec_frames=12, 
-                 distraction_consec_frames=15,
-                 yaw_threshold=22.0,
-                 pitch_threshold=25.0):
+                 distraction_consec_frames=10,
+                 yaw_threshold=15.0,
+                 pitch_threshold=20.0):
         self.drowsy_consec_frames = drowsy_consec_frames
         self.distraction_consec_frames = distraction_consec_frames
         self.yaw_threshold = yaw_threshold
@@ -122,8 +122,8 @@ class DrowsinessTracker:
         if is_distracted:
             self.distraction_frames += 1
         else:
-            # Pengemudi kembali fokus menatap jalan -> kurangi counter dengan cepat
-            self.distraction_frames = max(0, self.distraction_frames - 3)
+            # Pengemudi kembali fokus menatap jalan -> kurangi counter secara bertahap
+            self.distraction_frames = max(0, self.distraction_frames - 2)
 
         # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers)
         if self.closed_eyes_frames >= self.drowsy_consec_frames:
@@ -176,7 +176,7 @@ class DrowsinessTracker:
             status_label = self.alarm_type
         elif self.closed_eyes_frames >= 5:
             status_label = 'MENGANTUK'
-        elif self.distraction_frames >= self.distraction_consec_frames:
+        elif self.distraction_frames >= 3:
             status_label = 'TIDAK_FOKUS'
         elif prediction_dict.get('is_yawning', False) or self.yawn_frames >= 12:
             status_label = 'MENGUAP'

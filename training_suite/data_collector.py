@@ -63,6 +63,10 @@ def run_collector():
     current_label = 'TERJAGA'  # 'TERJAGA', 'MENGANTUK', 'MENGUAP'
     recorded_samples = 0
     auto_record_end_time = 0.0
+    session_batches = []
+    current_batch_count = 0
+    undo_notice = ""
+    undo_notice_time = 0.0
 
     print("=" * 60)
     print("      DMS DATA COLLECTOR - TOOL PENGUMPUL DATASET")
@@ -73,6 +77,7 @@ def run_collector():
     print("  [3] Set Kelas: MENGUAP (Mulut Terbuka Lebar)")
     print("  [SPASI] Mulai/Stop Rekam Kontinu (Auto 10 Detik)")
     print("  [R] Rekam 1 Sample Saat Ini (Manual Click)")
+    print("  [U] UNDO / Batalkan Rekaman Batch Terakhir (Jika Salah Input)")
     print("  [Q] atau [ESC] Keluar & Selesai")
     print("=" * 60)
 
@@ -128,11 +133,15 @@ def run_collector():
                     row = results['features_vector'] + [current_label]
                     csv_writer.writerow(row)
                     recorded_samples += 1
+                    current_batch_count += 1
 
                     # Cek batas waktu auto-record
                     if auto_record_end_time > 0 and time.time() >= auto_record_end_time:
                         is_recording = False
                         auto_record_end_time = 0.0
+                        if current_batch_count > 0:
+                            session_batches.append(current_batch_count)
+                            current_batch_count = 0
                         print(f"[*] Sesi perekaman selesai. Total sample tersimpan: {recorded_samples}")
 
             # Tampilkan Panel Informasi (HUD)
@@ -153,13 +162,18 @@ def run_collector():
             
             ear_text = f"EAR L: {ear_l:.3f} | R: {ear_r:.3f} | Avg: {ear_avg:.3f} | MAR: {mar:.3f}"
             pose_text = f"Head Pose: Yaw {results.get('yaw', 0.0):.1f}° | Pitch {results.get('pitch', 0.0):.1f}°"
-            sample_text = f"Dataset: {recorded_samples} sampel tersimpan"
-            guide_text = "Tombol: [1]=TERJAGA | [2]=MENGANTUK | [3]=MENGUAP | [SPASI]=REKAM | [Q]=KELUAR"
+            sample_text = f"Dataset: {recorded_samples} sampel sesi ini"
+            guide_text = "Tombol: [1]=TERJAGA | [2]=MENGANTUK | [3]=MENGUAP | [SPASI]=REKAM | [U]=UNDO | [Q]=KELUAR"
 
             cv2.putText(hud_frame, ear_text, (15, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 255, 255), 1)
             cv2.putText(hud_frame, pose_text, (15, 85), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (200, 200, 200), 1)
-            cv2.putText(hud_frame, sample_text, (15, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (100, 255, 100), 1)
-            cv2.putText(hud_frame, guide_text, (15, 132), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
+
+            if time.time() < undo_notice_time:
+                cv2.rectangle(hud_frame, (10, 95), (w - 10, 135), (0, 100, 220), -1)
+                cv2.putText(hud_frame, undo_notice, (18, 122), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (255, 255, 255), 2)
+            else:
+                cv2.putText(hud_frame, sample_text, (15, 110), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (100, 255, 100), 1)
+                cv2.putText(hud_frame, guide_text, (15, 132), cv2.FONT_HERSHEY_SIMPLEX, 0.42, (180, 180, 180), 1)
 
             cv2.imshow(win_name, hud_frame)
 
@@ -179,18 +193,56 @@ def run_collector():
             elif key == 32: # SPASI: Rekam 10 detik
                 is_recording = not is_recording
                 if is_recording:
+                    current_batch_count = 0
                     auto_record_end_time = time.time() + 10.0
                     print(f"[!] Memulai perekaman otomatis 10 detik untuk label: {current_label}...")
                 else:
                     auto_record_end_time = 0.0
+                    if current_batch_count > 0:
+                        session_batches.append(current_batch_count)
+                        current_batch_count = 0
                     print("[!] Perekaman dihentikan.")
             elif key in [ord('r'), ord('R')]: # Manual 1 frame
                 if results.get('face_detected', False):
                     row = results['features_vector'] + [current_label]
                     csv_writer.writerow(row)
                     recorded_samples += 1
+                    session_batches.append(1)
                     csv_file.flush()
                     print(f"[+] 1 sample manual tersimpan ({current_label}). Total: {recorded_samples}")
+            elif key in [ord('u'), ord('U')]: # UNDO / BATAL
+                if is_recording:
+                    is_recording = False
+                    auto_record_end_time = 0.0
+                    if current_batch_count > 0:
+                        session_batches.append(current_batch_count)
+                        current_batch_count = 0
+
+                if session_batches:
+                    count_to_remove = session_batches.pop()
+                    csv_file.flush()
+                    csv_file.close()
+
+                    with open(csv_path, 'r', encoding='utf-8') as f:
+                        all_rows = list(csv.reader(f))
+
+                    if len(all_rows) > count_to_remove:
+                        all_rows = all_rows[:-count_to_remove]
+
+                    with open(csv_path, 'w', newline='', encoding='utf-8') as f:
+                        writer = csv.writer(f)
+                        writer.writerows(all_rows)
+
+                    csv_file = open(csv_path, mode='a', newline='', encoding='utf-8')
+                    csv_writer = csv.writer(csv_file)
+                    recorded_samples = max(0, recorded_samples - count_to_remove)
+                    undo_notice = f"BATAL! {count_to_remove} sampel terakhir dihapus."
+                    undo_notice_time = time.time() + 3.0
+                    print(f"\n[UNDO] {undo_notice}")
+                else:
+                    undo_notice = "Tidak ada rekaman sesi ini yang bisa dibatalkan."
+                    undo_notice_time = time.time() + 2.5
+                    print(f"\n[UNDO] {undo_notice}")
     finally:
         csv_file.close()
         if cap is not None and cap.isOpened():

@@ -179,6 +179,17 @@
                         <div id="drowsyScoreBar" class="bg-slate-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
+
+                <!-- Distraction Score Progress Bar -->
+                <div class="mt-3">
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-slate-400">Indikator Menoleh (Distraksi):</span>
+                        <span id="distractScoreText" class="font-bold text-slate-200">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
+                        <div id="distractScoreBar" class="bg-slate-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
             </div>
 
             <!-- Kartu Metrik Geometris Wajah -->
@@ -224,8 +235,8 @@
                 <div class="font-semibold text-slate-300 flex items-center gap-1.5">
                     <span>💡</span> Cara Menguji Sistem:
                 </div>
-                <p>1. Pejamkan mata &gt; 1.5 detik untuk menguji alarm kantuk.</p>
-                <p>2. Menoleh ke samping &gt; 2.5 detik untuk menguji alarm distraksi.</p>
+                <p>1. Pejamkan mata &gt; 1.2 detik untuk menguji alarm kantuk.</p>
+                <p>2. Menoleh ke samping &gt; 1.0 detik untuk menguji alarm distraksi.</p>
                 <p>3. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
             </div>
         </div>
@@ -282,6 +293,8 @@
     const poseNotice = document.getElementById('poseNotice');
     const drowsyScoreText = document.getElementById('drowsyScoreText');
     const drowsyScoreBar = document.getElementById('drowsyScoreBar');
+    const distractScoreText = document.getElementById('distractScoreText');
+    const distractScoreBar = document.getElementById('distractScoreBar');
 
     let consecNoFaceFrames = 0;
 
@@ -602,8 +615,8 @@
             } else {
                 consecNoFaceFrames++;
                 // Hanya tampilkan banner "Wajah Tidak Terdeteksi" jika wajah hilang stabil > 6 frame (~0.5 detik)
-                // Ini mencegah banner berkedip saat pengemudi menoleh atau mata berkedip sekejap
-                if (consecNoFaceFrames > 6) {
+                // dan tidak sedang dalam kondisi distraksi/alarm menoleh
+                if (consecNoFaceFrames > 6 && !data.is_alarm_active && data.status_label !== 'TIDAK_FOKUS') {
                     displayCtx.fillStyle = "rgba(0, 0, 0, 0.6)";
                     displayCtx.fillRect(100, 200, 440, 80);
                     displayCtx.fillStyle = "#F59E0B";
@@ -654,15 +667,18 @@
         // Pose Kepala
         const yaw = data.yaw || 0.0;
         let yawText = `${yaw.toFixed(1)}° `;
-        if (yaw > 20) {
+        if (yaw > 15) {
             yawText += "(Menoleh Kanan)";
             poseNotice.innerText = "Pengemudi menoleh ke kanan";
-        } else if (yaw < -20) {
+            poseNotice.className = "text-[10px] text-amber-400 font-medium";
+        } else if (yaw < -15) {
             yawText += "(Menoleh Kiri)";
             poseNotice.innerText = "Pengemudi menoleh ke kiri";
+            poseNotice.className = "text-[10px] text-amber-400 font-medium";
         } else {
             yawText += "(Tengah)";
             poseNotice.innerText = "Menghadap lurus ke depan";
+            poseNotice.className = "text-[10px] text-slate-400";
         }
         yawVal.innerText = yawText;
 
@@ -677,6 +693,20 @@
             drowsyScoreBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
         } else {
             drowsyScoreBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-300";
+        }
+
+        // Indikator Distraksi (Menoleh)
+        const distractPct = data.distraction_progress || 0;
+        if (distractScoreText && distractScoreBar) {
+            distractScoreText.innerText = distractPct + "%";
+            distractScoreBar.style.width = distractPct + "%";
+            if (distractPct > 70) {
+                distractScoreBar.className = "bg-red-500 h-2.5 rounded-full transition-all duration-300";
+            } else if (distractPct > 30) {
+                distractScoreBar.className = "bg-amber-500 h-2.5 rounded-full transition-all duration-300";
+            } else {
+                distractScoreBar.className = "bg-emerald-500 h-2.5 rounded-full transition-all duration-300";
+            }
         }
 
         // Status Alarm & Notifikasi
@@ -701,6 +731,11 @@
                 statusIcon.className = "w-14 h-14 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-3xl";
                 statusIcon.innerText = "👁️";
                 statusSub.innerText = "Pengemudi fokus pada jalan";
+            } else if (label === 'TIDAK_FOKUS') {
+                statusText.className = "text-2xl font-black text-amber-400";
+                statusIcon.className = "w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl";
+                statusIcon.innerText = "👀";
+                statusSub.innerText = "Pandangan tidak fokus ke jalan";
             } else if (label === 'MENGUAP') {
                 statusText.className = "text-2xl font-black text-amber-400";
                 statusIcon.className = "w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-3xl";
