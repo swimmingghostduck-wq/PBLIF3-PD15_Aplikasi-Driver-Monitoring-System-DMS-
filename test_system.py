@@ -269,5 +269,73 @@ class TestDMSSystem(unittest.TestCase):
         }, follow_redirects=True)
         self.assertIn(b'minimal harus terdiri dari 6 karakter', r_short_pass.data)
 
+    def test_11_admin_crud_and_monitoring_management(self):
+        """Memastikan fungsionalitas FR-12 (CRUD Driver) & FR-13 (Kelola Data Monitoring, Filter, Export CSV)."""
+        from app import create_app
+        from app.models import db, User, AlertLog
+        app = create_app()
+        app.config['TESTING'] = True
+        client = app.test_client()
+
+        with app.app_context():
+            # Login sebagai admin
+            client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
+
+            # 1. Buat driver baru untuk pengujian CRUD
+            driver_test = User.query.filter_by(username='crud_test').first()
+            if not driver_test:
+                driver_test = User(username='crud_test', full_name='Driver Test Lama', nim_nik='111222', role='driver')
+                driver_test.set_password('driver123')
+                db.session.add(driver_test)
+                db.session.commit()
+
+            driver_id = driver_test.id
+
+            # 2. Uji FR-12 Update Driver & Reset Password
+            r_edit = client.post(f'/admin/drivers/edit/{driver_id}', data={
+                'full_name': 'Driver Test Baru',
+                'nim_nik': '999888',
+                'username': 'crud_test_updated',
+                'new_password': 'newpassword123'
+            }, follow_redirects=True)
+            self.assertEqual(r_edit.status_code, 200)
+
+            # Verifikasi perubahan data di database
+            updated_driver = db.session.get(User, driver_id)
+            self.assertEqual(updated_driver.full_name, 'Driver Test Baru')
+            self.assertEqual(updated_driver.username, 'crud_test_updated')
+            self.assertTrue(updated_driver.check_password('newpassword123'))
+
+            # 3. Uji FR-13 Tambah AlertLog dan Ekspor CSV
+            test_alert = AlertLog(
+                driver_id=driver_id,
+                alert_type='kantuk',
+                severity='BAHAYA',
+                duration_seconds=2.0,
+                notes='Uji Coba Filter CSV'
+            )
+            db.session.add(test_alert)
+            db.session.commit()
+
+            # Uji endpoint Ekspor CSV
+            r_csv = client.get('/admin/alerts/export/csv')
+            self.assertEqual(r_csv.status_code, 200)
+            self.assertEqual(r_csv.mimetype, 'text/csv')
+            self.assertIn(b'Uji Coba Filter CSV', r_csv.data)
+
+            # Uji endpoint Filter Dashboard
+            r_filtered = client.get(f'/admin/dashboard?driver_id={driver_id}&alert_type=kantuk')
+            self.assertEqual(r_filtered.status_code, 200)
+            self.assertIn(b'Driver Test Baru', r_filtered.data)
+
+            # 4. Uji Reload Model AI (Perbaikan Bug Engine)
+            r_reload = client.post('/admin/models/reload', follow_redirects=True)
+            self.assertEqual(r_reload.status_code, 200)
+
+            # Bersihkan data uji
+            db.session.delete(test_alert)
+            db.session.delete(updated_driver)
+            db.session.commit()
+
 if __name__ == '__main__':
     unittest.main()
