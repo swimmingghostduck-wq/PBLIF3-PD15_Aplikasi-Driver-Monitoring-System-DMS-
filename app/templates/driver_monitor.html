@@ -1,52 +1,61 @@
 {% extends 'base.html' %}
-{% block title %}Monitoring Pengemudi Real-Time - DMS{% endblock %}
+{% block title %}Monitoring Pengemudi Real-Time - DriveSafe DMS{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <!-- Header Ringkasan Status & Kontrol Kamera -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-700/80 gap-4">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading flex items-center gap-2.5">
                 <span>Pemantauan Kamera Real-Time</span>
                 <span id="liveBadge" class="flex h-3 w-3 relative">
                     <span id="livePing" class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 hidden"></span>
-                    <span id="liveDot" class="relative inline-flex rounded-full h-3 w-3 bg-slate-500"></span>
+                    <span id="liveDot" class="relative inline-flex rounded-full h-3 w-3 bg-slate-400"></span>
                 </span>
             </h1>
-            <p class="text-sm text-slate-400 mt-0.5">Pengemudi: <strong class="text-slate-200">{{ user.full_name }}</strong> | Mode: <span class="text-blue-400 font-semibold" id="modeText">Kamera Browser (WebRTC)</span></p>
+            <p class="text-sm text-slate-500 mt-0.5 font-sans">Pengemudi: <strong class="text-slate-800">{{ user.full_name }}</strong> &middot; Mode: <span class="text-blue-600 font-semibold" id="modeText">Kamera Browser (WebRTC)</span></p>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3">
+        <div class="flex flex-wrap items-center gap-2.5">
             <!-- Audio Alarm Toggle -->
-            <button id="toggleAudioBtn" onclick="toggleAudio()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition">
-                <span id="audioIcon">🔊</span>
+            <button id="toggleAudioBtn" onclick="toggleAudio()" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs flex items-center gap-2 transition cursor-pointer">
+                <svg id="audioIcon" class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"></path>
+                </svg>
                 <span id="audioText">Audio Alarm: AKTIF</span>
             </button>
             <!-- Tombol Tes Suara Alarm -->
-            <button id="testAlarmBtn" onclick="testAlarm()" title="Uji coba suara alarm buzzer" class="px-3.5 py-2 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 text-xs font-semibold rounded-xl border border-amber-500/30 flex items-center gap-1.5 transition">
-                <span>🔔</span>
+            <button id="testAlarmBtn" onclick="testAlarm()" title="Uji coba suara alarm buzzer" class="px-3.5 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-semibold rounded-xl border border-amber-200 shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
                 <span>Tes Alarm</span>
             </button>
-            <a href="{{ url_for('driver.history') }}" class="px-3.5 py-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-semibold rounded-xl border border-blue-500/30 transition">
-                📋 Riwayat Peringatan
+            <a href="{{ url_for('driver.history') }}" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl border border-blue-200 shadow-2xs transition flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span>Riwayat Peringatan</span>
             </a>
         </div>
     </div>
 
-    <!-- Panel Izin & Pemilihan Perangkat Webcam -->
-    <div class="bg-slate-800/90 border border-slate-700 p-4 rounded-2xl shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- Panel Izin & Pemilihan Perangkat Webcam (White Card) -->
+    <div class="bg-white border border-slate-200/90 p-4 rounded-2xl shadow-2xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div class="flex items-center space-x-3">
-            <div id="camStatusIcon" class="w-10 h-10 rounded-xl bg-slate-700 flex items-center justify-center text-xl">
-                📷
+            <div id="camStatusIcon" class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center text-lg border border-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                </svg>
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Status Kamera:</span>
-                    <span id="camStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-900/60 text-amber-300 border border-amber-700">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Status Kamera:</span>
+                    <span id="camStatusBadge" class="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-amber-50 text-amber-700 border border-amber-200">
                         Menunggu Izin Akses...
                     </span>
                 </div>
-                <div class="text-xs text-slate-400 mt-0.5" id="camDetailText">
+                <div class="text-xs text-slate-500 mt-0.5" id="camDetailText">
                     Klik tombol untuk meminta izin akses webcam laptop Anda.
                 </div>
             </div>
@@ -55,33 +64,36 @@
         <div class="flex flex-wrap items-center gap-2.5">
             <!-- Dropdown Pilihan Kamera -->
             <select id="cameraSelect" onchange="switchCamera()" 
-                    class="bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2 focus:outline-none focus:border-blue-500">
+                    class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
                 <option value="">Mencari kamera aktif...</option>
             </select>
 
             <!-- Tombol Utama ON / OFF Kamera -->
             <button id="toggleCamBtn" onclick="toggleCamera()" 
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/20 transition flex items-center gap-2">
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
                 <span id="toggleCamIcon">📹</span> <span id="toggleCamText">Nyalakan Kamera</span>
             </button>
 
             <!-- Tombol Minta Izin Kamera Eksplisit -->
             <button id="requestPermBtn" onclick="requestAndStartCamera()" title="Minta ulang izin akses kamera browser"
-                    class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-xl border border-slate-600 transition flex items-center gap-1.5">
-                <span>🔒</span> Izin Kamera
+                    class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition flex items-center gap-1.5 cursor-pointer">
+                <svg class="w-3.5 h-3.5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                <span>Izin Kamera</span>
             </button>
         </div>
     </div>
 
     <!-- Alert Banner Darurat (Muncul otomatis saat kantuk/distraksi terdeteksi) -->
-    <div id="alarmBanner" class="hidden p-4 rounded-2xl bg-red-600/90 border-2 border-red-500 text-white shadow-2xl alarm-pulsing flex items-center justify-between">
+    <div id="alarmBanner" class="hidden p-4 rounded-2xl bg-red-600 text-white shadow-xl alarm-pulsing flex items-center justify-between">
         <div class="flex items-center space-x-4">
             <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center text-2xl font-bold">
                 ⚠️
             </div>
             <div>
-                <h3 id="alarmTitle" class="text-lg font-extrabold uppercase tracking-wide">PERINGATAN BAHAYA</h3>
-                <p id="alarmDesc" class="text-sm text-red-100 font-medium">Pengemudi terdeteksi mengantuk! Segera buka mata Anda.</p>
+                <h3 id="alarmTitle" class="text-lg font-extrabold uppercase tracking-wide font-heading">PERINGATAN BAHAYA</h3>
+                <p id="alarmDesc" class="text-sm text-red-100 font-medium font-sans">Pengemudi terdeteksi mengantuk! Segera buka mata Anda.</p>
             </div>
         </div>
         <span class="px-3 py-1 bg-black/40 rounded-lg text-xs font-mono font-bold">NFR-03 REAL-TIME</span>
@@ -89,18 +101,18 @@
 
     <!-- Grid Konten: Video Stream & Panel Telemetri -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Kolom Kiri: Video Feed Stream & Canvas Overlay -->
-        <div class="lg:col-span-2 bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl flex flex-col">
-            <div class="bg-slate-900/80 px-4 py-3 border-b border-slate-700/60 flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-                    <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-500"></span> Feed MediaPipe & AI Detection
+        <!-- Kolom Kiri: Video Feed Stream & Canvas Overlay (White Frame + Dark Viewport) -->
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs flex flex-col">
+            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                    <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-400"></span> Feed MediaPipe & AI Detection
                 </span>
-                <span id="modelBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-900/60 text-blue-300 border border-blue-700 font-mono">
+                <span id="modelBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono font-medium">
                     Model: Memuat...
                 </span>
             </div>
 
-            <div class="relative bg-black flex items-center justify-center min-h-[380px] sm:min-h-[460px] overflow-hidden">
+            <div class="relative bg-slate-950 flex items-center justify-center min-h-[380px] sm:min-h-[460px] overflow-hidden">
                 <!-- Video Element Tersembunyi (Input Stream dari Browser) -->
                 <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
                 <canvas id="captureCanvas" width="640" height="480" class="hidden"></canvas>
@@ -110,18 +122,18 @@
 
                 <!-- Placeholder Standby Sebelum Izin Diberikan / Saat Kamera Mati -->
                 <div id="standbyPlaceholder" class="p-8 text-center flex flex-col items-center justify-center space-y-4">
-                    <div class="w-20 h-20 rounded-full bg-slate-700/60 text-slate-300 flex items-center justify-center text-4xl shadow-inner border border-slate-600/50">
+                    <div class="w-20 h-20 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center text-4xl shadow-inner border border-slate-700">
                         📹
                     </div>
                     <div>
-                        <h3 class="text-lg font-bold text-white">Kamera Sedang Nonaktif</h3>
+                        <h3 class="text-lg font-bold text-white font-heading">Kamera Sedang Nonaktif</h3>
                         <p class="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                            Klik tombol hijau <strong>"Nyalakan Kamera"</strong> untuk memulai streaming dan deteksi AI secara real-time.
+                            Klik tombol biru <strong>"Nyalakan Kamera"</strong> untuk memulai streaming dan deteksi AI secara real-time.
                         </p>
                     </div>
                     <div class="flex flex-wrap items-center justify-center gap-3">
                         <button onclick="requestAndStartCamera()" 
-                                class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-emerald-600/30 transition flex items-center gap-2">
+                                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
                             <span>📹</span> Nyalakan Kamera & Izinkan Akses
                         </button>
                     </div>
@@ -135,109 +147,112 @@
                         Browser Anda memblokir akses ke webcam. Untuk mengizinkan:
                     </p>
                     <ol class="text-xs text-slate-400 text-left mt-2 space-y-1 list-decimal list-inside bg-slate-900/60 p-3 rounded-lg">
-                        <li>Klik ikon <strong>Gembok 🔒</strong> atau <strong>Kamera 📹</strong> di sebelah kiri URL browser (samping <code class="text-blue-300">localhost:5000</code>).</li>
+                        <li>Klik ikon <strong>Gembok 🔒</strong> di samping URL browser.</li>
                         <li>Ubah izin Kamera menjadi <strong>Izinkan (Allow)</strong>.</li>
                         <li>Klik tombol coba izin lagi di bawah.</li>
                     </ol>
                     <div class="mt-4">
                         <button onclick="requestAndStartCamera()"
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow transition">
+                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow transition">
                             🔄 Coba Minta Izin Ulang
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-slate-900/80 px-4 py-2.5 border-t border-slate-700/60 text-xs text-slate-400 flex items-center justify-between">
-                <span id="fpsCounter">FPS: 0 | Resolusi: 640x480</span>
-                <span class="text-slate-500">PBL IF3-PD15 Simulation Mode</span>
+            <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+                <span id="fpsCounter" class="font-mono">FPS: 0 &middot; Resolusi: 640x480</span>
+                <span class="text-slate-400">PBL IF3-PD15 Simulation Mode</span>
             </div>
         </div>
 
-        <!-- Kolom Kanan: Panel Telemetri & Indikator AI -->
-        <div class="space-y-5">
-            <!-- Kartu Status Utama -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Status Kewaspadaan Saat Ini</h3>
+        <!-- Kolom Kanan: Panel Telemetri & Indikator AI (White Cards) -->
+        <div class="space-y-4">
+            <!-- Kartu Status Utama (White Card) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Status Kewaspadaan Saat Ini</h3>
                 <div class="flex items-center justify-between">
                     <div>
-                        <div id="statusText" class="text-2xl font-black text-slate-400">STANDBY</div>
-                        <p id="statusSub" class="text-xs text-slate-400 mt-0.5">Menunggu kamera aktif</p>
+                        <div id="statusText" class="text-2xl font-extrabold text-slate-800 font-heading">STANDBY</div>
+                        <p id="statusSub" class="text-xs text-slate-500 mt-0.5">Menunggu kamera aktif</p>
                     </div>
-                    <div id="statusIcon" class="w-14 h-14 rounded-2xl bg-slate-700/50 border border-slate-600 flex items-center justify-center text-3xl">
+                    <div id="statusIcon" class="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center text-3xl">
                         👤
                     </div>
                 </div>
 
                 <!-- Drowsiness Score Progress Bar -->
-                <div class="mt-4 pt-4 border-t border-slate-700/60">
+                <div class="mt-4 pt-4 border-t border-slate-100">
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="text-slate-400">Skor Tingkat Kantuk:</span>
-                        <span id="drowsyScoreText" class="font-bold text-slate-200">0%</span>
+                        <span class="text-slate-600 font-medium">Skor Tingkat Kantuk:</span>
+                        <span id="drowsyScoreText" class="font-bold text-slate-800">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
-                        <div id="drowsyScoreBar" class="bg-slate-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div id="drowsyScoreBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
 
                 <!-- Distraction Score Progress Bar -->
                 <div class="mt-3">
                     <div class="flex justify-between text-xs mb-1">
-                        <span class="text-slate-400">Indikator Menoleh (Distraksi):</span>
-                        <span id="distractScoreText" class="font-bold text-slate-200">0%</span>
+                        <span class="text-slate-600 font-medium">Indikator Menoleh (Distraksi):</span>
+                        <span id="distractScoreText" class="font-bold text-slate-800">0%</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2.5 overflow-hidden">
-                        <div id="distractScoreBar" class="bg-slate-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                        <div id="distractScoreBar" class="bg-purple-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                     </div>
                 </div>
             </div>
 
-            <!-- Kartu Metrik Geometris Wajah -->
-            <div class="bg-slate-800 p-5 rounded-2xl border border-slate-700 shadow-xl space-y-4">
-                <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Metrik Landmark MediaPipe</h3>
+            <!-- Kartu Metrik Geometris Wajah (White Card) -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs space-y-4">
+                <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Metrik Landmark MediaPipe</h3>
 
                 <!-- EAR (Eye Aspect Ratio) -->
                 <div>
                     <div class="flex justify-between items-center text-xs mb-1">
-                        <span class="text-slate-300 font-medium">Eye Aspect Ratio (EAR)</span>
-                        <span id="earVal" class="font-mono font-bold text-blue-400">0.000</span>
+                        <span class="text-slate-700 font-medium">Eye Aspect Ratio (EAR)</span>
+                        <span id="earVal" class="font-mono font-bold text-blue-600">0.000</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
-                        <div id="earBar" class="bg-blue-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div id="earBar" class="bg-blue-600 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
-                    <span class="text-[10px] text-slate-500">Ambang Batas Tertutup: &lt; 0.220</span>
+                    <span class="text-[10px] text-slate-400">Ambang Batas Tertutup: &lt; 0.220</span>
                 </div>
 
                 <!-- MAR (Mouth Aspect Ratio) -->
                 <div>
                     <div class="flex justify-between items-center text-xs mb-1">
-                        <span class="text-slate-300 font-medium">Mouth Aspect Ratio (MAR)</span>
-                        <span id="marVal" class="font-mono font-bold text-amber-400">0.000</span>
+                        <span class="text-slate-700 font-medium">Mouth Aspect Ratio (MAR)</span>
+                        <span id="marVal" class="font-mono font-bold text-amber-600">0.000</span>
                     </div>
-                    <div class="w-full bg-slate-900 rounded-full h-2 overflow-hidden">
+                    <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
                         <div id="marBar" class="bg-amber-500 h-2 rounded-full transition-all duration-150" style="width: 0%"></div>
                     </div>
-                    <span class="text-[10px] text-slate-500">Ambang Batas Menguap: &gt; 0.650</span>
+                    <span class="text-[10px] text-slate-400">Ambang Batas Menguap: &gt; 0.650</span>
                 </div>
 
                 <!-- Head Pose Yaw & Pitch -->
-                <div class="pt-2 border-t border-slate-700/60">
+                <div class="pt-2 border-t border-slate-100">
                     <div class="flex justify-between items-center text-xs mb-1">
-                        <span class="text-slate-300 font-medium">Arah Pandangan (Pose)</span>
-                        <span id="yawVal" class="font-mono font-bold text-purple-400">0.0° (Tengah)</span>
+                        <span class="text-slate-700 font-medium">Arah Pandangan (Pose)</span>
+                        <span id="yawVal" class="font-mono font-bold text-purple-600">0.0° (Tengah)</span>
                     </div>
-                    <div class="flex justify-between items-center text-[10px] text-slate-400 mb-1">
+                    <div class="flex justify-between items-center text-[10px] text-slate-500 mb-1">
                         <span>Sudut Vertikal (Pitch):</span>
-                        <span id="pitchVal" class="font-mono text-slate-300">0.0°</span>
+                        <span id="pitchVal" class="font-mono text-slate-700 font-medium">0.0°</span>
                     </div>
-                    <p id="poseNotice" class="text-[10px] text-slate-400">Menghadap lurus ke depan</p>
+                    <p id="poseNotice" class="text-[10px] text-slate-500">Menghadap lurus ke depan</p>
                 </div>
             </div>
 
-            <!-- Petunjuk Pengujian -->
-            <div class="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60 text-xs text-slate-400 space-y-1.5">
-                <div class="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <span>💡</span> Cara Menguji Sistem:
+            <!-- Petunjuk Pengujian (Light Card) -->
+            <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-xs text-blue-900 space-y-1.5">
+                <div class="font-semibold text-blue-900 flex items-center gap-1.5">
+                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>Panduan Pengujian Deteksi:</span>
                 </div>
                 <p>1. Pejamkan mata &gt; 1.2 detik untuk menguji alarm kantuk.</p>
                 <p>2. Menoleh ke samping &gt; 3.0 detik untuk menguji alarm menoleh.</p>
