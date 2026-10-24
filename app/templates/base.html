@@ -31,6 +31,24 @@
         }
     </script>
     <style>
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F1F5F9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #CBD5E1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94A3B8;
+        }
+        .tabular-nums {
+            font-variant-numeric: tabular-nums;
+        }
         @keyframes pulse-fast {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.85; transform: scale(1.02); }
@@ -57,7 +75,7 @@
                     </div>
                     <div>
                         <span class="font-heading font-bold text-base tracking-tight text-slate-900 block leading-tight">DriveSafe DMS</span>
-                        <span class="text-[11px] text-slate-500 block font-mono">PBL IF3-PD15 &middot; Polibatam</span>
+                        <span class="text-xs text-slate-500 block font-mono">PBL IF3-PD15 &middot; Polibatam</span>
                     </div>
                 </div>
 

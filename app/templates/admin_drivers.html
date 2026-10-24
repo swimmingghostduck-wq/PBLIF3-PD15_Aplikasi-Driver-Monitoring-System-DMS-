@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
-{% block title %}Kelola Data Driver - DriveSafe DMS{% endblock %}
+{% block title %}Kelola Pengemudi - DriveSafe DMS{% endblock %}
 
 {% block content %}
 <div class="space-y-6">
     <!-- Header Halaman -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Kelola Akun Driver</h1>
-            <p class="text-sm text-slate-500 mt-0.5 font-sans">Tambah akun baru, perbarui data profil, reset password, dan pantau pengemudi terdaftar (FR-12)</p>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Kelola Akun Pengemudi</h1>
+            <p class="text-sm text-slate-500 mt-0.5 font-sans">Pendaftaran akun baru, pembaruan profil, dan pengaturan kredensial pengemudi armada</p>
         </div>
         <a href="{{ url_for('admin.dashboard') }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs transition flex items-center gap-1.5 w-fit">
             <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -17,101 +17,114 @@
         </a>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Form Tambah Driver Baru (White Card) -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs h-fit">
-            <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2 font-heading">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <!-- Form Tambah Driver Baru (4 Cols di Desktop) -->
+        <div class="lg:col-span-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
+            <div class="flex items-center gap-2.5 mb-1">
                 <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"></path>
                     </svg>
                 </div>
-                <span>Tambah Driver Baru</span>
-            </h3>
-            <p class="text-xs text-slate-500 mb-5">Daftarkan akun pengemudi baru ke dalam sistem</p>
+                <h2 class="text-base font-bold text-slate-900 font-heading">Tambah Pengemudi Baru</h2>
+            </div>
+            <p class="text-xs text-slate-500 mb-5">Daftarkan akun pengemudi baru untuk akses monitoring kabin</p>
 
             <form method="POST" action="{{ url_for('admin.create_driver') }}" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Lengkap *</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Nama Lengkap *</label>
                     <input type="text" name="full_name" required
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition"
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                            placeholder="Contoh: Apri Catur">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">NIM / NIK <span class="text-slate-400 font-normal lowercase">(opsional)</span></label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">NIM / NIK <span class="text-slate-400 font-normal">(opsional)</span></label>
                     <input type="text" name="nim_nik"
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition"
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                            placeholder="Contoh: 3312501067">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Username *</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Username *</label>
                     <input type="text" name="username" required
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition"
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                            placeholder="Pilih username unik">
                 </div>
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Password *</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Password *</label>
                     <input type="password" name="password" required
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition"
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                            placeholder="Minimal 6 karakter">
                 </div>
 
-                <button type="submit"
-                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm shadow-xs transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Simpan Akun Driver</span>
-                </button>
+                <div class="pt-2">
+                    <button type="submit"
+                            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm shadow-xs transition duration-150 flex items-center justify-center gap-1.5 cursor-pointer">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        <span>Simpan Akun Pengemudi</span>
+                    </button>
+                </div>
             </form>
         </div>
 
-        <!-- Tabel Daftar Driver Terdaftar (White Card) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
+        <!-- Tabel Daftar Driver Terdaftar (8 Cols di Desktop) -->
+        <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between">
                 <div>
-                    <h3 class="font-bold text-slate-900 text-base font-heading">Daftar Pengemudi ({{ drivers|length }})</h3>
-                    <p class="text-xs text-slate-500">Seluruh pengemudi yang memiliki akses monitoring kabin</p>
+                    <h2 class="font-bold text-slate-900 text-base font-heading">Daftar Pengemudi Terdaftar</h2>
+                    <p class="text-xs text-slate-500">Total <strong class="text-slate-900 font-semibold">{{ drivers|length }}</strong> akun pengemudi dengan izin monitoring aktif</p>
                 </div>
             </div>
 
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-700">
-                    <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                    <thead class="bg-slate-50/70 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
                         <tr>
-                            <th class="px-5 py-3.5">Nama & Username</th>
+                            <th class="px-5 py-3.5">Pengemudi</th>
                             <th class="px-5 py-3.5">NIM / NIK</th>
                             <th class="px-5 py-3.5 text-center">Total Insiden</th>
                             <th class="px-5 py-3.5">Terdaftar</th>
-                            <th class="px-5 py-3.5 text-center">Aksi</th>
+                            <th class="px-5 py-3.5 text-center">Tindakan</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
                         {% for d in drivers %}
-                        <tr class="hover:bg-slate-50/70 transition">
-                            <td class="px-5 py-4">
-                                <div class="font-semibold text-slate-900">{{ d.full_name }}</div>
-                                <div class="text-xs text-blue-600 font-mono">@{{ d.username }}</div>
+                        <tr class="hover:bg-slate-50/60 transition">
+                            <td class="px-5 py-3.5">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 text-blue-700 flex items-center justify-center font-bold text-xs">
+                                        {{ (d.full_name[:2] if d.full_name else 'DR')|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-slate-900 text-sm">{{ d.full_name }}</div>
+                                        <div class="text-xs text-slate-500 font-mono">@{{ d.username }}</div>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="px-5 py-4 font-mono text-xs text-slate-600">{{ d.nim_nik or '-' }}</td>
-                            <td class="px-5 py-4 text-center">
+                            <td class="px-5 py-3.5 font-mono text-xs text-slate-600 tabular-nums">
+                                {{ d.nim_nik or '-' }}
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
                                 <a href="{{ url_for('admin.dashboard', driver_id=d.id) }}" 
-                                   class="px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition"
-                                   title="Klik untuk filter riwayat driver ini">
-                                    {{ d.alerts|length }} Insiden
+                                   class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-200 transition"
+                                   title="Filter riwayat insiden pengemudi ini">
+                                    <span class="tabular-nums">{{ d.alerts|length }}</span> Insiden
                                 </a>
                             </td>
-                            <td class="px-5 py-4 text-xs text-slate-500">{{ d.created_at.strftime('%Y-%m-%d') }}</td>
-                            <td class="px-5 py-4 text-center">
+                            <td class="px-5 py-3.5 text-xs text-slate-500 tabular-nums">
+                                {{ d.created_at.strftime('%Y-%m-%d') }}
+                            </td>
+                            <td class="px-5 py-3.5 text-center">
                                 <div class="flex items-center justify-center gap-1.5">
                                     <!-- Tombol Edit Driver & Reset Password -->
                                     <button type="button" 
                                             onclick="openEditModal({{ d.id }}, '{{ d.full_name|replace("'", "\\'") }}', '{{ d.username|replace("'", "\\'") }}', '{{ (d.nim_nik or '')|replace("'", "\\'") }}')"
-                                            class="text-xs px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg border border-slate-200 transition flex items-center gap-1 cursor-pointer font-medium"
-                                            title="Edit profil atau reset password">
+                                            class="text-xs px-2.5 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-lg border border-slate-200 transition flex items-center gap-1 cursor-pointer font-medium shadow-2xs"
+                                            title="Edit profil atau reset sandi">
                                         <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                             <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                         </svg>
@@ -120,9 +133,9 @@
 
                                     <!-- Tombol Hapus Driver -->
                                     <form action="{{ url_for('admin.delete_driver', driver_id=d.id) }}" method="POST"
-                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus driver {{ d.full_name }}? Seluruh riwayat peringatan juga akan terhapus.');">
-                                        <button type="submit" class="text-xs px-2.5 py-1.5 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg border border-slate-200 transition flex items-center gap-1 cursor-pointer font-medium"
-                                                title="Hapus akun driver">
+                                          onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun pengemudi {{ d.full_name }}? Seluruh riwayat rekaman juga akan terhapus.');">
+                                        <button type="submit" class="text-xs px-2.5 py-1.5 bg-white hover:bg-red-50 text-slate-700 hover:text-red-700 rounded-lg border border-slate-200 hover:border-red-200 transition flex items-center gap-1 cursor-pointer font-medium shadow-2xs"
+                                                title="Hapus akun pengemudi">
                                             <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                                             </svg>
@@ -134,7 +147,7 @@
                         </tr>
                         {% else %}
                         <tr>
-                            <td colspan="5" class="px-6 py-8 text-center text-slate-500 text-sm">Belum ada akun driver yang terdaftar di database.</td>
+                            <td colspan="5" class="px-6 py-10 text-center text-slate-500 text-sm">Belum ada akun pengemudi yang terdaftar di sistem.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -145,56 +158,54 @@
 </div>
 
 <!-- =========================================================================
-     MODAL EDIT PROFIL DRIVER & RESET PASSWORD (Light Modal)
+     MODAL EDIT PROFIL DRIVER & RESET PASSWORD
      ========================================================================= -->
-<div id="editDriverModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+<div id="editDriverModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-md w-full overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-150">
         <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
-            <h4 class="font-bold text-slate-900 text-base font-heading flex items-center gap-2">
+            <h3 class="font-bold text-slate-900 text-base font-heading flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                     </svg>
                 </div>
-                <span>Edit Profil & Reset Sandi</span>
-            </h4>
+                <span>Perbarui Data Pengemudi</span>
+            </h3>
             <button type="button" onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 font-bold text-xl leading-none cursor-pointer">&times;</button>
         </div>
         
         <form id="editDriverForm" method="POST" action="" class="p-5 space-y-4">
             <div>
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Nama Lengkap *</label>
+                <label class="block text-xs font-medium text-slate-700 mb-1.5">Nama Lengkap *</label>
                 <input type="text" id="edit_full_name" name="full_name" required
-                       class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                       class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">Username *</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">Username *</label>
                     <input type="text" id="edit_username" name="username" required
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 uppercase mb-1">NIM / NIK</label>
+                    <label class="block text-xs font-medium text-slate-700 mb-1.5">NIM / NIK</label>
                     <input type="text" id="edit_nim_nik" name="nim_nik"
-                           class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                           class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all">
                 </div>
             </div>
 
-            <div class="pt-3 border-t border-slate-200">
-                <label class="block text-xs font-semibold text-slate-700 uppercase mb-1 flex items-center gap-1.5">
-                    <svg class="w-3.5 h-3.5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"></path>
-                    </svg>
-                    <span>Reset Password Baru (Opsional)</span>
+            <div class="pt-3 border-t border-slate-100">
+                <label class="block text-xs font-medium text-slate-700 mb-1.5 flex items-center justify-between">
+                    <span>Reset Password Baru</span>
+                    <span class="text-slate-400 font-normal">(opsional)</span>
                 </label>
                 <input type="password" id="edit_new_password" name="new_password"
-                       class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition"
+                       class="w-full h-10 bg-white border border-slate-300 rounded-xl px-3.5 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition-all"
                        placeholder="Kosongkan jika tidak ingin mengubah sandi">
-                <span class="text-[11px] text-slate-500 mt-1 block">Minimal 6 karakter jika ingin mereset password driver.</span>
+                <span class="text-xs text-slate-400 mt-1 block">Minimal 6 karakter jika ingin mengganti sandi.</span>
             </div>
 
-            <div class="pt-3 flex justify-end gap-2">
+            <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
                 <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition cursor-pointer">
                     Batal
                 </button>

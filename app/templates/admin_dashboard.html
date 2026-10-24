@@ -6,8 +6,8 @@
     <!-- Header Halaman -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Dashboard Monitoring Admin</h1>
-            <p class="text-sm text-slate-500 mt-0.5 font-sans">Pantau kinerja aplikasi DMS, analisis telemetri keselamatan, dan audit data pengemudi (FR-13)</p>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Ringkasan Pemantauan Armada</h1>
+            <p class="text-sm text-slate-500 mt-0.5 font-sans">Analisis telemetri real-time, rekaman insiden kewaspadaan, dan audit keselamatan pengemudi</p>
         </div>
         <div class="flex flex-wrap items-center gap-2.5">
             <a href="{{ url_for('admin.export_alerts_csv', driver_id=selected_driver_id, alert_type=selected_alert_type, q=search_query) }}" 
@@ -21,7 +21,7 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
-                <span>Kelola Driver</span>
+                <span>Kelola Pengemudi</span>
             </a>
             <a href="{{ url_for('admin.manage_models') }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs transition flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -32,206 +32,222 @@
         </div>
     </div>
 
-    <!-- Statistik Utama (Light Theme Cards) -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Driver Terdaftar -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
+    <!-- Asymmetrical Fleet Overview Ribbon (Craft layout, bukan 4 kartu seragam AI slop) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+        <!-- Panel Ringkasan Keselamatan Pengemudi (Span 8) -->
+        <div class="lg:col-span-8 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                <div>
+                    <h2 class="text-base font-bold text-slate-900 font-heading">Statistik Keselamatan Armada</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Ringkasan kondisi pengemudi aktif dan total rekaman insiden</p>
+                </div>
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-xs text-slate-400 block font-medium">Pengemudi Aktif</span>
+                        <span class="text-xl font-bold text-slate-900 font-heading tabular-nums">{{ total_drivers }}</span>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div>
+                        <span class="text-xs text-slate-400 block font-medium">Total Insiden</span>
+                        <span class="text-xl font-bold text-slate-900 font-heading tabular-nums">{{ total_alerts }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Breakdown Insiden Fisiologis -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+                <div class="p-3.5 rounded-xl bg-red-50/60 border border-red-100">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-red-900">Kantuk (EAR)</span>
+                        <span class="text-lg font-bold text-red-600 font-heading tabular-nums">{{ total_drowsy }}</span>
+                    </div>
+                    <p class="text-xs text-red-700/80 mt-1">Mata terpejam &ge; 1.2 detik</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-amber-50/60 border border-amber-100">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-amber-900">Distraksi (Gaze)</span>
+                        <span class="text-lg font-bold text-amber-600 font-heading tabular-nums">{{ total_distraction }}</span>
+                    </div>
+                    <p class="text-xs text-amber-700/80 mt-1">Palingan kepala &gt; 3 detik</p>
+                </div>
+
+                <div class="p-3.5 rounded-xl bg-sky-50/60 border border-sky-100">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-medium text-sky-900">Menguap (MAR)</span>
+                        <span class="text-lg font-bold text-sky-600 font-heading tabular-nums">{{ total_yawn }}</span>
+                    </div>
+                    <p class="text-xs text-sky-700/80 mt-1">Bukaan mulut &ge; 0.65</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Status Mesin Klasifikasi AI (Span 4) -->
+        <div class="lg:col-span-4 bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
             <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Driver Terdaftar</span>
-                <div class="text-3xl font-bold text-slate-900 mt-1 font-heading">{{ total_drivers }}</div>
-                <span class="text-[11px] text-slate-500">Pengemudi aktif</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Insiden Kantuk -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Insiden Kantuk</span>
-                <div class="text-3xl font-bold text-red-600 mt-1 font-heading">{{ total_drowsy }}</div>
-                <span class="text-[11px] text-slate-500">Mata terpejam (EAR bahaya)</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-red-50 text-red-600 flex items-center justify-center border border-red-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Insiden Distraksi -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Insiden Distraksi</span>
-                <div class="text-3xl font-bold text-purple-600 mt-1 font-heading">{{ total_distraction }}</div>
-                <span class="text-[11px] text-slate-500">Menoleh/menunduk &gt; 3 detik</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Total Peringatan -->
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Log Rekaman</span>
-                <div class="text-3xl font-bold text-slate-900 mt-1 font-heading">{{ total_alerts }}</div>
-                <span class="text-[11px] text-slate-500">Total riwayat tersimpan</span>
-            </div>
-            <div class="w-12 h-12 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center border border-slate-200">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                </svg>
-            </div>
-        </div>
-    </div>
-
-    <!-- Banner Status Model AI Aktif (Light Card) -->
-    <div class="bg-white p-5 rounded-2xl border border-blue-200 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-xs font-bold text-blue-700 uppercase tracking-wider">Status Model AI Engine:</span>
-            </div>
-            <h3 class="text-lg font-bold text-slate-900 mt-1 font-heading">{{ active_model_info.status }}</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Tipe: <span class="text-slate-700 font-medium">{{ active_model_info.type }}</span> &middot; Akurasi Evaluasi: <strong class="text-emerald-600">{{ active_model_info.accuracy }}</strong></p>
-        </div>
-        <form action="{{ url_for('admin.reload_model') }}" method="POST">
-            <button type="submit" class="px-4 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl border border-blue-200 transition flex items-center gap-2 cursor-pointer shadow-2xs">
-                <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
-                </svg>
-                <span>Sinkronisasi Ulang Model</span>
-            </button>
-        </form>
-    </div>
-
-    <!-- Filter & Pencarian Bar (FR-13) -->
-    <div class="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <form method="GET" action="{{ url_for('admin.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <!-- Filter Driver -->
-            <div class="sm:col-span-3">
-                <label class="block text-xs font-medium text-slate-700 mb-1">Filter Driver</label>
-                <select name="driver_id" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
-                    <option value="">Semua Pengemudi</option>
-                    {% for d in all_drivers %}
-                        <option value="{{ d.id }}" {% if selected_driver_id == d.id %}selected{% endif %}>
-                            {{ d.full_name }} (@{{ d.username }})
-                        </option>
-                    {% endfor %}
-                </select>
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Engine Inferensi</span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        Aktif
+                    </span>
+                </div>
+                <h3 class="text-base font-bold text-slate-900 font-heading leading-tight">{{ active_model_info.status }}</h3>
+                <p class="text-xs text-slate-500 mt-1">
+                    Arsitektur: <span class="font-medium text-slate-700">{{ active_model_info.type }}</span>
+                </p>
+                <div class="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                    <span class="text-slate-600">Akurasi Pengujian:</span>
+                    <strong class="text-emerald-600 font-mono text-sm">{{ active_model_info.accuracy }}</strong>
+                </div>
             </div>
 
-            <!-- Filter Jenis Peringatan -->
-            <div class="sm:col-span-3">
-                <label class="block text-xs font-medium text-slate-700 mb-1">Jenis Peringatan</label>
-                <select name="alert_type" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
-                    <option value="">Semua Jenis</option>
-                    <option value="kantuk" {% if selected_alert_type == 'kantuk' %}selected{% endif %}>Mengantuk</option>
-                    <option value="tidak_fokus" {% if selected_alert_type == 'tidak_fokus' %}selected{% endif %}>Tidak Fokus</option>
-                    <option value="menguap" {% if selected_alert_type == 'menguap' %}selected{% endif %}>Menguap</option>
-                </select>
-            </div>
-
-            <!-- Pencarian Teks -->
-            <div class="sm:col-span-4">
-                <label class="block text-xs font-medium text-slate-700 mb-1">Cari Nama / Catatan Telemetri</label>
-                <input type="text" name="q" value="{{ search_query }}" placeholder="Contoh: Apri atau EAR..."
-                       class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
-            </div>
-
-            <!-- Tombol Aksi Filter -->
-            <div class="sm:col-span-2 flex items-center gap-2">
-                <button type="submit" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs">
-                    Terapkan
+            <form action="{{ url_for('admin.reload_model') }}" method="POST" class="mt-4 pt-3 border-t border-slate-100">
+                <button type="submit" class="w-full py-2 px-3 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-xs font-medium rounded-xl border border-slate-200 transition flex items-center justify-center gap-2 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    <span>Sinkronkan Ulang Model</span>
                 </button>
-                <a href="{{ url_for('admin.dashboard') }}" class="py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition" title="Reset filter">
-                    Reset
-                </a>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 
-    <!-- Tabel Insiden Terkini (Clean White Table) -->
+    <!-- Kontainer Tabel & Filter Terintegrasi -->
     <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div>
-                <h3 class="font-bold text-slate-900 text-base font-heading">Daftar Insiden Pemantauan ({{ recent_alerts|length }} Catatan)</h3>
-                <p class="text-xs text-slate-500">Menampilkan data log insiden keselamatan pengemudi real-time</p>
+        <!-- Toolbar Filter di Atas Tabel -->
+        <div class="p-4 sm:p-5 border-b border-slate-200/80 bg-slate-50/50">
+            <form method="GET" action="{{ url_for('admin.dashboard') }}" class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                <!-- Filter Pengemudi -->
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Pengemudi</label>
+                    <select name="driver_id" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                        <option value="">Semua Pengemudi</option>
+                        {% for d in all_drivers %}
+                            <option value="{{ d.id }}" {% if selected_driver_id == d.id %}selected{% endif %}>
+                                {{ d.full_name }} (@{{ d.username }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filter Jenis Peringatan -->
+                <div class="sm:col-span-3">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Jenis Insiden</label>
+                    <select name="alert_type" class="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                        <option value="">Semua Jenis Insiden</option>
+                        <option value="kantuk" {% if selected_alert_type == 'kantuk' %}selected{% endif %}>Mengantuk (EAR)</option>
+                        <option value="tidak_fokus" {% if selected_alert_type == 'tidak_fokus' %}selected{% endif %}>Tidak Fokus (Gaze)</option>
+                        <option value="menguap" {% if selected_alert_type == 'menguap' %}selected{% endif %}>Menguap (MAR)</option>
+                    </select>
+                </div>
+
+                <!-- Pencarian Teks -->
+                <div class="sm:col-span-4">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Pencarian</label>
+                    <div class="relative">
+                        <input type="text" name="q" value="{{ search_query }}" placeholder="Cari nama atau catatan..."
+                               class="w-full bg-white border border-slate-300 rounded-xl pl-8 pr-3 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Tombol Terapkan & Reset -->
+                <div class="sm:col-span-2 flex items-center gap-2">
+                    <button type="submit" class="flex-1 py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl transition cursor-pointer shadow-xs">
+                        Terapkan
+                    </button>
+                    {% if selected_driver_id or selected_alert_type or search_query %}
+                    <a href="{{ url_for('admin.dashboard') }}" class="py-2 px-3 bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200 transition" title="Hapus filter">
+                        Reset
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+
+        <!-- Header Tabel & Aksi Massal -->
+        <div class="px-6 py-3.5 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white">
+            <div class="text-xs text-slate-600">
+                Menampilkan <strong class="text-slate-900 font-semibold">{{ recent_alerts|length }}</strong> catatan insiden terbaru
             </div>
             
             {% if recent_alerts %}
             <form action="{{ url_for('admin.clear_alerts') }}" method="POST"
-                  onsubmit="return confirm('PENTING: Apakah Anda yakin ingin mengosongkan SELURUH catatan insiden uji coba? Tindakan ini tidak dapat dibatalkan.');">
-                <button type="submit" class="text-xs px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg border border-red-200 transition flex items-center gap-1 cursor-pointer font-medium">
-                    <svg class="w-3.5 h-3.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                  onsubmit="return confirm('PENTING: Apakah Anda yakin ingin mengosongkan seluruh catatan insiden uji coba? Tindakan ini tidak dapat dibatalkan.');">
+                <button type="submit" class="text-xs px-2.5 py-1.5 bg-slate-50 hover:bg-red-50 text-slate-600 hover:text-red-600 rounded-lg border border-slate-200 hover:border-red-200 transition flex items-center gap-1.5 cursor-pointer font-medium">
+                    <svg class="w-3.5 h-3.5 text-slate-400 hover:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
-                    <span>Bersihkan Semua Log Uji Coba</span>
+                    <span>Bersihkan Log Uji</span>
                 </button>
             </form>
             {% endif %}
         </div>
 
+        <!-- Tabel Data -->
         <div class="overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-700">
-                <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+                <thead class="bg-slate-50/70 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
                     <tr>
-                        <th class="px-5 py-3.5">Waktu</th>
-                        <th class="px-5 py-3.5">Driver</th>
-                        <th class="px-5 py-3.5">Jenis Bahaya</th>
-                        <th class="px-5 py-3.5">Level</th>
-                        <th class="px-5 py-3.5">Catatan Telemetri</th>
-                        <th class="px-5 py-3.5 text-center">Snapshot Bukti</th>
-                        <th class="px-5 py-3.5 text-center">Aksi</th>
+                        <th class="px-5 py-3">Waktu</th>
+                        <th class="px-5 py-3">Pengemudi</th>
+                        <th class="px-5 py-3">Jenis Insiden</th>
+                        <th class="px-5 py-3">Tingkat</th>
+                        <th class="px-5 py-3">Catatan Telemetri</th>
+                        <th class="px-5 py-3 text-center">Snapshot Bukti</th>
+                        <th class="px-5 py-3 text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for alert in recent_alerts %}
-                    <tr class="hover:bg-slate-50/70 transition">
-                        <td class="px-5 py-3.5 font-mono text-xs text-slate-600 whitespace-nowrap">
+                    <tr class="hover:bg-slate-50/60 transition">
+                        <td class="px-5 py-3.5 font-mono text-xs text-slate-600 whitespace-nowrap tabular-nums">
                             {{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
                         </td>
                         <td class="px-5 py-3.5">
-                            <div class="font-semibold text-slate-900">{{ alert.driver.full_name if alert.driver else 'Driver ID #' ~ alert.driver_id }}</div>
-                            <div class="text-[11px] text-slate-500 font-mono">@{{ alert.driver.username if alert.driver else '-' }}</div>
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-7 h-7 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-xs font-semibold text-slate-700">
+                                    {{ (alert.driver.full_name[:1] if alert.driver else 'D')|upper }}
+                                </div>
+                                <div>
+                                    <div class="font-semibold text-slate-900 text-xs sm:text-sm">{{ alert.driver.full_name if alert.driver else 'Driver #' ~ alert.driver_id }}</div>
+                                    <div class="text-xs text-slate-500 font-mono">@{{ alert.driver.username if alert.driver else '-' }}</div>
+                                </div>
+                            </div>
                         </td>
                         <td class="px-5 py-3.5 whitespace-nowrap">
                             {% if alert.alert_type == 'kantuk' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200/80">
                                     <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Mengantuk
                                 </span>
                             {% elif alert.alert_type == 'tidak_fokus' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span> Tidak Fokus
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200/80">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span> Tidak Fokus
                                 </span>
                             {% elif alert.alert_type == 'menguap' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span> Menguap
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-sky-50 text-sky-700 border border-sky-200/80">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-600"></span> Menguap
                                 </span>
                             {% else %}
                                 <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-200">{{ alert.alert_type }}</span>
                             {% endif %}
                         </td>
                         <td class="px-5 py-3.5 whitespace-nowrap">
-                            <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ 'bg-red-50 text-red-700 border border-red-200' if alert.severity == 'BAHAYA' else 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                            <span class="px-2 py-0.5 rounded text-xs font-bold {{ 'bg-red-50 text-red-700 border border-red-200' if alert.severity == 'BAHAYA' else 'bg-amber-50 text-amber-700 border border-amber-200' }}">
                                 {{ alert.severity }}
                             </span>
                         </td>
-                        <td class="px-5 py-3.5 text-xs text-slate-600 font-mono max-w-xs truncate" title="{{ alert.notes or '' }}">
+                        <td class="px-5 py-3.5 text-xs text-slate-600 font-mono max-w-xs truncate tabular-nums" title="{{ alert.notes or '' }}">
                             {{ alert.notes or '-' }}
                         </td>
                         <td class="px-5 py-3.5 text-center whitespace-nowrap">
                             {% if alert.snapshot_path %}
                                 <button type="button" 
                                         onclick="openSnapshotModal('{{ url_for('static', filename='snapshots/' + alert.snapshot_path) }}', '{{ alert.driver.full_name if alert.driver else 'Driver' }}', '{{ alert.alert_type|capitalize }}', '{{ alert.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}', '{{ alert.notes or '-' }}')"
-                                        class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg border border-slate-200 transition inline-flex items-center gap-1.5 cursor-pointer font-medium">
+                                        class="text-xs px-2.5 py-1 bg-white hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg border border-slate-200 transition inline-flex items-center gap-1.5 cursor-pointer font-medium shadow-2xs">
                                     <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -255,13 +271,15 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-slate-500">
+                        <td colspan="7" class="px-6 py-12 text-center text-slate-500">
                             <div class="max-w-sm mx-auto">
-                                <svg class="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                <p class="font-medium text-slate-700">Tidak ada data insiden</p>
-                                <p class="text-xs text-slate-400 mt-1">Belum ada rekaman peringatan yang cocok dengan filter yang dipilih.</p>
+                                <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mx-auto mb-2 text-slate-400">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                                    </svg>
+                                </div>
+                                <p class="font-medium text-slate-700 text-sm">Tidak ada catatan insiden</p>
+                                <p class="text-xs text-slate-400 mt-1">Belum ada rekaman peringatan yang cocok dengan filter yang Anda tentukan.</p>
                             </div>
                         </td>
                     </tr>
@@ -273,10 +291,10 @@
 </div>
 
 <!-- =========================================================================
-     MODAL PRATINJAU SNAPSHOT FOTO BUKTI INSIDEN (Light Modal)
+     MODAL PRATINJAU SNAPSHOT FOTO BUKTI INSIDEN
      ========================================================================= -->
-<div id="snapshotModal" class="fixed inset-0 z-50 hidden bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-    <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150">
+<div id="snapshotModal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
+    <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full overflow-hidden shadow-xl animate-in fade-in zoom-in-95 duration-150">
         <div class="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
             <h4 class="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <span id="modalAlertBadge" class="px-2 py-0.5 rounded text-xs font-semibold bg-red-50 text-red-700 border border-red-200"></span>
@@ -284,23 +302,23 @@
             </h4>
             <button type="button" onclick="closeSnapshotModal()" class="text-slate-400 hover:text-slate-700 font-bold text-xl leading-none cursor-pointer">&times;</button>
         </div>
-        <div class="p-4 bg-slate-100 flex justify-center">
-            <img id="modalImg" src="" alt="Snapshot Insiden" class="rounded-xl border border-slate-300 max-h-[380px] object-contain shadow-xs">
+        <div class="p-4 bg-slate-950 flex justify-center">
+            <img id="modalImg" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'/%3E" alt="Snapshot Insiden" class="rounded-xl border border-slate-800 max-h-[360px] object-contain shadow-xs">
         </div>
-        <div class="p-4 bg-white space-y-2 text-xs">
+        <div class="p-4 bg-white space-y-2.5 text-xs">
             <div class="flex items-center justify-between text-slate-600">
                 <span>Waktu Kejadian:</span>
-                <span id="modalTimestamp" class="text-slate-900 font-mono font-medium"></span>
+                <span id="modalTimestamp" class="text-slate-900 font-mono font-medium tabular-nums"></span>
             </div>
             <div class="text-slate-600">
-                <span class="block mb-0.5">Metrik Telemetri:</span>
-                <p id="modalNotes" class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 font-mono text-slate-700 break-words"></p>
+                <span class="block mb-1 font-medium">Metrik Fisiologis Telemetri:</span>
+                <p id="modalNotes" class="bg-slate-50 p-2.5 rounded-xl border border-slate-200 font-mono text-slate-700 break-words tabular-nums"></p>
             </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <a id="modalFullLink" href="#" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition shadow-xs">
-                    Buka Ukuran Penuh
+            <div class="pt-2 flex justify-end gap-2 border-t border-slate-100">
+                <a id="modalFullLink" href="#" target="_blank" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition shadow-xs">
+                    Buka Ukuran Asli
                 </a>
-                <button type="button" onclick="closeSnapshotModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-medium transition cursor-pointer">
+                <button type="button" onclick="closeSnapshotModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-medium transition cursor-pointer">
                     Tutup
                 </button>
             </div>
