@@ -268,6 +268,20 @@ def history():
     total_distraksi = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='tidak_fokus').count()
     total_menguap = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='menguap').count()
 
+@driver_bp.route('/profile')
+@login_required
+def profile():
+    """Halaman profil: informasi akun dan ringkasan pemantauan driver."""
+    uid = current_user.id
+    return render_template(
+        'driver_profile.html',
+        user=current_user,
+        total_sesi=MonitoringSession.query.filter_by(driver_id=uid).count(),
+        total_kantuk=AlertLog.query.filter_by(driver_id=uid, alert_type='kantuk').count(),
+        total_distraksi=AlertLog.query.filter_by(driver_id=uid, alert_type='tidak_fokus').count(),
+        total_menguap=AlertLog.query.filter_by(driver_id=uid, alert_type='menguap').count()
+    )
+
     return render_template(
         'driver_history.html',
         alerts=alerts,

@@ -1,6 +1,6 @@
 import os
 import time
-from flask import Flask, redirect, url_for, session, flash, request
+from flask import Flask, redirect, url_for, session, flash, request, render_template
 from flask_login import LoginManager, current_user, logout_user
 from config import Config
 from app.models import db, User
@@ -83,7 +83,7 @@ def create_app(config_class=Config):
             if current_user.is_admin():
                 return redirect(url_for('admin.dashboard'))
             return redirect(url_for('driver.monitor'))
-        return redirect(url_for('auth.login'))
+        return render_template('splash.html')
 
     return app
 

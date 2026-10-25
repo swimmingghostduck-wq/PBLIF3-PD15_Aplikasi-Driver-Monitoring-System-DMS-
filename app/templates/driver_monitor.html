@@ -3,6 +3,20 @@
 
 {% block content %}
 <div class="space-y-6">
+    <!-- Selamat Datang -->
+    <section id="welcomeSection" class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs px-6 py-10 text-center">
+        <img src="{{ url_for('static', filename='logo.svg') }}" alt="" class="w-14 h-14 mx-auto mb-4">
+        <h2 class="text-3xl font-heading font-bold text-slate-900 tracking-tight">Selamat Datang, {{ user.full_name }}</h2>
+        <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">Nyalakan kamera agar DriveSafe dapat memantau kewaspadaan Anda selama berkendara.</p>
+        <button type="button" onclick="startFromWelcome()"
+                class="mt-5 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition cursor-pointer">
+            Akses Kamera
+        </button>
+        <p class="text-xs text-slate-500 mt-3">Browser akan meminta izin kamera. Pilih "Izinkan".</p>
+    </section>
+
+    <!-- ====== BAGIAN KAMERA (tersembunyi sampai tombol Akses Kamera diklik) ====== -->
+    <div id="cameraSection" class="hidden space-y-6">
     <!-- Header Ringkasan Status & Kontrol Kamera -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
         <div>
@@ -261,7 +275,134 @@
             </div>
         </div>
     </div>
+
+    <!-- Kamera Deteksi Objek -->
+    <div class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
+        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera Deteksi Objek (Jalan di Depan)</span>
+                <p class="text-[11px] text-slate-500 mt-0.5">Mendeteksi orang, sepeda, motor, mobil, bus, dan truk. Jarak bersifat estimasi relatif dari ukuran objek di layar.</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2.5">
+                <label for="objCamSelect" class="sr-only">Pilih kamera objek</label>
+                <select id="objCamSelect" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                    <option value="">Mencari kamera...</option>
+                </select>
+                <button id="objToggleBtn" type="button" onclick="toggleObjectCamera()"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
+                    <span id="objToggleText">Nyalakan Kamera Objek</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="objAlert" class="hidden px-4 py-3 bg-red-600 text-white text-sm font-bold flex items-center gap-2">
+            <span>⚠️</span><span id="objAlertText">Objek terlalu dekat!</span>
+        </div>
+
+        <div class="relative bg-slate-950 flex items-center justify-center min-h-[300px] overflow-hidden">
+            <video id="objVideo" autoplay playsinline muted class="hidden"></video>
+            <canvas id="objCanvas" width="640" height="480" class="w-full h-auto max-h-[480px] hidden"></canvas>
+            <div id="objStandby" class="p-8 text-center space-y-2">
+                <div class="text-4xl">🚗</div>
+                <h3 class="text-base font-bold text-white font-heading">Kamera Objek Nonaktif</h3>
+                <p class="text-xs text-slate-400 max-w-md mx-auto">Arahkan kamera ke jalan di depan, lalu klik <strong>Nyalakan Kamera Objek</strong>. Disarankan memakai kamera kedua (USB / kamera ponsel).</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-200 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
+            <span id="objStatus">Kamera objek belum aktif</span>
+            <span class="flex items-center gap-3">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Jauh</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Sedang</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Dekat</span>
+            </span>
+            <span id="objSummary" class="font-mono text-slate-600">-</span>
+        </div>
+    </div>
+    </div>
+    <!-- ====== AKHIR BAGIAN KAMERA ====== -->
+
+    <!-- Cara Penggunaan -->
+    <section class="bg-slate-100 rounded-2xl px-6 py-8">
+        <h2 class="text-xl font-heading font-bold text-slate-900 text-center">Cara Penggunaan</h2>
+        <div class="text-center mt-3"><button type="button" onclick="openTutorial()" class="px-4 py-2 bg-white hover:bg-slate-50 text-blue-700 text-xs font-semibold rounded-xl border border-blue-200 transition cursor-pointer">Lihat Tutorial Bergambar</button></div>
+        <ol class="mt-4 max-w-xl mx-auto space-y-2 text-sm text-slate-700 list-decimal list-inside">
+            <li>Klik <strong>Akses Kamera</strong>, lalu pilih <strong>Izinkan</strong> pada pop-up browser.</li>
+            <li>Posisikan wajah di tengah layar dengan pencahayaan yang cukup.</li>
+            <li>Lihat ke depan seperti saat berkendara. Sistem memantau mata dan arah kepala Anda.</li>
+            <li>Jika terdeteksi mengantuk atau tidak fokus, alarm suara dan banner merah akan muncul.</li>
+            <li>Riwayat peringatan dapat dilihat di menu <strong>Riwayat</strong>.</li>
+        </ol>
+    </section>
+
+    <!-- Tentang Kami -->
+    <section class="bg-white rounded-2xl border border-slate-200/90 px-6 py-8 text-center">
+        <h2 class="text-xl font-heading font-bold text-slate-900">Tentang Kami</h2>
+        <p class="mt-3 max-w-xl mx-auto text-sm text-slate-600">
+            DriveSafe adalah Driver Monitoring System berbasis AI yang memantau kondisi pengemudi secara real-time
+            melalui kamera. Proyek PBL IF3-PD15, Teknik Informatika, Politeknik Negeri Batam.
+        </p>
+    </section>
 </div>
+
+    <!-- Tutorial pop-up (muncul otomatis untuk pengguna baru) -->
+    <div id="tutorialModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 items-center justify-center p-4 flex" role="dialog" aria-modal="true" aria-labelledby="tutorialHeading">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
+            <div class="flex items-center justify-between px-5 pt-4">
+                <span id="tutorialHeading" class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cara Menggunakan DriveSafe</span>
+                <button type="button" onclick="closeTutorial()" aria-label="Tutup tutorial" class="w-8 h-8 text-slate-500 hover:text-slate-800 text-2xl leading-none cursor-pointer">&times;</button>
+            </div>
+            <div class="overflow-hidden mt-3">
+                <div id="tutorialTrack" class="flex transition-transform duration-300 ease-out">
+                    <div class="min-w-full px-5">
+                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="40" y="20" width="240" height="140" rx="10" fill="#fff" stroke="#CBD5E1"/><rect x="40" y="20" width="240" height="22" rx="10" fill="#E2E8F0"/><circle cx="56" cy="31" r="4" fill="#94A3B8"/><circle cx="70" cy="31" r="4" fill="#94A3B8"/>
+<rect x="66" y="58" width="188" height="86" rx="8" fill="#fff" stroke="#94A3B8"/><text x="160" y="82" text-anchor="middle" font-size="11" fill="#0F172A">localhost ingin memakai kamera Anda</text>
+<rect x="92" y="102" width="66" height="24" rx="6" fill="#2563EB"/><text x="125" y="118" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">Izinkan</text>
+<rect x="166" y="102" width="66" height="24" rx="6" fill="#E2E8F0"/><text x="199" y="118" text-anchor="middle" font-size="11" fill="#0F172A">Blokir</text></svg></div>
+                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">1. Izinkan Akses Kamera</h3>
+                        <p class="mt-1 text-sm text-slate-600">Klik <strong>Akses Kamera</strong>, lalu pilih <strong>Izinkan</strong> pada pop-up browser agar DriveSafe dapat melihat wajah Anda.</p>
+                    </div>
+                    <div class="min-w-full px-5">
+                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="60" y="14" width="200" height="152" rx="12" fill="#0F172A"/><ellipse cx="160" cy="88" rx="44" ry="56" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-dasharray="7 5"/>
+<circle cx="160" cy="88" r="32" fill="#FCD9B6"/><circle cx="148" cy="82" r="3.5" fill="#0F172A"/><circle cx="172" cy="82" r="3.5" fill="#0F172A"/><path d="M149 99Q160 107 171 99" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+<text x="160" y="158" text-anchor="middle" font-size="10" fill="#93C5FD">Wajah di tengah, cahaya cukup</text></svg></div>
+                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">2. Posisikan Wajah</h3>
+                        <p class="mt-1 text-sm text-slate-600">Duduk menghadap kamera dengan wajah di tengah layar dan pencahayaan yang cukup. Hindari cahaya kuat dari belakang.</p>
+                    </div>
+                    <div class="min-w-full px-5">
+                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="20" y="20" width="280" height="140" rx="12" fill="#CBD5E1"/><path d="M150 160 L170 160 L190 80 L130 80 Z" fill="#64748B"/><path d="M160 150 V132 M160 118 V104 M160 94 V84" stroke="#fff" stroke-width="3"/>
+<circle cx="70" cy="100" r="26" fill="#FCD9B6"/><circle cx="78" cy="94" r="3.5" fill="#0F172A"/><circle cx="62" cy="94" r="3.5" fill="#0F172A"/>
+<path d="M104 100 H236" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"/><path d="M228 90 L246 100 L228 110 Z" fill="#2563EB"/>
+<text x="160" y="46" text-anchor="middle" font-size="12" font-weight="bold" fill="#0F172A">Pandangan lurus ke jalan</text></svg></div>
+                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">3. Lihat ke Depan</h3>
+                        <p class="mt-1 text-sm text-slate-600">Pandang ke depan seperti saat berkendara. Sistem memantau mata, mulut, dan arah kepala Anda secara real-time.</p>
+                    </div>
+                    <div class="min-w-full px-5">
+                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="30" y="50" width="260" height="80" rx="12" fill="#DC2626"/><path d="M62 108 L82 70 L102 108 Z" fill="#fff"/><rect x="80" y="82" width="4" height="14" fill="#DC2626"/><circle cx="82" cy="102" r="2.5" fill="#DC2626"/>
+<text x="120" y="88" font-size="14" font-weight="bold" fill="#fff">PERINGATAN: MENGANTUK</text><text x="120" y="108" font-size="10" fill="#FEE2E2">Alarm suara berbunyi</text>
+<path d="M250 20 q10 10 0 20 M260 14 q16 16 0 32" stroke="#DC2626" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div>
+                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">4. Peringatan Muncul</h3>
+                        <p class="mt-1 text-sm text-slate-600">Jika terdeteksi mengantuk atau tidak fokus, banner merah dan alarm suara akan muncul. Riwayatnya tersimpan di menu Riwayat.</p>
+                    </div>
+                    <div class="min-w-full px-5">
+                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#0F172A"/><path d="M0 180 L120 70 H200 L320 180 Z" fill="#334155"/><path d="M160 178 V160 M160 146 V132 M160 122 V112" stroke="#E2E8F0" stroke-width="3"/>
+<rect x="130" y="82" width="56" height="34" fill="none" stroke="#10B981" stroke-width="3"/><rect x="130" y="64" width="86" height="18" fill="#10B981"/><text x="135" y="77" font-size="10" font-weight="bold" fill="#0F172A">Mobil - JAUH</text>
+<rect x="206" y="100" width="76" height="62" fill="none" stroke="#EF4444" stroke-width="3"/><rect x="206" y="82" width="96" height="18" fill="#EF4444"/><text x="211" y="95" font-size="10" font-weight="bold" fill="#fff">Motor - DEKAT</text></svg></div>
+                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">5. Kamera Deteksi Objek</h3>
+                        <p class="mt-1 text-sm text-slate-600">Nyalakan kamera kedua yang menghadap jalan. Objek di depan diberi label Jauh, Sedang, atau Dekat. Objek yang terlalu dekat memicu peringatan.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="px-5 pb-5 pt-4">
+                <div class="flex justify-center gap-2 mb-4"><button type="button" onclick="tutorialGo(0)" aria-label="Slide 1" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(1)" aria-label="Slide 2" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(2)" aria-label="Slide 3" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(3)" aria-label="Slide 4" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(4)" aria-label="Slide 5" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button></div>
+                <div class="flex items-center justify-between">
+                    <button id="tutPrev" type="button" onclick="tutorialPrev()" class="px-4 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-300 rounded-xl hover:bg-slate-50 disabled:opacity-40 cursor-pointer">Sebelumnya</button>
+                    <button type="button" onclick="closeTutorial()" class="px-3 py-2 text-xs font-semibold text-slate-500 hover:text-slate-800 cursor-pointer">Lewati</button>
+                    <button id="tutNext" type="button" onclick="tutorialNext()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 cursor-pointer">Berikutnya</button>
+                </div>
+            </div>
+        </div>
+    </div>
 {% endblock %}
 
 {% block scripts %}
@@ -797,19 +938,245 @@
     document.addEventListener('DOMContentLoaded', () => {
         enumerateCameras();
 
-        // Cek apakah permission sudah pernah diberikan sebelumnya
-        if (navigator.permissions && navigator.permissions.query) {
-            navigator.permissions.query({ name: 'camera' }).then(permStatus => {
-                if (permStatus.state === 'granted') {
-                    requestAndStartCamera();
-                }
-                permStatus.onchange = () => {
-                    if (permStatus.state === 'granted') {
-                        requestAndStartCamera();
-                    }
-                };
-            }).catch(() => {});
-        }
+        // Kamera TIDAK menyala otomatis: pengguna harus klik "Akses Kamera".
+        // Pengguna baru melihat tutorial bergambar sekali.
+        initTutorial();
     });
+
+    // Klik "Akses Kamera": sembunyikan welcome, tampilkan bagian kamera, lalu minta izin kamera
+    async function startFromWelcome() {
+        document.getElementById('welcomeSection').classList.add('hidden');
+        const cam = document.getElementById('cameraSection');
+        cam.classList.remove('hidden');
+        cam.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        await requestAndStartCamera();
+        loadObjCameras();
+    }
+
+    // ===== Tutorial pop-up bergambar (slider) =====
+    const TUT_KEY = 'dsTutorialSeen_{{ user.id }}';
+    const TUT_COUNT = 5;
+    let tutIndex = 0;
+    const tutModal = document.getElementById('tutorialModal');
+    const tutTrack = document.getElementById('tutorialTrack');
+
+    function renderTutorial() {
+        tutTrack.style.transform = 'translateX(-' + (tutIndex * 100) + '%)';
+        document.querySelectorAll('.tut-dot').forEach((d, i) => {
+            d.className = 'tut-dot w-2.5 h-2.5 rounded-full cursor-pointer ' + (i === tutIndex ? 'bg-blue-600' : 'bg-slate-300');
+        });
+        document.getElementById('tutPrev').disabled = (tutIndex === 0);
+        document.getElementById('tutNext').innerText = (tutIndex === TUT_COUNT - 1) ? 'Mulai' : 'Berikutnya';
+    }
+    function openTutorial() {
+        tutIndex = 0;
+        renderTutorial();
+        tutModal.classList.remove('hidden');
+        document.getElementById('tutNext').focus();
+    }
+    function closeTutorial() {
+        tutModal.classList.add('hidden');
+        try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {}
+    }
+    function tutorialNext() {
+        if (tutIndex >= TUT_COUNT - 1) { closeTutorial(); return; }
+        tutIndex++; renderTutorial();
+    }
+    function tutorialPrev() { if (tutIndex > 0) { tutIndex--; renderTutorial(); } }
+    function tutorialGo(i) { tutIndex = i; renderTutorial(); }
+    function initTutorial() {
+        let seen = false;
+        try { seen = localStorage.getItem(TUT_KEY) === '1'; } catch (e) {}
+        if (!seen) openTutorial();
+    }
+    document.addEventListener('keydown', (e) => {
+        if (tutModal.classList.contains('hidden')) return;
+        if (e.key === 'Escape') closeTutorial();
+        if (e.key === 'ArrowRight') tutorialNext();
+        if (e.key === 'ArrowLeft') tutorialPrev();
+    });
+    let tutTouchX = null;
+    tutTrack.addEventListener('touchstart', (e) => { tutTouchX = e.touches[0].clientX; }, { passive: true });
+    tutTrack.addEventListener('touchend', (e) => {
+        if (tutTouchX === null) return;
+        const dx = e.changedTouches[0].clientX - tutTouchX;
+        if (dx < -40) tutorialNext(); else if (dx > 40) tutorialPrev();
+        tutTouchX = null;
+    });
+
+    // ===== Kamera Deteksi Objek (COCO-SSD, berjalan langsung di browser) =====
+    const OBJ_LABELS = { person: 'Orang', bicycle: 'Sepeda', car: 'Mobil', motorcycle: 'Motor', bus: 'Bus', truck: 'Truk' };
+    const OBJ_NEAR = 0.55;      // tinggi objek > 55% tinggi layar = DEKAT (ubah untuk kalibrasi)
+    const OBJ_MID = 0.30;       // 30% - 55% = SEDANG, di bawahnya = JAUH
+    const OBJ_MIN_SCORE = 0.5;  // keyakinan minimum deteksi
+    const TFJS_URL = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js';
+    const COCO_URL = 'https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js';
+
+    const objVideo = document.getElementById('objVideo');
+    const objCanvas = document.getElementById('objCanvas');
+    const objCtx = objCanvas.getContext('2d');
+    const objCamSelect = document.getElementById('objCamSelect');
+    const objToggleBtn = document.getElementById('objToggleBtn');
+    const objToggleText = document.getElementById('objToggleText');
+    const objStandby = document.getElementById('objStandby');
+    const objAlert = document.getElementById('objAlert');
+    const objAlertText = document.getElementById('objAlertText');
+    const objStatus = document.getElementById('objStatus');
+    const objSummary = document.getElementById('objSummary');
+
+    let objModel = null, objModelPromise = null, objStream = null, objLoop = null, objBusy = false, objLastBeep = 0;
+    const scriptPromises = {};
+
+    function loadScriptOnce(src) {
+        if (!scriptPromises[src]) {
+            scriptPromises[src] = new Promise((resolve, reject) => {
+                const el = document.createElement('script');
+                el.src = src;
+                el.onload = resolve;
+                el.onerror = () => { delete scriptPromises[src]; reject(new Error('Gagal memuat library (cek internet)')); };
+                document.head.appendChild(el);
+            });
+        }
+        return scriptPromises[src];
+    }
+
+    function ensureObjModel() {
+        if (!objModelPromise) {
+            objModelPromise = loadScriptOnce(TFJS_URL)
+                .then(() => loadScriptOnce(COCO_URL))
+                .then(() => cocoSsd.load({ base: 'lite_mobilenet_v2' }))
+                .then((m) => { objModel = m; return m; })
+                .catch((err) => { objModelPromise = null; throw err; });
+        }
+        return objModelPromise;
+    }
+
+    async function loadObjCameras() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        try {
+            const devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+            const track = currentStream && currentStream.getVideoTracks()[0];
+            const driverId = track ? track.getSettings().deviceId : null;
+            objCamSelect.innerHTML = '';
+            if (devices.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.innerText = 'Tidak ada kamera terdeteksi';
+                objCamSelect.appendChild(opt);
+                return;
+            }
+            devices.forEach((d, i) => {
+                const opt = document.createElement('option');
+                opt.value = d.deviceId;
+                opt.innerText = d.label || ('Kamera ' + (i + 1));
+                objCamSelect.appendChild(opt);
+            });
+            const other = devices.find(d => d.deviceId !== driverId);
+            if (other) objCamSelect.value = other.deviceId;
+        } catch (e) { console.error('Gagal mendata kamera objek:', e); }
+    }
+
+    function setObjStatus(text) { objStatus.innerText = text; }
+
+    async function startObjectCamera() {
+        initAudioContext();
+        objToggleBtn.disabled = true;
+        try {
+            setObjStatus('Memuat model deteksi objek (pertama kali butuh internet)...');
+            await ensureObjModel();
+            setObjStatus('Meminta akses kamera objek...');
+            const deviceId = objCamSelect.value;
+            const video = { width: { ideal: 640 }, height: { ideal: 480 } };
+            if (deviceId) video.deviceId = { exact: deviceId };
+            objStream = await navigator.mediaDevices.getUserMedia({ video: video, audio: false });
+            objVideo.srcObject = objStream;
+            await objVideo.play();
+
+            objStandby.classList.add('hidden');
+            objCanvas.classList.remove('hidden');
+            objToggleText.innerText = 'Matikan Kamera Objek';
+            objToggleBtn.className = 'px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer';
+            setObjStatus('Kamera objek aktif');
+            if (objLoop) clearInterval(objLoop);
+            objLoop = setInterval(detectObjects, 200);
+        } catch (err) {
+            console.error('Kamera objek gagal:', err);
+            if (objStream) { objStream.getTracks().forEach(t => t.stop()); objStream = null; }
+            setObjStatus('Gagal: ' + (err.message || err.name) + '. Coba kamera lain atau cek izin.');
+        } finally {
+            objToggleBtn.disabled = false;
+        }
+    }
+
+    function stopObjectCamera() {
+        if (objLoop) { clearInterval(objLoop); objLoop = null; }
+        if (objStream) { objStream.getTracks().forEach(t => t.stop()); objStream = null; }
+        objVideo.srcObject = null;
+        objCtx.clearRect(0, 0, objCanvas.width, objCanvas.height);
+        objCanvas.classList.add('hidden');
+        objStandby.classList.remove('hidden');
+        objAlert.classList.add('hidden');
+        objToggleText.innerText = 'Nyalakan Kamera Objek';
+        objToggleBtn.className = 'px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer';
+        objSummary.innerText = '-';
+        setObjStatus('Kamera objek dimatikan');
+    }
+
+    function toggleObjectCamera() {
+        if (objStream) stopObjectCamera(); else startObjectCamera();
+    }
+
+    async function detectObjects() {
+        if (!objModel || !objStream || objBusy || objVideo.readyState < 2) return;
+        objBusy = true;
+        try {
+            const w = objVideo.videoWidth, h = objVideo.videoHeight;
+            if (!w || !h) return;
+            if (objCanvas.width !== w) { objCanvas.width = w; objCanvas.height = h; }
+            const preds = await objModel.detect(objVideo);
+            objCtx.drawImage(objVideo, 0, 0, w, h);
+
+            const counts = {};
+            let nearest = null;
+            preds.forEach((p) => {
+                const label = OBJ_LABELS[p.class];
+                if (!label || p.score < OBJ_MIN_SCORE) return;
+                const x = p.bbox[0], y = p.bbox[1], bw = p.bbox[2], bh = p.bbox[3];
+                const ratio = bh / h;
+                const level = ratio > OBJ_NEAR ? 'DEKAT' : (ratio > OBJ_MID ? 'SEDANG' : 'JAUH');
+                const color = level === 'DEKAT' ? '#EF4444' : (level === 'SEDANG' ? '#F59E0B' : '#10B981');
+
+                objCtx.lineWidth = 3;
+                objCtx.strokeStyle = color;
+                objCtx.strokeRect(x, y, bw, bh);
+                const text = label + ' - ' + level;
+                objCtx.font = 'bold 14px sans-serif';
+                const tw = objCtx.measureText(text).width + 10;
+                const ty = Math.max(22, y);
+                objCtx.fillStyle = color;
+                objCtx.fillRect(x, ty - 22, tw, 22);
+                objCtx.fillStyle = level === 'DEKAT' ? '#FFFFFF' : '#0F172A';
+                objCtx.fillText(text, x + 5, ty - 6);
+
+                counts[label] = (counts[label] || 0) + 1;
+                if (level === 'DEKAT' && (!nearest || ratio > nearest.ratio)) nearest = { label: label, ratio: ratio };
+            });
+
+            const parts = Object.keys(counts).map(k => counts[k] + ' ' + k);
+            objSummary.innerText = parts.length ? parts.join(', ') : 'Tidak ada objek';
+
+            if (nearest) {
+                objAlert.classList.remove('hidden');
+                objAlertText.innerText = 'Objek terlalu dekat: ' + nearest.label + '! Kurangi kecepatan.';
+                if (Date.now() - objLastBeep > 1500) { objLastBeep = Date.now(); playAlarmSound(); }
+            } else {
+                objAlert.classList.add('hidden');
+            }
+        } catch (e) {
+            console.error('Deteksi objek error:', e);
+        } finally {
+            objBusy = false;
+        }
+    }
 </script>
 {% endblock %}
