@@ -77,13 +77,13 @@
 
         <div class="flex flex-wrap items-center gap-2.5">
             <!-- Dropdown Pilihan Kamera -->
-            <select id="cameraSelect" onchange="switchCamera()" 
+            <select id="cameraSelect" onchange="switchCamera()"
                     class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
                 <option value="">Mencari kamera aktif...</option>
             </select>
 
             <!-- Tombol Utama ON / OFF Kamera -->
-            <button id="toggleCamBtn" onclick="toggleCamera()" 
+            <button id="toggleCamBtn" onclick="toggleCamera()"
                     class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
                 <span id="toggleCamIcon">📹</span> <span id="toggleCamText">Nyalakan Kamera</span>
             </button>
@@ -146,7 +146,7 @@
                         </p>
                     </div>
                     <div class="flex flex-wrap items-center justify-center gap-3">
-                        <button onclick="requestAndStartCamera()" 
+                        <button onclick="requestAndStartCamera()"
                                 class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
                             <span>📹</span> Nyalakan Kamera & Izinkan Akses
                         </button>
@@ -735,11 +735,11 @@
             // Kirim frame ke endpoint /driver/process_frame
             const res = await fetch("{{ route('driver.process_frame') }}", {
                 method: "POST",
-                headers: { 
+                headers: {
                     "Content-Type": "application/json",
                     "X-CSRF-TOKEN": "{{ csrf_token() }}"
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     image: dataUrl,
                     driver_id: {{ Auth::id() }}
                 })

@@ -9,7 +9,7 @@
             <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Riwayat Peringatan Saya</h1>
             <p class="text-sm text-slate-500 mt-0.5">Catatan telemetri keselamatan kabin: <strong class="text-slate-800 font-semibold">{{ Auth::user()->full_name }}</strong></p>
         </div>
-        <a href="{{ route('driver.monitor') }}" 
+        <a href="{{ route('driver.monitor') }}"
            class="h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors inline-flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>

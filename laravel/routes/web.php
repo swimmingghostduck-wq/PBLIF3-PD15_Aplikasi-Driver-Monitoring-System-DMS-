@@ -17,6 +17,11 @@ use App\Http\Controllers\DriverController;
 
 // Root redirect
 Route::get('/', function () {
+    if (Auth::check()) {
+        return Auth::user()->isAdmin()
+            ? redirect()->route('admin.dashboard')
+            : redirect()->route('driver.dashboard');
+    }
     return redirect()->route('login');
 });
 
