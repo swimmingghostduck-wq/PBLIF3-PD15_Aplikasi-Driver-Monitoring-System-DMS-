@@ -1,7 +1,12 @@
 # Driver Monitoring System (DMS) & Model Training Suite
 **Proyek PBL IF3-PD15 — Teknik Informatika, Politeknik Negeri Batam**
 
-Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. Dilengkapi dengan **Training Suite Mandiri** untuk merekam dataset dan melatih model AI kustom.
+Sistem Pemantauan Pengemudi (*Driver Monitoring System*) berbasis AI dan Computer Vision real-time untuk mendeteksi kondisi kantuk (*drowsiness*) dan ketidakfokusan pengemudi menggunakan kamera/webcam. 
+
+Aplikasi ini menggunakan arsitektur hybrid modern:
+- **Fullstack Web & Dashboard Admin (Laravel 12 / PHP 8.5+ & Blade)**: Menangani antarmuka operasional utilitarian bergaya Linear/Vercel (*anti-AI slop*), autentikasi, otorisasi peran, manajemen data pengemudi, log insiden, dan audit forensik.
+- **AI & Computer Vision Microservice (Python & MediaPipe)**: Menangani deteksi wajah real-time (468 landmark), kalkulasi EAR/MAR, estimasi Head Pose (Yaw/Pitch), klasifikasi Random Forest kustom, serta streaming video feed.
+- **Training Suite Mandiri**: Alat mandiri untuk merekam dataset wajah dan melatih ulang model AI kustom.
 
 ---
 
@@ -17,20 +22,20 @@ Sistem ini mengimplementasikan seluruh kebutuhan fungsional (FR) dan non-fungsio
 
 | Kode | Deskripsi Kebutuhan | Status Implementasi |
 |---|---|---|
-| **FR-01** | Driver dapat membuat akun baru | Selesai (`/auth/register`) |
-| **FR-02** | Pengguna dapat melakukan Login | Selesai (`/auth/login`) |
-| **FR-03** | Akses kamera/webcam sebagai input video | Selesai (`dms_core/detector.py`, `/driver/video_feed`) |
+| **FR-01** | Driver dapat membuat akun baru | Selesai (`/register`) |
+| **FR-02** | Pengguna dapat melakukan Login | Selesai (`/login`) |
+| **FR-03** | Akses kamera/webcam sebagai input video | Selesai (Kamera Browser WebRTC & Fallback OpenCV) |
 | **FR-04** | Deteksi wajah dan landmark mata real-time | Selesai (MediaPipe Face Mesh 468 titik) |
-| **FR-05** | Deteksi kondisi pengemudi yang mengantuk | Selesai (Model AI kustom & fallback EAR/MAR) |
-| **FR-06** | Deteksi arah pandangan/kepala (menoleh) | Selesai (Estimasi Head Pose `cv2.solvePnP` Yaw/Pitch) |
+| **FR-05** | Deteksi kondisi pengemudi yang mengantuk | Selesai (Model AI Random Forest & kalkulasi EAR) |
+| **FR-06** | Deteksi arah pandangan/kepala (menoleh) | Selesai (Estimasi Head Pose `solvePnP` Yaw/Pitch) |
 | **FR-09** | Pemberian peringatan saat kondisi bahaya | Selesai (`dms_core/tracker.py`) |
-| **FR-10** | Peringatan suara (Web Audio) & visual | Selesai (Synthesizer Web Audio API + HUD Banner) |
-| **FR-11** | Pengguna dapat melakukan Logout | Selesai (`/auth/logout`) |
+| **FR-10** | Peringatan suara (Web Audio) & visual | Selesai (Synthesizer Web Audio API + HUD Alert) |
+| **FR-11** | Pengguna dapat melakukan Logout | Selesai (`/logout`) |
 | **FR-12** | Admin dapat mengelola data Driver (CRUD) | Selesai (`/admin/drivers`) |
-| **FR-13** | Admin memantau hasil monitoring driver | Selesai (`/admin/dashboard`) |
-| **FR-14** | Driver melihat riwayat peringatan pribadi | Selesai (`/driver/history`) |
+| **FR-13** | Admin memantau hasil monitoring driver | Selesai (`/admin/dashboard` & `/admin/alerts`) |
+| **FR-14** | Driver melihat riwayat peringatan pribadi | Selesai (`/driver/dashboard`) |
 | **NFR-01** | Antarmuka & dokumentasi Bahasa Indonesia | Selesai (100% Bahasa Indonesia) |
-| **NFR-03** | Peringatan dalam waktu $\le$ 3 detik | Selesai (Deteksi real-time ~25-30 FPS) |
+| **NFR-03** | Peringatan dalam waktu $\le$ 3 detik | Selesai (Deteksi real-time responsif) |
 | **NFR-05** | Akurasi deteksi model $\ge 80\%$ | Selesai (Evaluasi test set mencapai $\ge 95\%$) |
 
 ---
@@ -38,166 +43,183 @@ Sistem ini mengimplementasikan seluruh kebutuhan fungsional (FR) dan non-fungsio
 ## 📂 Struktur Direktori Proyek
 
 ```
-dmsgacorsekali/
-├── app/                           # Aplikasi Web Flask
-│   ├── routes/
-│   │   ├── auth.py                # Login, Register, Logout
-│   │   ├── driver.py              # Monitoring Webcam, Telemetri, Riwayat Insiden
-│   │   └── admin.py               # Dashboard Admin, Kelola Driver, Manajemen Model
-│   ├── templates/                 # Antarmuka HTML5 Tailwind CSS Responsive
-│   ├── static/snapshots/          # Foto bukti insiden otomatis
-│   ├── models.py                  # Model Database SQLAlchemy (User, AlertLog, Session)
-│   └── __init__.py                # Factory Flask & Auto-Fallback Database (MySQL/SQLite)
-├── dms_core/                      # Core Engine Computer Vision
+PBLIF3-PD15_Aplikasi-Driver-Monitoring-System-DMS-/
+├── laravel/                       # Aplikasi Web Utama (Laravel Framework)
+│   ├── app/
+│   │   ├── Http/Controllers/     # AuthController, AdminController, DriverController
+│   │   ├── Http/Middleware/      # EnsureAdmin (Otorisasi Akses Admin)
+│   │   └── Models/               # User, MonitoringSession, AlertLog (Eloquent ORM)
+│   ├── database/
+│   │   ├── migrations/           # Skema tabel users, monitoring_sessions, alert_logs
+│   │   └── seeders/              # DatabaseSeeder (Akun default Admin & Driver)
+│   ├── resources/views/          # Blade Templates Utilitarian (Linear/Vercel style)
+│   │   ├── admin/                # dashboard, alerts, drivers, models, profile
+│   │   ├── auth/                 # login, register
+│   │   ├── driver/               # dashboard, monitor (Webcam HUD)
+│   │   └── layouts/              # admin.blade.php (Hairstyle hairline borders)
+│   ├── routes/web.php            # 25 Web Routes aplikasi
+│   ├── public/snapshots/         # Foto bukti rekaman insiden kamera
+│   └── tests/Feature/            # Automated Feature & Web Tests (PHPUnit)
+├── dms_core/                      # Core Engine Computer Vision & AI
 │   ├── detector.py                # MediaPipe Face Mesh, EAR, MAR, Head Pose (solvePnP)
-│   ├── classifier.py              # Inferensi Model Custom (Scikit-Learn/PyTorch) & Proteksi Rambut
+│   ├── classifier.py              # Inferensi Model Custom (Scikit-Learn/PyTorch)
 │   ├── tracker.py                 # Pelacak durasi frame kantuk/distraksi & pemicu alarm
-│   └── alert_manager.py           # Penyimpan snapshot & log insiden
-├── training_suite/                # Suite Pelatihan Model Mandiri
+│   └── alert_manager.py           # Manajemen snapshot kamera & pencatatan log
+├── training_suite/                # Suite Pelatihan Model AI Mandiri
 │   ├── data_collector.py          # GUI Webcam untuk merekam sampel dataset wajah
-│   ├── dataset_loader.py          # Pemuat dataset, stratified train-test, & bootstrap sintetis
-│   ├── train_sklearn.py           # Pelatihan Random Forest / SVM / Gradient Boosting
+│   ├── dataset_loader.py          # Pemuat dataset & stratified split train-test
+│   ├── train_sklearn.py           # Pelatihan model (Random Forest / SVM / GBDT)
 │   ├── train_pytorch.py           # Pelatihan Deep Learning PyTorch MLP
-│   └── evaluate.py                # Evaluasi akurasi & pembuatan grafik Confusion Matrix
-├── dataset/                       # Folder dataset CSV dan data rekaman
-├── models/                        # Folder file bobot model (.joblib, .pt) dan grafik PNG
-├── config.py                      # Konfigurasi aplikasi dan koneksi MySQL/SQLite
-├── init_db.py                     # Skrip inisialisasi tabel dan akun default
-├── run.py                         # Skrip peluncur server web Flask
-├── test_system.py                 # Unit test otomatis komprehensif (9 Test Cases)
-└── requirements.txt               # Daftar dependensi Python
+│   └── evaluate.py                # Evaluasi akurasi & generator Confusion Matrix PNG
+├── dataset/                       # File dataset CSV dan data rekaman fitur
+├── models/                        # Bobot model terlatih (.joblib) & gambar confusion matrix
+├── run.py                         # Skrip peluncur Service API & Deteksi AI (Python Flask)
+└── requirements.txt               # Dependensi pustaka Python
 ```
 
 ---
 
-## 💻 Panduan Instalasi & Menjalankan di Laptop Baru
+## 🚀 Panduan Menjalankan Aplikasi
 
-Ikuti langkah-langkah berikut untuk menjalankan sistem di laptop:
+Sistem ini terdiri dari dua komponen yang saling terhubung:
+1. **Web Dashboard & Antarmuka Pengguna (Laravel)**
+2. **Service Deteksi AI & Kamera (Python)**
 
-### 1. Prasyarat Sistem
-- **Python**: Disarankan menggunakan **Python 3.10** atau **Python 3.11** *(Hindari Python 3.14 karena beberapa pustaka Computer Vision seperti MediaPipe & PyTorch belum menyediakan prebuilt wheel stabil untuk Windows di Python 3.14)*.
-- **Git** terpasang di laptop.
-- Kamera/Webcam laptop berfungsi normal.
-- *(Opsional)* **MySQL (XAMPP / Laragon)**. Jika tidak menyalakan MySQL, sistem otomatis menggunakan **SQLite lokal (`dms.db`)** tanpa konfigurasi tambahan!
+---
 
-### 2. Clone Repositori & Buat Virtual Environment
-Buka PowerShell atau Terminal di laptop Anda:
+### Langkah 1: Persiapan Lingkungan
+
+Pastikan laptop Anda telah terpasang:
+- **Laragon / PHP 8.2+** (dengan Composer)
+- **Python 3.10 atau 3.11** (rekomendasi terbaik untuk MediaPipe)
+- **Webcam** (kamera bawaan laptop atau USB webcam)
+
+---
+
+### Langkah 2: Setup Service AI Python
+
+Buka terminal PowerShell di folder root proyek:
+
 ```powershell
-# 1. Masuk ke folder proyek
-cd dmsgacorsekali
-
-# 2. Buat virtual environment bernama 'venv'
+# 1. Buat virtual environment bernama 'venv' (jika belum ada)
 python -m venv venv
 
-# 3. Aktifkan virtual environment
+# 2. Aktifkan virtual environment
 .\venv\Scripts\Activate.ps1
-```
-> **💡 Catatan PowerShell:** Jika muncul pesan `cannot be loaded because running scripts is disabled on this system`, jalankan perintah berikut sekali saja lalu ulangi aktivasi:
-> ```powershell
-> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-> .\venv\Scripts\Activate.ps1
-> ```
 
-### 3. Instalasi Dependensi Pustaka
-Untuk menghemat kuota dan mempercepat proses download (versi CPU ~180MB vs versi CUDA ~2.5GB):
-```powershell
-# Pasang PyTorch versi CPU yang hemat penyimpanan
+# 3. Pasang dependensi Computer Vision & AI
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-
-# Pasang seluruh dependensi proyek
 pip install -r requirements.txt
 ```
 
-> **✨ Fitur Auto-Switch Venv:** Seluruh skrip (`run.py`, `init_db.py`, `test_system.py`, dan seluruh skrip di folder `training_suite/`) telah dilengkapi pendeteksi otomatis. Jika Anda lupa mengaktifkan venv dan mengetik `python <skrip>.py`, skrip akan otomatis dialihkan untuk dieksekusi di dalam virtual environment proyek.
+> **💡 Catatan PowerShell:** Jika muncul error *Script Execution Policy*, jalankan perintah:
+> `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` lalu ulangi perintah aktivasi.
 
-### 4. Inisialisasi Database
-Jalankan skrip inisialisasi untuk membuat seluruh tabel dan akun pengguna bawaan:
+---
+
+### Langkah 3: Setup Web Laravel & Database
+
+Buka terminal PowerShell baru dan masuk ke folder `laravel`:
+
 ```powershell
-python init_db.py
+cd laravel
+
+# 1. Pasang dependensi PHP (jika belum terpasang)
+composer install
+
+# 2. Buat file .env dan generate Application Key (jika baru pertama kali clone)
+copy .env.example .env
+php artisan key:generate
+
+# 3. Jalankan migrasi database dan masukkan data bawaan (seeder)
+php artisan migrate --seed
 ```
-**Akun Bawaan (Default) yang Tersedia:**
-- **Administrator**:
-  - Username: `admin`
-  - Password: `admin123`
-- **Driver Utama (Apri Catur)**:
-  - Username: `driver`
-  - Password: `driver123`
-- **Driver Rekan (Nayla Azkyah)**:
-  - Username: `nayla`
-  - Password: `driver123`
 
-### 5. Verifikasi Pengujian Sistem (Testing)
-Pastikan semua modul berjalan sempurna 100%:
+---
+
+### Langkah 4: Menjalankan Aplikasi
+
+Jalankan kedua terminal secara berdampingan:
+
+#### Terminal 1 — Menjalankan Web Laravel:
 ```powershell
-python test_system.py
+cd laravel
+php artisan serve
 ```
-*(Hasil yang diharapkan: `Ran 9 tests ... OK`)*.
+Aplikasi Web utama dapat diakses di:
+👉 **[http://127.0.0.1:8000](http://127.0.0.1:8000)**
 
-### 6. Menjalankan Aplikasi Web DMS
+#### Terminal 2 — Menjalankan Service AI & Deteksi Kamera:
 ```powershell
+# Pastikan berada di root direktori proyek
 python run.py
 ```
-Buka browser favorit Anda (Google Chrome / Microsoft Edge) dan akses alamat:
-👉 **[http://localhost:5000](http://localhost:5000)** atau **[http://127.0.0.1:5000](http://127.0.0.1:5000)**
+Service Deteksi AI aktif di:
+👉 **`http://127.0.0.1:5000`** *(API & Kamera Microservice)*
 
 ---
 
-## 🔒 Keamanan Sesi & Akun (Session Security)
-Sistem dilengkapi fitur keamanan sesi:
-- **Proteksi Sesi Kuat (*Strong Session Protection*)**: Mencegah serangan *Session Hijacking* dan *Session Fixation*.
-- **Batas Waktu Inaktivitas Otomatis (*Session Inactivity Timeout*)**: Sesi pengguna otomatis berakhir setelah 30 menit tidak aktif demi keamanan.
-- **Cookie Aman**: Menggunakan atribut `HttpOnly` dan `SameSite=Lax` untuk mencegah pencurian cookie via XSS dan serangan CSRF.
-- **Validasi Pengalihan URL**: Melindungi sistem dari kerentanan *Open Redirect*.
+## 🔑 Akun Pengujian Bawaan (Default Login)
+
+Database telah dilengkapi akun bawaan untuk pengujian langsung:
+
+| Peran | Username | Password | Deskripsi |
+|---|---|---|---|
+| **Administrator** | `admin` | `admin123` | Akses penuh dashboard analitik, kelola pengemudi, riwayat peringatan, dan evaluasi model AI |
+| **Driver Utama** | `apri` *(atau `driver`)* | `driver123` | Akses monitoring kabin real-time, HUD webcam, dan riwayat berkendara |
+| **Driver Rekan** | `nayla` | `driver123` | Akun pengemudi kedua untuk pengujian multi-driver |
 
 ---
 
-## 🧠 Panduan Mengumpulkan Data & Melatih Model AI Mandiri
+## 🧪 Pengujian Otomatis (Automated Testing)
 
-Anda dapat melatih model AI Anda sendiri menggunakan wajah Anda atau rekan tim:
+Untuk memverifikasi keandalan seluruh rute, otentikasi, middleware otorisasi, dan basis data:
 
-### Langkah 1: Kumpulkan Data Wajah via Webcam
-Pastikan aplikasi web sedang tidak menggunakan kamera, lalu jalankan:
+```powershell
+cd laravel
+php artisan test
+```
+
+Semua 10 skenario pengujian fitur (`DmsWebTest` & `ExampleTest`) akan berjalan dan menghasilkan status **PASSED (100%)**.
+
+---
+
+## 🧠 Pelatihan Model AI Mandiri (Training Suite)
+
+Anda dapat melatih ulang model deteksi kantuk menggunakan wajah pengemudi:
+
+### 1. Rekam Sampel Wajah via Webcam
 ```powershell
 python training_suite/data_collector.py
 ```
-Jendela pop-up kamera akan muncul di layar monitor Anda:
-- Tekan **`[1]`** untuk mengatur label kelas **TERJAGA** (mata terbuka normal).
-- Tekan **`[2]`** untuk mengatur label kelas **MENGANTUK** (mata terpejam/sayu).
-- Tekan **`[3]`** untuk mengatur label kelas **MENGUAP** (mulut terbuka lebar).
-- Tekan **`[SPASI]`** untuk merekam kontinu selama 10 detik.
-- Tekan **`[Q]`** atau **`[ESC]`** untuk selesai. Data tersimpan di `dataset/dataset_features.csv`.
+- Tekan **`[1]`** untuk sampel kelas **TERJAGA** (mata terbuka normal).
+- Tekan **`[2]`** untuk sampel kelas **MENGANTUK** (mata terpejam/sayu).
+- Tekan **`[3]`** untuk sampel kelas **MENGUAP** (mulut terbuka lebar).
+- Tekan **`[SPASI]`** untuk merekam kontinu 10 detik.
+- Tekan **`[Q]`** atau **`[ESC]`** untuk selesai.
 
-### Langkah 2: Latih Model AI (Scikit-Learn atau PyTorch)
-Untuk melatih model Random Forest (**Direkomendasikan** — akurasi $\ge 95\%$):
+### 2. Latih Model Random Forest
 ```powershell
 python training_suite/train_sklearn.py --model rf
 ```
-Atau melatih model Deep Learning PyTorch MLP:
-```powershell
-python training_suite/train_pytorch.py --epochs 25
-```
-Bobot model akan otomatis tersimpan di folder `models/trained_model.joblib` atau `models/trained_model.pt`.
+Bobot model baru akan tersimpan di `models/trained_model.joblib`.
 
-### Langkah 3: Evaluasi Akurasi & Buat Grafik Confusion Matrix
+### 3. Evaluasi & Buat Confusion Matrix
 ```powershell
 python training_suite/evaluate.py
 ```
-Grafik akurasi dan matriks konfusi tersimpan di `models/confusion_matrix.png`, siap digunakan untuk laporan, poster, dan presentasi PBL Anda!
-
-### Langkah 4: Aktifkan Model pada Aplikasi Web
-Buka menu **Admin -> Manajemen Model** di aplikasi web (`http://localhost:5000/admin/models`), lalu klik tombol **"Muat Ulang Model ke Memory"**. Aplikasi akan langsung menggunakan model baru Anda untuk inferensi real-time!
+Grafik matriks konfusi HD tersimpan di `models/confusion_matrix.png` dan dapat langsung diinspeksi melalui menu **Model AI & Evaluasi** di Web Admin Laravel.
 
 ---
 
-## ❓ FAQ & Solusi Masalah Teknis (Troubleshooting)
+## ❓ Solusi Masalah Teknis (Troubleshooting)
 
-1. **Webcam terdeteksi sibuk / lampu kamera laptop menyala terus:**
-   - Tutup aplikasi lain yang mungkin memakai kamera (seperti Zoom, Google Meet, Skype, atau tab browser lain).
-   - Jika proses Python lama masih menggantung di latar belakang, buka PowerShell dan jalankan:
+1. **Webcam tidak menyala / bentrok aplikasi lain:**
+   - Tutup Zoom, Teams, Meet, atau aplikasi lain yang menggunakan webcam.
+   - Jika proses Python lama menggantung, hentikan dengan:
      ```powershell
      Stop-Process -Name python, pythonw -Force -ErrorAction SilentlyContinue
      ```
-2. **Port 5000 sudah digunakan aplikasi lain:**
-   - Anda dapat mengubah port di baris terakhir `run.py` menjadi port lain, misalnya `port=5001`.
-3. **Database MySQL tidak terhubung:**
-   - Tidak perlu khawatir! Sistem telah dilengkapi **Auto-Fallback**. Jika MySQL tidak menyala, sistem otomatis beralih ke database lokal SQLite (`sqlite:///dms.db`) sehingga aplikasi tetap dapat berjalan normal 100%.
+2. **Koneksi Database:**
+   - Secara default Laravel menggunakan SQLite (`database/database.sqlite`) yang sudah siap pakai tanpa konfigurasi tambahan.
+   - Jika ingin menggunakan MySQL di Laragon: cukup ubah `DB_CONNECTION=mysql` di file `laravel/.env`, nyalakan MySQL di Laragon, lalu jalankan `php artisan migrate --seed`.
