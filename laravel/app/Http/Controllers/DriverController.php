@@ -6,32 +6,30 @@ use App\Models\AlertLog;
 use App\Models\MonitoringSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 
 class DriverController extends Controller
 {
     /**
-     * Dashboard Personal Pengemudi.
+     * Dashboard Riwayat Peringatan Pengemudi.
      */
     public function dashboard()
     {
         $user = Auth::user();
-        $myAlerts = AlertLog::where('driver_id', $user->id)
+        $alerts = AlertLog::where('driver_id', $user->id)
             ->orderBy('timestamp', 'desc')
-            ->limit(10)
-            ->get();
+            ->paginate(15);
 
-        $totalMyAlerts = AlertLog::where('driver_id', $user->id)->count();
-        $totalSessions = MonitoringSession::where('driver_id', $user->id)->count();
-
-        // Safety score individual
-        $safetyScore = $totalMyAlerts === 0 ? 100.0 : max(50.0, 100.0 - ($totalMyAlerts * 5.0));
+        $total_kantuk = AlertLog::where('driver_id', $user->id)->where('alert_type', 'kantuk')->count();
+        $total_distraksi = AlertLog::where('driver_id', $user->id)->where('alert_type', 'tidak_fokus')->count();
+        $total_menguap = AlertLog::where('driver_id', $user->id)->where('alert_type', 'menguap')->count();
 
         return view('driver.dashboard', compact(
             'user',
-            'myAlerts',
-            'totalMyAlerts',
-            'totalSessions',
-            'safetyScore'
+            'alerts',
+            'total_kantuk',
+            'total_distraksi',
+            'total_menguap'
         ));
     }
 
@@ -42,6 +40,65 @@ class DriverController extends Controller
     {
         $user = Auth::user();
         return view('driver.monitor', compact('user'));
+    }
+
+    /**
+     * Halaman Profil Pengemudi.
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        $total_sesi = MonitoringSession::where('driver_id', $user->id)->count();
+        $total_kantuk = AlertLog::where('driver_id', $user->id)->where('alert_type', 'kantuk')->count();
+        $total_distraksi = AlertLog::where('driver_id', $user->id)->where('alert_type', 'tidak_fokus')->count();
+        $total_menguap = AlertLog::where('driver_id', $user->id)->where('alert_type', 'menguap')->count();
+
+        return view('driver.profile', compact(
+            'user',
+            'total_sesi',
+            'total_kantuk',
+            'total_distraksi',
+            'total_menguap'
+        ));
+    }
+
+    /**
+     * Proxy pengiriman frame webcam ke service AI Python.
+     */
+    public function processFrame(Request $request)
+    {
+        $imageData = $request->input('image');
+        $driverId = Auth::id() ?? 1;
+
+        if (!$imageData) {
+            return response()->json(['error' => 'Tidak ada data gambar'], 400);
+        }
+
+        try {
+            $response = Http::timeout(2.5)->post('http://127.0.0.1:5000/driver/process_frame', [
+                'image' => $imageData,
+                'driver_id' => $driverId
+            ]);
+
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+        } catch (\Exception $e) {
+            // Service Python offline / timeout
+        }
+
+        return response()->json([
+            'success' => false,
+            'face_detected' => false,
+            'status_label' => 'STANDBY (Python AI Offline)',
+            'alarm_message' => 'Jalankan python run.py untuk inferensi AI',
+            'is_alarm_active' => false,
+            'ear_avg' => 0.0,
+            'mar' => 0.0,
+            'yaw' => 0.0,
+            'pitch' => 0.0,
+            'method' => 'Python Service Offline (Jalankan: python run.py)'
+        ]);
     }
 
     /**
@@ -70,4 +127,3 @@ class DriverController extends Controller
         return response()->json(['success' => true, 'id' => $alert->id]);
     }
 }
-

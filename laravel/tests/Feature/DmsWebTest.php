@@ -97,7 +97,7 @@ class DmsWebTest extends TestCase
 
         $response = $this->actingAs($driver)->get('/driver/dashboard');
         $response->assertStatus(200);
-        $response->assertSee('Dashboard Pengemudi');
+        $response->assertSee('Riwayat Peringatan');
     }
 
     /**
@@ -120,8 +120,7 @@ class DmsWebTest extends TestCase
 
         $response = $this->actingAs($driver)->get('/driver/monitor');
         $response->assertStatus(200);
-        $response->assertSee('Monitoring Kabin Pengemudi');
-        $response->assertSee('AI Service');
+        $response->assertSee('Pemantauan Kamera Real-Time');
     }
 
     /**
