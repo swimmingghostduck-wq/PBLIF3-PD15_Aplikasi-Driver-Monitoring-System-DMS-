@@ -86,23 +86,25 @@ def init_dms_engine(app):
 
 @driver_bp.before_request
 def ensure_driver():
-    """FR-14: Memastikan halaman antarmuka pengemudi hanya diakses oleh pengguna bertipe driver."""
-    if current_user.is_authenticated and current_user.is_admin():
-        # Jangan halangi endpoint API (/process_frame, /video_feed, /status_feed),
-        # tetapi amankan rute halaman web tampilan pengemudi (monitor & history).
-        if request.endpoint in ['driver.monitor', 'driver.history']:
-            flash('Modul pengemudi khusus untuk akun Driver. Anda dialihkan kembali ke Dashboard Admin.', 'info')
-            return redirect(url_for('admin.dashboard'))
+    # Lewatkan semua request ke microservice
+    pass
 
 @driver_bp.route('/monitor')
-@login_required
 def monitor():
-    """Halaman Dashboard Utama Monitoring Pengemudi."""
-    return render_template('driver_monitor.html', user=current_user)
+    return redirect('http://127.0.0.1:8000/driver/monitor')
 
-@driver_bp.route('/process_frame', methods=['POST'])
-@login_required
+@driver_bp.route('/history')
+def history():
+    return redirect('http://127.0.0.1:8000/driver/dashboard')
+
+@driver_bp.route('/profile')
+def profile():
+    return redirect('http://127.0.0.1:8000/admin/profile')
+
+@driver_bp.route('/process_frame', methods=['POST', 'OPTIONS'])
 def process_frame():
+    if request.method == 'OPTIONS':
+        return ('', 204)
     """
     Menerima frame video langsung dari webcam browser (HTML5 getUserMedia),
     memproses deteksi landmark wajah, inferensi AI, dan status kantuk.
@@ -142,14 +144,16 @@ def process_frame():
         if phase == 'start' and event_type:
             # Hanya simpan snapshot visual untuk event berisiko tinggi (kantuk & tidak_fokus)
             # Menguap tidak perlu capture snapshot agar menghemat kapasitas storage
+            # Driver ID dapat diterima dari request frontend Laravel
+            active_driver_id = data.get('driver_id') or (current_user.id if getattr(current_user, 'is_authenticated', False) else 1)
             snapshot_file = None
             if event_type in ['kantuk', 'tidak_fokus']:
                 snapshot_file = alert_manager.save_snapshot(
-                    frame, current_user.id, event_type
+                    frame, active_driver_id, event_type
                 )
             incident_notes = generate_incident_note(event_type, detection_res, tracker)
             new_log = AlertLog(
-                driver_id=current_user.id,
+                driver_id=active_driver_id,
                 alert_type=event_type,
                 severity='BAHAYA' if event_type == 'kantuk' else 'PERINGATAN',
                 duration_seconds=duration,
@@ -325,43 +329,6 @@ def video_feed():
     )
 
 @driver_bp.route('/status_feed')
-@login_required
 def status_feed():
     """Endpoint API Real-time untuk polling status alarm backend."""
     return jsonify(latest_status)
-
-@driver_bp.route('/history')
-@login_required
-def history():
-    """FR-14: Driver dapat melihat riwayat peringatan dirinya sendiri."""
-    page = request.args.get('page', 1, type=int)
-    alerts = AlertLog.query.filter_by(driver_id=current_user.id)\
-                           .order_by(AlertLog.timestamp.desc())\
-                           .paginate(page=page, per_page=15, error_out=False)
-    
-    total_kantuk = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='kantuk').count()
-    total_distraksi = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='tidak_fokus').count()
-    total_menguap = AlertLog.query.filter_by(driver_id=current_user.id, alert_type='menguap').count()
-
-@driver_bp.route('/profile')
-@login_required
-def profile():
-    """Halaman profil: informasi akun dan ringkasan pemantauan driver."""
-    uid = current_user.id
-    return render_template(
-        'driver_profile.html',
-        user=current_user,
-        total_sesi=MonitoringSession.query.filter_by(driver_id=uid).count(),
-        total_kantuk=AlertLog.query.filter_by(driver_id=uid, alert_type='kantuk').count(),
-        total_distraksi=AlertLog.query.filter_by(driver_id=uid, alert_type='tidak_fokus').count(),
-        total_menguap=AlertLog.query.filter_by(driver_id=uid, alert_type='menguap').count()
-    )
-
-    return render_template(
-        'driver_history.html',
-        alerts=alerts,
-        total_kantuk=total_kantuk,
-        total_distraksi=total_distraksi,
-        total_menguap=total_menguap,
-        user=current_user
-    )

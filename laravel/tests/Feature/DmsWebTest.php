@@ -110,5 +110,42 @@ class DmsWebTest extends TestCase
         $response = $this->actingAs($driver)->get('/admin/dashboard');
         $response->assertRedirect('/driver/dashboard');
     }
+
+    /**
+     * Test driver dapat mengakses halaman monitoring kabin.
+     */
+    public function test_driver_can_access_monitor_page(): void
+    {
+        $driver = User::where('role', 'driver')->first();
+
+        $response = $this->actingAs($driver)->get('/driver/monitor');
+        $response->assertStatus(200);
+        $response->assertSee('Monitoring Kabin Pengemudi');
+        $response->assertSee('AI Service');
+    }
+
+    /**
+     * Test driver dapat mencatat log insiden peringatan.
+     */
+    public function test_driver_can_log_alert_incident(): void
+    {
+        $driver = User::where('role', 'driver')->first();
+
+        $response = $this->actingAs($driver)->postJson('/driver/alerts/log', [
+            'alert_type' => 'kantuk',
+            'severity' => 'BAHAYA',
+            'duration_seconds' => 2.5,
+            'notes' => 'Mata terpejam rapat (Nilai EAR: 0.18)'
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertJson(['success' => true]);
+
+        $this->assertDatabaseHas('alert_logs', [
+            'driver_id' => $driver->id,
+            'alert_type' => 'kantuk',
+            'severity' => 'BAHAYA'
+        ]);
+    }
 }
 

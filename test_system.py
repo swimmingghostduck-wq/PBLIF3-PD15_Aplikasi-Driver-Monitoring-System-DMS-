@@ -198,198 +198,48 @@ class TestDMSSystem(unittest.TestCase):
         self.assertFalse(status_scratch['is_alarm_active'])
         self.assertEqual(status_scratch['status_label'], 'TERJAGA')
 
-    def test_08_flask_endpoints(self):
-        """Memastikan route Flask (Login, Register) merespons dengan HTTP 200."""
+    def test_08_flask_redirects_to_laravel(self):
+        """Memastikan rute web lama pada Flask otomatis mengalihkan (HTTP 302) ke Web Laravel."""
         from app import create_app
         app = create_app()
         app.config['TESTING'] = True
         client = app.test_client()
 
-        r_login = client.get('/auth/login')
-        self.assertEqual(r_login.status_code, 200)
+        r_login = client.get('/auth/login', headers={'Accept': 'text/html'})
+        self.assertEqual(r_login.status_code, 302)
+        self.assertIn('http://127.0.0.1:8000/login', r_login.headers.get('Location'))
 
-        r_reg = client.get('/auth/register')
-        self.assertEqual(r_reg.status_code, 200)
+        r_reg = client.get('/auth/register', headers={'Accept': 'text/html'})
+        self.assertEqual(r_reg.status_code, 302)
+        self.assertIn('http://127.0.0.1:8000/register', r_reg.headers.get('Location'))
+
+        r_admin = client.get('/admin/dashboard', headers={'Accept': 'text/html'})
+        self.assertEqual(r_admin.status_code, 302)
+        self.assertIn('http://127.0.0.1:8000/admin/dashboard', r_admin.headers.get('Location'))
+
+        r_driver = client.get('/driver/monitor', headers={'Accept': 'text/html'})
+        self.assertEqual(r_driver.status_code, 302)
+        self.assertIn('http://127.0.0.1:8000/driver/monitor', r_driver.headers.get('Location'))
 
     def test_09_process_frame_endpoint(self):
         """Memastikan endpoint /driver/process_frame menerima base64 frame dari browser dan merespons JSON."""
         from app import create_app
-        from app.models import User
         app = create_app()
         app.config['TESTING'] = True
         client = app.test_client()
-
-        # Login sebagai driver
-        client.post('/auth/login', data={'username': 'driver', 'password': 'driver123'})
 
         # Siapkan gambar uji frame
         test_img = np.zeros((480, 640, 3), dtype=np.uint8)
         _, buf = cv2.imencode('.jpg', test_img)
         b64_data = 'data:image/jpeg;base64,' + base64.b64encode(buf).decode('utf-8')
 
-        res = client.post('/driver/process_frame', json={'image': b64_data})
+        res = client.post('/driver/process_frame', json={'image': b64_data, 'driver_id': 1})
         self.assertEqual(res.status_code, 200)
         json_data = res.get_json()
         self.assertTrue(json_data['success'])
         self.assertIn('face_detected', json_data)
         self.assertIn('ear_avg', json_data)
         self.assertIn('status_label', json_data)
-
-    def test_10_session_security_and_auth(self):
-        """Memastikan fitur keamanan sesi: timeout inaktivitas, logout, dan validasi password."""
-        import time
-        from app import create_app
-        app = create_app()
-        app.config['TESTING'] = True
-        app.config['SESSION_INACTIVITY_TIMEOUT'] = 2  # 2 detik untuk pengujian timeout cepat
-        client = app.test_client()
-
-        # 1. Login
-        r_login = client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
-        self.assertEqual(r_login.status_code, 302)
-
-        # 2. Akses halaman admin saat sesi aktif
-        r_dash = client.get('/admin/dashboard')
-        self.assertEqual(r_dash.status_code, 200)
-
-        # 3. Akses grafik confusion matrix lewat endpoint aman
-        r_cm = client.get('/admin/models/confusion_matrix')
-        self.assertEqual(r_cm.status_code, 200)
-
-        # 4. Uji Session Inactivity Timeout (tunggu > 2 detik)
-        time.sleep(2.5)
-        r_timeout = client.get('/admin/dashboard', follow_redirects=False)
-        self.assertEqual(r_timeout.status_code, 302)
-        self.assertIn('/auth/login', r_timeout.headers.get('Location', ''))
-
-        # 5. Uji validasi panjang password pada registrasi (< 6 karakter ditolak)
-        r_short_pass = client.post('/auth/register', data={
-            'username': 'shortuser',
-            'full_name': 'Short Password User',
-            'nim_nik': '12345',
-            'password': '123',
-            'confirm_password': '123'
-        }, follow_redirects=True)
-        self.assertIn(b'minimal harus terdiri dari 6 karakter', r_short_pass.data)
-
-    def test_11_admin_crud_and_monitoring_management(self):
-        """Memastikan fungsionalitas FR-12 (CRUD Driver) & FR-13 (Kelola Data Monitoring, Filter, Export CSV)."""
-        from app import create_app
-        from app.models import db, User, AlertLog
-        app = create_app()
-        app.config['TESTING'] = True
-        client = app.test_client()
-
-        with app.app_context():
-            # Login sebagai admin
-            client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
-
-            # 1. Buat driver baru untuk pengujian CRUD
-            driver_test = User.query.filter_by(username='crud_test').first()
-            if not driver_test:
-                driver_test = User(username='crud_test', full_name='Driver Test Lama', nim_nik='111222', role='driver')
-                driver_test.set_password('driver123')
-                db.session.add(driver_test)
-                db.session.commit()
-
-            driver_id = driver_test.id
-
-            # 2. Uji FR-12 Update Driver & Reset Password
-            r_edit = client.post(f'/admin/drivers/edit/{driver_id}', data={
-                'full_name': 'Driver Test Baru',
-                'nim_nik': '999888',
-                'username': 'crud_test_updated',
-                'new_password': 'newpassword123'
-            }, follow_redirects=True)
-            self.assertEqual(r_edit.status_code, 200)
-
-            # Verifikasi perubahan data di database
-            updated_driver = db.session.get(User, driver_id)
-            self.assertEqual(updated_driver.full_name, 'Driver Test Baru')
-            self.assertEqual(updated_driver.username, 'crud_test_updated')
-            self.assertTrue(updated_driver.check_password('newpassword123'))
-
-            # 3. Uji FR-13 Tambah AlertLog dan Ekspor CSV
-            test_alert = AlertLog(
-                driver_id=driver_id,
-                alert_type='kantuk',
-                severity='BAHAYA',
-                duration_seconds=2.0,
-                notes='Uji Coba Filter CSV'
-            )
-            db.session.add(test_alert)
-            db.session.commit()
-
-            # Uji endpoint Ekspor CSV
-            r_csv = client.get('/admin/alerts/export/csv')
-            self.assertEqual(r_csv.status_code, 200)
-            self.assertEqual(r_csv.mimetype, 'text/csv')
-            self.assertIn(b'Uji Coba Filter CSV', r_csv.data)
-
-            # Uji endpoint Filter Dashboard & Ringkasan Insiden
-            r_filtered = client.get(f'/admin/dashboard?driver_id={driver_id}&alert_type=kantuk')
-            self.assertEqual(r_filtered.status_code, 200)
-            self.assertIn(b'Driver Test Baru', r_filtered.data)
-
-            r_alerts = client.get(f'/admin/alerts?driver_id={driver_id}&alert_type=kantuk')
-            self.assertEqual(r_alerts.status_code, 200)
-            self.assertIn(b'Driver Test Baru', r_alerts.data)
-
-            # 4. Uji Reload Model AI (Perbaikan Bug Engine)
-            r_reload = client.post('/admin/models/reload', follow_redirects=True)
-            self.assertEqual(r_reload.status_code, 200)
-
-            # Bersihkan data uji
-            db.session.delete(test_alert)
-            db.session.delete(updated_driver)
-            db.session.commit()
-
-    def test_12_admin_profile_management(self):
-        """Memastikan fitur Pengaturan Profil Administrator (GET & POST pembaruan data dan verifikasi sandi)."""
-        from app import create_app
-        from app.models import db, User
-        app = create_app()
-        app.config['TESTING'] = True
-        client = app.test_client()
-
-        with app.app_context():
-            # 1. Login sebagai admin
-            client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
-
-            # 2. Akses halaman profil admin
-            r_get = client.get('/admin/profile')
-            self.assertEqual(r_get.status_code, 200)
-            self.assertIn(b'Pengaturan Profil', r_get.data)
-
-            # 3. Update nama lengkap dan NIM
-            r_post = client.post('/admin/profile', data={
-                'full_name': 'Administrator DMS Utama',
-                'username': 'admin',
-                'nim_nik': '1234567890'
-            }, follow_redirects=True)
-            self.assertEqual(r_post.status_code, 200)
-            self.assertIn(b'Profil data diri berhasil diperbarui', r_post.data)
-
-            # Verifikasi perubahan di database
-            admin = User.query.filter_by(username='admin').first()
-            self.assertEqual(admin.full_name, 'Administrator DMS Utama')
-            self.assertEqual(admin.nim_nik, '1234567890')
-
-            # 4. Uji penolakan ganti password jika current password salah
-            r_wrong_pass = client.post('/admin/profile', data={
-                'full_name': 'Administrator DMS Utama',
-                'username': 'admin',
-                'nim_nik': '1234567890',
-                'current_password': 'wrongpassword',
-                'new_password': 'newpassword123',
-                'confirm_password': 'newpassword123'
-            }, follow_redirects=True)
-            self.assertIn(b'Kata sandi saat ini yang Anda masukkan salah', r_wrong_pass.data)
-
-            # Kembalikan nama admin ke default
-            admin.full_name = 'Administrator DMS'
-            admin.nim_nik = ''
-            db.session.commit()
 
 if __name__ == '__main__':
     unittest.main()

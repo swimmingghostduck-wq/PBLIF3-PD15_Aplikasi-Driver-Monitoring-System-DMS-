@@ -56,6 +56,15 @@ class AlertManager:
 
             # Simpan dengan kompresi teroptimasi JPEG Q75
             cv2.imwrite(filepath, snapshot, [cv2.IMWRITE_JPEG_QUALITY, 75])
+
+            # Sinkronisasi ke folder public Laravel jika tersedia
+            laravel_public_snapshots = os.path.abspath(os.path.join(
+                os.path.dirname(__file__), '..', 'laravel', 'public', 'snapshots'
+            ))
+            if os.path.exists(laravel_public_snapshots):
+                laravel_filepath = os.path.join(laravel_public_snapshots, filename)
+                cv2.imwrite(laravel_filepath, snapshot, [cv2.IMWRITE_JPEG_QUALITY, 75])
+
             return filename
         except Exception as e:
             print(f"[AlertManager] Gagal menyimpan snapshot: {e}")

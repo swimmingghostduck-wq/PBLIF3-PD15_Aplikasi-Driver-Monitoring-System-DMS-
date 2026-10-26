@@ -58,46 +58,53 @@ def create_app(config_class=Config):
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
     @app.before_request
-    def enforce_session_security():
-        """Memeriksa batas waktu inaktivitas sesi pengguna untuk keamanan sistem."""
-        if current_user.is_authenticated:
-            # Kecualikan file statis dari update waktu aktivitas
-            if request.endpoint and request.endpoint.startswith('static'):
-                return
+    def handle_incoming_request():
+        # Izinkan preflight CORS
+        if request.method == 'OPTIONS':
+            return ('', 204)
 
-            now = time.time()
-            last_active = session.get('_last_active')
-            timeout = app.config.get('SESSION_INACTIVITY_TIMEOUT', 1800)
+        # Lewatkan request API dan file statis
+        if request.path.startswith('/driver/process_frame') or \
+           request.path.startswith('/driver/video_feed') or \
+           request.path.startswith('/driver/status') or \
+           request.path.startswith('/static') or \
+           request.is_json:
+            return None
 
-            if last_active and (now - last_active > timeout):
-                logout_user()
-                session.clear()
-                flash('Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan masuk kembali.', 'warning')
-                return redirect(url_for('auth.login', next=request.path if request.method == 'GET' else None))
+        # Jika request berasal dari browser (HTML), alihkan ke Laravel di port 8000
+        if request.accept_mimetypes.accept_html:
+            path = request.path
+            path_mapping = {
+                '/': '/',
+                '/splash': '/',
+                '/auth/login': '/login',
+                '/auth/register': '/register',
+                '/auth/logout': '/logout',
+                '/driver/monitor': '/driver/monitor',
+                '/driver/history': '/driver/dashboard',
+                '/driver/dashboard': '/driver/dashboard',
+                '/driver/profile': '/admin/profile',
+            }
+            target_path = path_mapping.get(path, path)
+            return redirect(f'http://127.0.0.1:8000{target_path}')
 
-            session['_last_active'] = now
+    @app.after_request
+    def add_cors_headers(response):
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization, X-Requested-With'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
+        return response
 
-    from jinja2.exceptions import TemplateNotFound
-
-    @app.errorhandler(TemplateNotFound)
-    def handle_template_not_found(e):
-        return redirect('http://127.0.0.1:8000' + request.path)
+    @app.errorhandler(500)
+    @app.errorhandler(404)
+    def handle_global_errors(e):
+        if request.accept_mimetypes.accept_html and not request.is_json:
+            return redirect('http://127.0.0.1:8000' + request.path)
+        return {'error': str(e), 'service': 'DMS AI Microservice'}, (getattr(e, 'code', 500))
 
     @app.route('/')
     def index():
-        if request.accept_mimetypes.accept_html and not request.accept_mimetypes.accept_json:
-            return redirect('http://127.0.0.1:8000')
-        return {
-            'status': 'online',
-            'service': 'Driver Monitoring System (DMS) - AI & Camera Detection Microservice',
-            'frontend_url': 'http://127.0.0.1:8000',
-            'note': 'Frontend dan UI web telah dimigrasikan penuh ke Laravel (http://127.0.0.1:8000).',
-            'endpoints': {
-                'process_frame': '/driver/process_frame',
-                'video_feed': '/driver/video_feed',
-                'status': '/driver/status'
-            }
-        }
+        return redirect('http://127.0.0.1:8000')
 
     return app
 

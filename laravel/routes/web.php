@@ -69,4 +69,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 Route::middleware('auth')->prefix('driver')->name('driver.')->group(function () {
     Route::get('/dashboard', [DriverController::class, 'dashboard'])->name('dashboard');
     Route::get('/monitor', [DriverController::class, 'monitor'])->name('monitor');
+    Route::post('/alerts/log', [DriverController::class, 'logAlert'])->name('log_alert');
 });
