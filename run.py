@@ -19,12 +19,13 @@ app = create_app()
 
 if __name__ == '__main__':
     print("=" * 65)
-    print("      DRIVER MONITORING SYSTEM (DMS) - POLIBATAM PBL IF3-PD15")
+    print("   DRIVER MONITORING SYSTEM (DMS) - AI & CAMERA DETECTION SERVICE")
     print("=" * 65)
-    print("Aplikasi Web berjalan di:")
-    print("  -> http://127.0.0.1:5000")
-    print("  -> http://localhost:5000")
-    print("\nTekan [Ctrl+C] di terminal ini untuk menghentikan server.")
+    print("Service Deteksi AI berjalan di:")
+    print("  -> http://127.0.0.1:5000 (API & Camera Stream)")
+    print("\nDashboard Web & Admin Laravel berjalan di:")
+    print("  -> http://127.0.0.1:8000")
+    print("\nTekan [Ctrl+C] di terminal ini untuk menghentikan server AI.")
     print("=" * 65)
     app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
 

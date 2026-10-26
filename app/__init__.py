@@ -77,13 +77,27 @@ def create_app(config_class=Config):
 
             session['_last_active'] = now
 
+    from jinja2.exceptions import TemplateNotFound
+
+    @app.errorhandler(TemplateNotFound)
+    def handle_template_not_found(e):
+        return redirect('http://127.0.0.1:8000' + request.path)
+
     @app.route('/')
     def index():
-        if current_user.is_authenticated:
-            if current_user.is_admin():
-                return redirect(url_for('admin.dashboard'))
-            return redirect(url_for('driver.monitor'))
-        return render_template('splash.html')
+        if request.accept_mimetypes.accept_html and not request.accept_mimetypes.accept_json:
+            return redirect('http://127.0.0.1:8000')
+        return {
+            'status': 'online',
+            'service': 'Driver Monitoring System (DMS) - AI & Camera Detection Microservice',
+            'frontend_url': 'http://127.0.0.1:8000',
+            'note': 'Frontend dan UI web telah dimigrasikan penuh ke Laravel (http://127.0.0.1:8000).',
+            'endpoints': {
+                'process_frame': '/driver/process_frame',
+                'video_feed': '/driver/video_feed',
+                'status': '/driver/status'
+            }
+        }
 
     return app
 

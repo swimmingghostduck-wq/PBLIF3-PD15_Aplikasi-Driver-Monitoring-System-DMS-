@@ -11,6 +11,68 @@ from app.models import db, User, AlertLog, MonitoringSession
 
 admin_bp = Blueprint('admin', __name__)
 
+@admin_bp.app_template_filter('timeago')
+def timeago_filter(dt):
+    """Mengubah objek datetime menjadi format waktu relatif yang mudah dipahami manusia."""
+    if not dt:
+        return ""
+    from datetime import datetime
+    now = datetime.now()
+    diff = now - dt
+    total_seconds = int(diff.total_seconds())
+    if total_seconds < 0:
+        return "Baru saja"
+    if total_seconds < 60:
+        return f"{total_seconds} detik yang lalu" if total_seconds > 5 else "Baru saja"
+    minutes = total_seconds // 60
+    if minutes < 60:
+        return f"{minutes} menit yang lalu"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} jam yang lalu"
+    days = hours // 24
+    if days < 7:
+        return f"{days} hari yang lalu"
+    return dt.strftime('%d/%m/%Y')
+
+@admin_bp.app_template_filter('clean_operational_note')
+def clean_operational_note_filter(notes, alert_type=None):
+    """
+    Menghilangkan jargon teknis machine learning (seperti 'Metode: Random Forest Classifier', 'EAR:', 'MAR:', dll.)
+    dan menggantinya dengan konteks operasional yang ramah bagi administrator armada.
+    """
+    if not notes or not isinstance(notes, str) or notes.strip() == '' or notes.strip() == '-':
+        if alert_type == 'kantuk':
+            return "Mata terpejam saat berkendara"
+        elif alert_type == 'tidak_fokus':
+            return "Pandangan teralihkan dari arah jalan"
+        elif alert_type == 'menguap':
+            return "Kelelahan terdeteksi"
+        return "Insiden kewaspadaan terdeteksi"
+
+    # Filter out ML technical jargon
+    cleaned = re.sub(r'Metode:\s*[^|;]+[|;]?', '', notes, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\(Nilai EAR:[^)]+\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\(Nilai MAR:[^)]+\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\(Sudut Pitch:[^)]+\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\(Sudut Yaw:[^)]+\)', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'EAR:\s*[\d.]+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'MAR:\s*[\d.]+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'Yaw:\s*[^|;]+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'Pitch:\s*[^|;]+', '', cleaned, flags=re.IGNORECASE)
+    cleaned = cleaned.replace('|', '').replace(';', '').strip()
+
+    if not cleaned:
+        if alert_type == 'kantuk':
+            return "Mata terpejam saat berkendara"
+        elif alert_type == 'tidak_fokus':
+            return "Pandangan teralihkan dari arah jalan"
+        elif alert_type == 'menguap':
+            return "Kelelahan terdeteksi"
+        return "Insiden kewaspadaan terdeteksi"
+
+    return cleaned
+
 @admin_bp.before_request
 def ensure_admin():
     """Memastikan hanya user dengan role 'admin' yang dapat mengakses modul ini."""
