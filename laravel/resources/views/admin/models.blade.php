@@ -6,9 +6,9 @@
 <form action="{{ route('admin.reload_model') }}" method="POST">
     @csrf
     <button type="submit" 
-            class="h-8 px-3 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+            class="h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-2 cursor-pointer"
             title="Muat ulang artefak model AI ke memori server">
-        <svg class="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <svg class="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
         </svg>
         <span>Muat Ulang Model</span>
@@ -17,79 +17,81 @@
 @endsection
 
 @section('content')
-<div class="px-6 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-5">
+<div class="px-6 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6">
     
-    <!-- Page Header & Technical Architecture Subtitle -->
-    <div class="pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <!-- Page Header -->
+    <div class="pb-4 border-b border-slate-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
             <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Status &amp; Performa Model AI</h1>
             <p class="text-sm text-slate-500 mt-0.5">Spesifikasi arsitektur Random Forest, evaluasi Confusion Matrix, dan metrik inferensi computer vision.</p>
         </div>
         <div class="flex items-center gap-2">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-mono font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                 Engine Aktif
             </span>
         </div>
     </div>
 
-    <!-- 4 Clean Structured Stat Blocks -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- 1. Model Klasifikasi -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Arsitektur Model</span>
-                <h3 class="text-lg font-bold font-heading text-slate-900 mt-1">Random Forest</h3>
-                <p class="text-xs text-slate-500 font-mono mt-0.5">50 Decision Trees &bull; Scikit-Learn</p>
+    <!-- 4 KPI Cards: Consistent with Dashboard Style, Zero Slop -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-5">
+        <!-- KPI 1: Model Klasifikasi -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 tracking-wide">Model Klasifikasi</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Tersinkronisasi
+                </span>
             </div>
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono">
-                <span class="text-slate-400">Status:</span>
-                <span class="text-emerald-700 font-medium">Tersinkronisasi</span>
+            <div class="mt-3 flex items-baseline justify-between">
+                <div class="text-2xl font-bold font-heading text-slate-900">
+                    Random Forest
+                </div>
             </div>
         </div>
 
-        <!-- 2. Akurasi Validasi -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Akurasi Validasi</span>
-                <div class="mt-1 flex items-baseline gap-1.5 font-mono">
-                    <span class="text-2xl font-bold font-heading text-slate-900 tabular-nums">99.66%</span>
-                    <span class="text-xs text-emerald-700 font-medium">Optimal</span>
-                </div>
+        <!-- KPI 2: Akurasi Validasi -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 tracking-wide">Akurasi Validasi</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Optimal
+                </span>
             </div>
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
-                <span>Skor Evaluasi:</span>
-                <span class="tabular-nums">289 / 290 Tepat</span>
+            <div class="mt-3 flex items-baseline justify-between">
+                <div class="text-3xl font-bold font-heading text-slate-900 font-mono tabular-nums">
+                    99.66%
+                </div>
             </div>
         </div>
 
-        <!-- 3. False Alarm Rate -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">False Alarm Rate</span>
-                <div class="mt-1 flex items-baseline gap-1.5 font-mono">
-                    <span class="text-2xl font-bold font-heading text-slate-900 tabular-nums">0.34%</span>
-                    <span class="text-xs text-emerald-700 font-medium">Sangat Rendah</span>
-                </div>
+        <!-- KPI 3: False Alarm Rate -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 tracking-wide">False Alarm Rate</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Sangat Rendah
+                </span>
             </div>
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
-                <span>Presisi Makro:</span>
-                <span class="tabular-nums">99.7%</span>
+            <div class="mt-3 flex items-baseline justify-between">
+                <div class="text-3xl font-bold font-heading text-slate-900 font-mono tabular-nums">
+                    0.34%
+                </div>
             </div>
         </div>
 
-        <!-- 4. Latensi Inferensi -->
-        <div class="bg-white p-5 rounded-lg border border-slate-200 flex flex-col justify-between">
-            <div>
-                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Latensi Inferensi</span>
-                <div class="mt-1 flex items-baseline gap-1.5 font-mono">
-                    <span class="text-2xl font-bold font-heading text-slate-900 tabular-nums">&lt; 15 ms</span>
-                    <span class="text-xs text-slate-400 font-sans">per frame</span>
-                </div>
+        <!-- KPI 4: Latensi Inferensi -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-medium text-slate-500 tracking-wide">Latensi Inferensi</span>
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200/80">
+                    Real-time (CPU)
+                </span>
             </div>
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs font-mono text-slate-500">
-                <span>Throughput:</span>
-                <span class="tabular-nums">&ge; 30 FPS (CPU)</span>
+            <div class="mt-3 flex items-baseline justify-between">
+                <div class="text-3xl font-bold font-heading text-slate-900 font-mono tabular-nums">
+                    &lt; 15 ms
+                </div>
             </div>
         </div>
     </div>
@@ -98,13 +100,13 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
         
         <!-- Kolom Kiri: Tabel Performa Klasifikasi per Kategori (7 Cols) -->
-        <div class="lg:col-span-7 bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+        <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm font-heading">Metrik Klasifikasi per Kategori</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Nilai presisi, recall, dan F1-score pada 290 sampel data uji fisiologis</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Nilai presisi, recall, dan F1-score pada data uji</p>
                 </div>
-                <span class="px-2 py-0.5 bg-white text-slate-700 border border-slate-200 text-xs font-mono font-medium rounded">
+                <span class="px-2.5 py-0.5 bg-blue-50 text-blue-700 border border-blue-200/80 text-xs font-mono font-medium rounded-lg">
                     290 Sampel
                 </span>
             </div>
@@ -178,20 +180,20 @@
         </div>
 
         <!-- Kolom Kanan: Matriks Konfusi (Confusion Matrix) (5 Cols) -->
-        <div class="lg:col-span-5 bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+        <div class="lg:col-span-5 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm font-heading">Matriks Konfusi</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Prediksi vs Aktual Ground Truth</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Prediksi vs Ground Truth</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <button type="button" id="toggleMatrixBtn" onclick="toggleMatrixDisplay()" 
-                            class="text-xs font-mono font-medium text-slate-600 hover:text-slate-900 px-2 py-0.5 rounded border border-slate-200 bg-white hover:bg-slate-50 transition-colors cursor-pointer">
+                            class="text-xs font-semibold text-slate-700 hover:text-slate-900 px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 shadow-2xs transition-colors cursor-pointer">
                         <span id="toggleMatrixLabel">Grafik PNG</span>
                     </button>
                     @if($cmExists)
                     <a href="{{ route('admin.view_confusion_matrix') }}" target="_blank" 
-                       class="text-xs font-medium text-slate-900 hover:underline font-mono inline-flex items-center gap-0.5"
+                       class="text-xs font-semibold text-blue-600 hover:text-blue-700 hover:underline font-mono inline-flex items-center gap-0.5"
                        title="Buka berkas grafik PNG">
                         <span>Lihat HD ↗</span>
                     </a>
@@ -226,18 +228,18 @@
                                     <span class="text-[10px] text-slate-400 font-mono">n=80</span>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-900 text-white text-center font-bold">
+                                    <div class="p-2 rounded-lg bg-blue-600 text-white text-center font-bold shadow-2xs">
                                         <div class="tabular-nums">80</div>
-                                        <div class="text-[10px] text-slate-400 font-normal">100%</div>
+                                        <div class="text-[10px] text-blue-100 font-normal">100%</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 text-center text-slate-400">
                                         <div class="tabular-nums">0</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 text-center text-slate-400">
                                         <div class="tabular-nums">0</div>
                                     </div>
                                 </td>
@@ -253,18 +255,18 @@
                                     <span class="text-[10px] text-slate-400 font-mono">n=80</span>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 text-center text-slate-400">
                                         <div class="tabular-nums">0</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-900 text-white text-center font-bold">
+                                    <div class="p-2 rounded-lg bg-blue-600 text-white text-center font-bold shadow-2xs">
                                         <div class="tabular-nums">80</div>
-                                        <div class="text-[10px] text-slate-400 font-normal">100%</div>
+                                        <div class="text-[10px] text-blue-100 font-normal">100%</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 text-center text-slate-400">
                                         <div class="tabular-nums">0</div>
                                     </div>
                                 </td>
@@ -280,20 +282,20 @@
                                     <span class="text-[10px] text-slate-400 font-mono">n=130</span>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-amber-50 border border-amber-300 text-center text-amber-800 font-bold" title="1 False Alarm">
+                                    <div class="p-2 rounded-lg bg-amber-50 border border-amber-300 text-center text-amber-800 font-bold" title="1 False Alarm">
                                         <div class="tabular-nums">1</div>
                                         <div class="text-[10px] text-amber-700 font-medium">0.8%</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-50 border border-slate-200 text-center text-slate-400">
+                                    <div class="p-2 rounded-lg bg-slate-50 border border-slate-200 text-center text-slate-400">
                                         <div class="tabular-nums">0</div>
                                     </div>
                                 </td>
                                 <td class="p-1">
-                                    <div class="p-2 rounded bg-slate-900 text-white text-center font-bold">
+                                    <div class="p-2 rounded-lg bg-blue-600 text-white text-center font-bold shadow-2xs">
                                         <div class="tabular-nums">129</div>
-                                        <div class="text-[10px] text-slate-400 font-normal">99.2%</div>
+                                        <div class="text-[10px] text-blue-100 font-normal">99.2%</div>
                                     </div>
                                 </td>
                             </tr>
@@ -307,28 +309,28 @@
                 @if($cmExists)
                     <img src="{{ route('admin.view_confusion_matrix') }}"
                          alt="Grafik Confusion Matrix"
-                         class="max-h-[260px] w-auto rounded border border-slate-200 object-contain bg-white">
+                         class="max-h-[260px] w-auto rounded-lg border border-slate-200 object-contain bg-white">
                 @else
                     <div class="text-center p-6 text-slate-400 text-xs font-mono space-y-1">
                         <p class="font-semibold text-slate-600">Grafik belum tersedia</p>
-                        <p>Jalankan <code>python training_suite/evaluate.py</code> untuk menghasilkan grafik evaluasi.</p>
+                        <p>Jalankan evaluasi untuk menghasilkan berkas PNG grafik.</p>
                     </div>
                 @endif
             </div>
 
             <!-- Breakdown Ringkasan Forensik Matriks -->
             <div class="p-3.5 grid grid-cols-3 gap-2 text-center text-xs font-mono">
-                <div class="p-2 rounded bg-slate-50 border border-slate-200">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-slate-400 block text-[11px]">True Positive</span>
                     <span class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">289</span>
                     <span class="text-emerald-700 font-medium text-[11px]">99.66%</span>
                 </div>
-                <div class="p-2 rounded bg-slate-50 border border-slate-200">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-slate-400 block text-[11px]">False Positive</span>
                     <span class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">1</span>
                     <span class="text-amber-700 font-medium text-[11px]">0.34%</span>
                 </div>
-                <div class="p-2 rounded bg-slate-50 border border-slate-200">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200/80">
                     <span class="text-slate-400 block text-[11px]">False Negative</span>
                     <span class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">0</span>
                     <span class="text-slate-500 font-medium text-[11px]">0.00%</span>
@@ -341,11 +343,11 @@
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
         
         <!-- Berkas Artefak di Server -->
-        <div class="lg:col-span-6 bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+        <div class="lg:col-span-6 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm font-heading">Berkas Artefak Model</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Direktori penyimpanan lokal: <code>models/</code></p>
+                    <p class="text-xs text-slate-500 mt-0.5">Direktori penyimpanan: <code>models/</code></p>
                 </div>
                 <span class="text-xs text-slate-500 font-mono">{{ count($modelsList) }} berkas</span>
             </div>
@@ -374,11 +376,11 @@
         </div>
 
         <!-- Spesifikasi Inferensi & Parameter Model -->
-        <div class="lg:col-span-6 bg-white rounded-lg border border-slate-200 overflow-hidden">
-            <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/60 flex items-center justify-between">
+        <div class="lg:col-span-6 bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-slate-200/90 bg-slate-50/70 flex items-center justify-between">
                 <div>
                     <h2 class="font-bold text-slate-900 text-sm font-heading">Spesifikasi Inferensi &amp; Parameter</h2>
-                    <p class="text-xs text-slate-500 mt-0.5">Konfigurasi parameter runtime pipeline AI telematika</p>
+                    <p class="text-xs text-slate-500 mt-0.5">Konfigurasi runtime pipeline AI telematika</p>
                 </div>
                 <span class="text-xs text-slate-500 font-mono">5 Parameter</span>
             </div>
@@ -428,4 +430,3 @@
     }
 </script>
 @endsection
-
