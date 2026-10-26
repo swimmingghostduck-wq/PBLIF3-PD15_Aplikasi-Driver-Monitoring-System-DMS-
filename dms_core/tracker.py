@@ -7,6 +7,8 @@ class DrowsinessTracker:
     - FR-05: Deteksi kondisi pengemudi mengantuk
     - FR-06: Deteksi pengemudi tidak fokus / menoleh ke samping / menunduk terlalu lama
     - NFR-03: Memberikan peringatan dalam waktu maksimal 3 detik
+    - Smart Lifecycle: 1 insiden = 1 snapshot bukti awal + akumulasi durasi berkelanjutan
+    - Fast Recovery: Alarm langsung padam seketika pengemudi fokus kembali ke jalan
     """
 
     def __init__(self, 
@@ -25,7 +27,7 @@ class DrowsinessTracker:
         self.distraction_frames = 0
         self.no_face_frames = 0
 
-        # Memory orientasi & smoothing pose (EMA filter agar gerakan menggaruk kepala tidak membuat spike)
+        # Memory orientasi & smoothing pose (EMA filter)
         self.smooth_yaw = 0.0
         self.smooth_pitch = 0.0
         self.last_yaw = 0.0
@@ -37,8 +39,13 @@ class DrowsinessTracker:
         self.is_alarm_active = False
         self.alarm_type = None           # 'KANTUK', 'TIDAK_FOKUS', 'MENGUAP', 'WAJAH_HILANG'
         self.alarm_message = ''
-        self.last_alert_time = 0.0
-        self.alert_cooldown = 2.0        # Jeda minimal antar event pencatatan log (detik)
+
+        # Siklus Hidup Insiden (Incident Session Lifecycle & Storage Optimization)
+        self.active_incident = None         # 'kantuk', 'tidak_fokus', 'menguap' saat insiden berlangsung
+        self.incident_start_time = 0.0      # Waktu mulai insiden
+        self.post_incident_cooldown = 4.0   # Jeda 4 detik setelah pulih sebelum insiden baru bisa dimulai
+        self.incident_cooldown_until = 0.0  # Batas waktu cooldown
+        self.active_log_id = None           # ID baris AlertLog di database yang sedang berjalan
 
         # Statistik sesi pengemudi
         self.total_drowsy_events = 0
@@ -48,18 +55,18 @@ class DrowsinessTracker:
     def update(self, features_dict, prediction_dict):
         """
         Memperbarui status tracker pada setiap frame video.
-        Mengembalikan dictionary berisi status alarm dan metrik real-time.
+        Mengembalikan dictionary berisi status alarm, siklus insiden, dan metrik real-time.
         """
         current_time = time.time()
         should_record_event = False
         new_event_type = None
+        event_phase = None
+        incident_duration = 0.0
 
         # 1. Periksa apakah wajah terdeteksi
         if not features_dict.get('face_detected', False):
             self.no_face_frames += 1
 
-            # Logika Cerdas: Hanya anggap sebagai menoleh/menunduk jika sebelum wajah hilang,
-            # pengemudi memang terbukti sedang menoleh/menunduk dengan durasi akumulasi nyata atau sudut >= threshold
             was_really_turning = (self.distraction_frames >= 1) or (abs(self.last_yaw) >= self.yaw_threshold)
             was_really_nodding = (self.distraction_frames >= 1) or (self.last_pitch >= self.pitch_threshold)
 
@@ -74,30 +81,53 @@ class DrowsinessTracker:
                         direction = self.last_direction if self.last_direction in ['Kanan', 'Kiri'] else 'Samping'
                         self.alarm_message = f'PERINGATAN: Terlalu Lama Menoleh ke {direction}! Fokus Menatap Jalan!'
 
-                    if (current_time - self.last_alert_time) > self.alert_cooldown:
+                    if self.active_incident is None and current_time > self.incident_cooldown_until:
+                        self.active_incident = 'tidak_fokus'
+                        self.incident_start_time = current_time - (self.distraction_consec_frames / 12.0)
                         self.total_distraction_events += 1
-                        self.last_alert_time = current_time
                         should_record_event = True
                         new_event_type = 'tidak_fokus'
-                return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type)
+                        event_phase = 'start'
+                    elif self.active_incident == 'tidak_fokus':
+                        event_phase = 'ongoing'
+                        new_event_type = 'tidak_fokus'
 
-            # Jika bukan karena menoleh nyata (misal tangan menggaruk kepala / melintas sebentar),
-            # jangan menaikkan distraction_frames! Berikan toleransi hingga distraction_consec_frames (~3 detik)
+                    incident_duration = max(1.5, current_time - self.incident_start_time) if self.incident_start_time > 0 else 2.0
+                    return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type, event_phase, incident_duration)
+
             if self.no_face_frames >= self.distraction_consec_frames:
                 self.is_alarm_active = True
                 self.alarm_type = 'WAJAH_HILANG'
                 self.alarm_message = 'PERINGATAN: Wajah Pengemudi Tidak Terdeteksi! Menghadap ke Jalan!'
-                if (current_time - self.last_alert_time) > self.alert_cooldown:
+                if self.active_incident is None and current_time > self.incident_cooldown_until:
+                    self.active_incident = 'tidak_fokus'
+                    self.incident_start_time = current_time - (self.distraction_consec_frames / 12.0)
                     self.total_distraction_events += 1
-                    self.last_alert_time = current_time
                     should_record_event = True
                     new_event_type = 'tidak_fokus'
+                    event_phase = 'start'
+                elif self.active_incident == 'tidak_fokus':
+                    event_phase = 'ongoing'
+                    new_event_type = 'tidak_fokus'
+                incident_duration = max(1.5, current_time - self.incident_start_time) if self.incident_start_time > 0 else 2.0
             else:
                 self.is_alarm_active = False
                 self.alarm_type = None
                 self.alarm_message = 'Mencari posisi wajah pengemudi...'
+                if self.active_incident is not None:
+                    event_phase = 'end'
+                    new_event_type = self.active_incident
+                    self.incident_cooldown_until = current_time + self.post_incident_cooldown
+                    self.active_incident = None
 
-            return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type)
+                if self.incident_start_time > 0:
+                    incident_duration = max(1.5, current_time - self.incident_start_time)
+                    if event_phase == 'end':
+                        self.incident_start_time = 0.0
+                else:
+                    incident_duration = 2.0
+
+            return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type, event_phase, incident_duration)
 
         # Wajah terdeteksi normal
         self.no_face_frames = 0
@@ -107,18 +137,17 @@ class DrowsinessTracker:
         is_yawning_pred = prediction_dict.get('is_yawning', False)
 
         # Cek arah pandangan mata (Iris Gaze Priority)
-        # Jika mata fokus menatap lurus ke jalan, gerakan kepala kecil / menggaruk kepala tidak dianggap distraksi
         is_gaze_forward = features_dict.get('is_gaze_forward', None)
         if is_gaze_forward is None:
             is_gaze_forward = (abs(yaw) < 20.0 and abs(pitch) < 18.0)
         self.is_gaze_forward = is_gaze_forward
 
-        # EMA filter pada pose kepala untuk meredam glitch saat tangan mendekati wajah/kepala
+        # EMA filter pada pose kepala (alpha=0.50 agar cepat merespons ketika kepala kembali lurus)
         if self.smooth_yaw == 0.0 and self.smooth_pitch == 0.0:
             self.smooth_yaw = yaw
             self.smooth_pitch = pitch
         else:
-            alpha = 0.45
+            alpha = 0.50
             self.smooth_yaw = alpha * yaw + (1 - alpha) * self.smooth_yaw
             self.smooth_pitch = alpha * pitch + (1 - alpha) * self.smooth_pitch
 
@@ -150,34 +179,46 @@ class DrowsinessTracker:
         if is_distracted:
             self.distraction_frames += 1
         else:
-            # Pengemudi kembali fokus menatap jalan -> kurangi counter secara bertahap
-            self.distraction_frames = max(0, self.distraction_frames - 2)
+            # FAST RECOVERY: Pengemudi sudah menghadap ke depan!
+            # Langsung bersihkan counter distraksi agar alarm segera padam dan tidak memicu snapshot palsu saat menghadap tengah
+            self.distraction_frames = 0
 
         # 2. Logika Kantuk / Mata Tertutup
         if is_drowsy_pred:
             self.closed_eyes_frames += 1
         else:
-            self.closed_eyes_frames = max(0, self.closed_eyes_frames - 3)
+            # Mata sudah terbuka -> pemulihan cepat
+            self.closed_eyes_frames = 0
 
         # 3. Logika Menguap
         if is_yawning_pred:
             self.yawn_frames += 1
         else:
-            self.yawn_frames = max(0, self.yawn_frames - 1)
+            self.yawn_frames = max(0, self.yawn_frames - 2)
 
-        # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers)
+        # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers & Smart Lifecycle)
+        # 1. KANTUK (Mata terpejam melampaui ambang batas)
         if self.closed_eyes_frames >= self.drowsy_consec_frames:
             self.is_alarm_active = True
             self.alarm_type = 'KANTUK'
             self.alarm_message = 'BAHAYA: Anda Terdeteksi Mengantuk! Segera Buka Mata!'
-            
-            if (current_time - self.last_alert_time) > self.alert_cooldown:
+
+            if self.active_incident is None and current_time > self.incident_cooldown_until:
+                # START: Buat 1 log database & simpan 1 foto bukti awal
+                self.active_incident = 'kantuk'
+                self.incident_start_time = current_time - (self.drowsy_consec_frames / 12.0)
                 self.total_drowsy_events += 1
-                self.last_alert_time = current_time
                 should_record_event = True
                 new_event_type = 'kantuk'
+                event_phase = 'start'
+            elif self.active_incident == 'kantuk':
+                # ONGOING: Perbarui durasi, DILARANG mengambil foto berulang!
+                event_phase = 'ongoing'
+                new_event_type = 'kantuk'
 
-        elif self.distraction_frames >= self.distraction_consec_frames:
+        # 2. TIDAK FOKUS (Menoleh/Menunduk berkelanjutan)
+        # STRICT GUARD: Haram memicu alarm distraksi jika pengemudi sudah menghadap 'Tengah'!
+        elif self.distraction_frames >= self.distraction_consec_frames and is_distracted and self.last_direction != 'Tengah':
             self.is_alarm_active = True
             self.alarm_type = 'TIDAK_FOKUS'
             if 'Bawah' in self.last_direction:
@@ -186,35 +227,61 @@ class DrowsinessTracker:
                 self.alarm_message = f'PERINGATAN: Terlalu Lama Menoleh ke {self.last_direction}! Fokus Menatap Jalan!'
             else:
                 self.alarm_message = f'PERINGATAN: Tetap Fokus Menatap Jalan! ({self.last_direction})'
-            
-            if (current_time - self.last_alert_time) > self.alert_cooldown:
+
+            if self.active_incident is None and current_time > self.incident_cooldown_until:
+                # START: Buat 1 log database & simpan 1 foto bukti awal saat posisi menoleh
+                self.active_incident = 'tidak_fokus'
+                self.incident_start_time = current_time - (self.distraction_consec_frames / 12.0)
                 self.total_distraction_events += 1
-                self.last_alert_time = current_time
                 should_record_event = True
                 new_event_type = 'tidak_fokus'
+                event_phase = 'start'
+            elif self.active_incident == 'tidak_fokus':
+                # ONGOING: Perbarui durasi, DILARANG mengambil foto berulang!
+                event_phase = 'ongoing'
+                new_event_type = 'tidak_fokus'
 
-        elif self.yawn_frames >= 30: # Sering menguap
+        # 3. MENGUAP (Bukaan mulut lebar berkelanjutan)
+        elif self.yawn_frames >= 28:
             self.is_alarm_active = True
             self.alarm_type = 'MENGUAP'
             self.alarm_message = 'Peringatan: Terdeteksi Menguap Berulang Kali, Pertimbangkan Istirahat.'
-            
-            if (current_time - self.last_alert_time) > (self.alert_cooldown * 2):
+
+            if self.active_incident is None and current_time > self.incident_cooldown_until:
+                self.active_incident = 'menguap'
+                self.incident_start_time = current_time - (self.yawn_frames / 12.0)
                 self.total_yawn_events += 1
-                self.last_alert_time = current_time
                 should_record_event = True
+                new_event_type = 'menguap'
+                event_phase = 'start'
+            elif self.active_incident == 'menguap':
+                event_phase = 'ongoing'
                 new_event_type = 'menguap'
 
         else:
+            # PENGEMUDI KEMBALI WASPADA & FOKUS (NORMAL)
             self.is_alarm_active = False
             self.alarm_type = None
             self.alarm_message = 'Kondisi Pengemudi: Waspada & Fokus'
 
-        return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type)
+            if self.active_incident is not None:
+                # END: Sesi insiden selesai! Tutup rekaman di database dengan total durasi final
+                event_phase = 'end'
+                new_event_type = self.active_incident
+                self.incident_cooldown_until = current_time + self.post_incident_cooldown
+                self.active_incident = None
 
-    def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type):
+        if self.incident_start_time > 0:
+            incident_duration = max(1.5, current_time - self.incident_start_time)
+            if event_phase == 'end':
+                self.incident_start_time = 0.0
+        else:
+            incident_duration = 2.0
+
+        return self._build_status(features_dict, prediction_dict, should_record_event, new_event_type, event_phase, incident_duration)
+
+    def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type, event_phase=None, incident_duration=2.0):
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
-        # Ambang batas transisi status visual:
-        # Melirik wajar / menggaruk kepala (< 60% durasi bahaya, misal < 16 frame / ~1.8 detik) TETAP berstatus TERJAGA.
         warning_frame_thresh = max(2, int(self.distraction_consec_frames * 0.6))
 
         if self.is_alarm_active:
@@ -230,7 +297,6 @@ class DrowsinessTracker:
         else:
             status_label = 'TERJAGA'
 
-        # Skor kantuk dihitung secara proporsional terhadap durasi akumulasi mata terpejam
         drowsy_progress = min(100, int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100))
         drowsy_score = round(drowsy_progress / 100.0, 2)
         distraction_progress = min(100, int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100))
@@ -249,7 +315,10 @@ class DrowsinessTracker:
             'total_yawn_events': self.total_yawn_events,
             'should_record_event': should_record_event,
             'new_event_type': new_event_type,
+            'event_phase': event_phase,
+            'incident_duration': round(incident_duration, 1),
             'status_label': status_label,
             'drowsy_score': drowsy_score,
             'method': prediction_dict.get('method', 'Baseline')
         }
+

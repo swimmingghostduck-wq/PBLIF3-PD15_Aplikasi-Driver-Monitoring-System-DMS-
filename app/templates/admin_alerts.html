@@ -1,0 +1,515 @@
+{% extends 'admin_base.html' %}
+{% block title %}Ringkasan Insiden - DriveSafe{% endblock %}
+
+{% block content %}
+<div class="px-6 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6">
+    <!-- Header Halaman & Aksi Cepat -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
+        <div>
+            <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Ringkasan Insiden Pengemudi</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Catatan riwayat peringatan dan rincian kejadian seluruh pengemudi</p>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <!-- Ekspor CSV -->
+            <a href="{{ url_for('admin.export_alerts_csv', driver_id=selected_driver_id, alert_type=selected_alert_type, q=search_query) }}" 
+               class="h-9.5 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-medium rounded-lg border border-slate-200 shadow-2xs transition-colors inline-flex items-center gap-2"
+               title="Unduh log insiden dalam format CSV">
+                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                </svg>
+                <span>Ekspor CSV</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Unified Metric Strip -->
+    <div class="bg-white border border-slate-200 rounded-lg divide-y sm:divide-y-0 sm:divide-x divide-slate-100 grid grid-cols-2 sm:grid-cols-5 shadow-xs">
+        <!-- 1. Total Pengemudi -->
+        <div class="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Pengemudi Aktif</span>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_drivers }}</span>
+                    <span class="text-xs text-slate-400 font-mono">orang</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Total Insiden -->
+        <div class="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Total Peringatan</span>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-red-600 tabular-nums">{{ total_alerts }}</span>
+                    <span class="text-xs text-red-500 font-mono">insiden</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Mengantuk -->
+        <div class="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Mengantuk</span>
+                    <span class="w-2 h-2 rounded-full bg-red-600"></span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_drowsy }}</span>
+                    <span class="text-xs text-slate-400 font-mono">kali</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. Tidak Fokus -->
+        <div class="p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Distraksi</span>
+                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_distraction }}</span>
+                    <span class="text-xs text-slate-400 font-mono">kali</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Menguap -->
+        <div class="col-span-2 sm:col-span-1 p-4 sm:p-5 flex flex-col justify-between">
+            <div>
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Menguap</span>
+                    <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                </div>
+                <div class="mt-2 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_yawn }}</span>
+                    <span class="text-xs text-slate-400 font-mono">kali</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabel Riwayat Insiden Penuh -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
+        
+        <!-- Quick Filter Pills -->
+        <div class="px-4 py-2.5 border-b border-slate-200 bg-white flex flex-wrap items-center gap-2 text-xs font-sans">
+            <span class="font-semibold text-slate-400 uppercase font-mono tracking-wider mr-1 text-[11px]">Filter Cepat:</span>
+            
+            <a href="{{ url_for('admin.alerts', driver_id=selected_driver_id, q=search_query) }}" 
+               class="px-3 py-1 rounded-full font-medium transition-colors {% if not selected_alert_type %}bg-blue-600 text-white shadow-2xs font-semibold{% else %}bg-slate-100 text-slate-600 hover:bg-slate-200{% endif %}">
+                Semua Insiden ({{ total_alerts }})
+            </a>
+
+            <a href="{{ url_for('admin.alerts', alert_type='kantuk', driver_id=selected_driver_id, q=search_query) }}" 
+               class="px-3 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1.5 {% if selected_alert_type == 'kantuk' %}bg-red-600 text-white shadow-2xs font-semibold{% else %}bg-red-50 text-red-700 hover:bg-red-100 border border-red-200/60{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if selected_alert_type == 'kantuk' %}bg-white{% else %}bg-red-500{% endif %}"></span>
+                <span>Mengantuk ({{ total_drowsy }})</span>
+            </a>
+
+            <a href="{{ url_for('admin.alerts', alert_type='tidak_fokus', driver_id=selected_driver_id, q=search_query) }}" 
+               class="px-3 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1.5 {% if selected_alert_type == 'tidak_fokus' %}bg-amber-600 text-white shadow-2xs font-semibold{% else %}bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200/60{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if selected_alert_type == 'tidak_fokus' %}bg-white{% else %}bg-amber-500{% endif %}"></span>
+                <span>Distraksi ({{ total_distraction }})</span>
+            </a>
+
+            <a href="{{ url_for('admin.alerts', alert_type='menguap', driver_id=selected_driver_id, q=search_query) }}" 
+               class="px-3 py-1 rounded-full font-medium transition-colors inline-flex items-center gap-1.5 {% if selected_alert_type == 'menguap' %}bg-blue-600 text-white shadow-2xs font-semibold{% else %}bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200/60{% endif %}">
+                <span class="w-1.5 h-1.5 rounded-full {% if selected_alert_type == 'menguap' %}bg-white{% else %}bg-blue-500{% endif %}"></span>
+                <span>Menguap ({{ total_yawn }})</span>
+            </a>
+        </div>
+
+        <!-- Inline Filter Toolbar -->
+        <div class="p-3 sm:p-4 border-b border-slate-200 bg-slate-50/70 flex flex-wrap items-center justify-between gap-3">
+            <form method="GET" action="{{ url_for('admin.alerts') }}" class="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+                <!-- Dropdown Pengemudi -->
+                <select name="driver_id" class="h-9.5 bg-white border border-slate-300 rounded-lg px-3 text-sm text-slate-900 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-sans">
+                    <option value="">Semua Pengemudi</option>
+                    {% for d in all_drivers %}
+                        <option value="{{ d.id }}" {% if selected_driver_id == d.id %}selected{% endif %}>
+                            {{ d.full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+
+                <!-- Dropdown Jenis Insiden -->
+                <select name="alert_type" class="h-9.5 bg-white border border-slate-300 rounded-lg px-3 text-sm text-slate-900 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-sans">
+                    <option value="">Semua Insiden</option>
+                    <option value="kantuk" {% if selected_alert_type == 'kantuk' %}selected{% endif %}>Mengantuk (EAR)</option>
+                    <option value="tidak_fokus" {% if selected_alert_type == 'tidak_fokus' %}selected{% endif %}>Tidak Fokus (Pose/Gaze)</option>
+                    <option value="menguap" {% if selected_alert_type == 'menguap' %}selected{% endif %}>Menguap (MAR)</option>
+                </select>
+
+                <!-- Input Pencarian -->
+                <div class="relative flex-1 min-w-[180px] max-w-sm">
+                    <input type="text" name="q" value="{{ search_query }}" placeholder="Cari nama atau catatan..."
+                           class="w-full h-9.5 bg-white border border-slate-300 rounded-lg pl-9 pr-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-zinc-800 focus:ring-1 focus:ring-zinc-800 font-sans">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+
+                <!-- Tombol Filter -->
+                <button type="submit" class="h-9.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors cursor-pointer shadow-xs">
+                    Filter
+                </button>
+
+                <!-- Reset Link -->
+                {% if selected_driver_id or selected_alert_type or search_query %}
+                <a href="{{ url_for('admin.alerts') }}" class="h-9.5 px-3.5 bg-white hover:bg-slate-50 text-slate-600 text-sm font-medium rounded-lg border border-slate-200 transition-colors inline-flex items-center shadow-2xs" title="Hapus filter">
+                    Reset
+                </a>
+                {% endif %}
+            </form>
+
+            <!-- Table Actions / Count -->
+            <div class="flex items-center gap-3 shrink-0 text-sm font-mono text-slate-500">
+                <span>
+                    <strong class="text-slate-900 tabular-nums">{{ recent_alerts|length }}</strong> rekaman
+                    {% if selected_driver_id or selected_alert_type or search_query %}
+                        <span class="text-emerald-700 font-semibold font-sans">[Terfilter]</span>
+                    {% endif %}
+                </span>
+
+                {% if recent_alerts %}
+                <div class="w-px h-4 bg-slate-200"></div>
+                <form action="{{ url_for('admin.clear_alerts') }}" method="POST"
+                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus seluruh log insiden? Tindakan ini tidak dapat dibatalkan.');">
+                    <button type="submit" class="h-8 px-2.5 bg-white hover:bg-red-50 text-red-600 rounded-md border border-slate-200 hover:border-red-200 transition-colors flex items-center gap-1.5 cursor-pointer font-sans text-xs font-medium">
+                        <svg class="w-3.5 h-3.5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                        <span>Bersihkan Log</span>
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Tabel Log Insiden -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-800">
+                <thead class="bg-slate-50 text-xs uppercase font-mono font-semibold text-slate-500 border-b border-slate-200 tracking-wider">
+                    <tr>
+                        <th class="px-4 py-3 whitespace-nowrap">Waktu Kejadian</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Pengemudi</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Klasifikasi Insiden</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Tingkat</th>
+                        <th class="px-4 py-3">Keterangan Insiden</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Bukti</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for alert in recent_alerts %}
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                        <!-- Waktu -->
+                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap tabular-nums text-xs font-mono">
+                            {{ alert.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}
+                        </td>
+
+                        <!-- Pengemudi -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            <div class="font-medium text-slate-900 text-sm">
+                                {{ alert.driver.full_name if alert.driver else 'Pengemudi #' ~ alert.driver_id }}
+                            </div>
+                            <div class="text-slate-400 font-mono text-xs">
+                                @{{ alert.driver.username if alert.driver else '-' }}
+                            </div>
+                        </td>
+
+                        <!-- Klasifikasi Insiden -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            {% if alert.alert_type == 'kantuk' %}
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-red-600 shrink-0"></span>
+                                    <span>Mengantuk (EAR)</span>
+                                </span>
+                            {% elif alert.alert_type == 'tidak_fokus' %}
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500 shrink-0"></span>
+                                    <span>Tidak Fokus (Pose/Gaze)</span>
+                                </span>
+                            {% elif alert.alert_type == 'menguap' %}
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                                    <span>Menguap (MAR)</span>
+                                </span>
+                            {% else %}
+                                <span class="text-slate-700 text-sm">{{ alert.alert_type }}</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Tingkat -->
+                        <td class="px-4 py-3 whitespace-nowrap">
+                            {% if alert.severity == 'BAHAYA' %}
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-mono font-bold bg-red-50 text-red-700 border border-red-200 tracking-wider">
+                                    BAHAYA
+                                </span>
+                            {% else %}
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200 tracking-wider">
+                                    {{ alert.severity }}
+                                </span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Keterangan Insiden -->
+                        <td class="px-4 py-3 text-slate-700 max-w-xs truncate text-xs font-sans" title="{{ alert.notes or '' }}">
+                            {% if alert.notes %}
+                                <span>{{ alert.notes }}</span>
+                            {% else %}
+                                <span class="text-slate-400 font-mono">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Snapshot Foto -->
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            {% if alert.snapshot_path %}
+                                <button type="button" 
+                                        class="btn-open-snapshot h-7.5 px-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center gap-1.5 cursor-pointer font-sans text-xs font-medium shadow-2xs"
+                                        data-img="{{ url_for('static', filename='snapshots/' + alert.snapshot_path) }}"
+                                        data-driver="{{ alert.driver.full_name if alert.driver else 'Pengemudi #' ~ alert.driver_id }}"
+                                        data-type="{{ alert.alert_type|capitalize }}"
+                                        data-time="{{ alert.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}"
+                                        data-duration="{{ '%.1f'|format(alert.duration_seconds) }} detik"
+                                        data-notes="{{ alert.notes or '' }}"
+                                        title="Lihat foto bukti kejadian">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    </svg>
+                                    <span>Bukti Foto</span>
+                                </button>
+                            {% else %}
+                                <span class="text-xs text-slate-400 font-mono">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Aksi Hapus -->
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
+                            <form action="{{ url_for('admin.delete_alert', alert_id=alert.id) }}" method="POST"
+                                  onsubmit="return confirm('Hapus catatan insiden #{{ alert.id }}?');">
+                                <button type="submit" class="text-slate-400 hover:text-red-600 p-1.5 rounded-md hover:bg-red-50 transition-colors cursor-pointer" title="Hapus insiden ini">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                    </svg>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="py-12 px-4 text-center">
+                            <div class="max-w-md mx-auto space-y-3">
+                                <div class="relative w-12 h-12 mx-auto flex items-center justify-center">
+                                    <span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-25 animate-ping"></span>
+                                    <div class="relative w-9 h-9 rounded-full border border-emerald-500/40 bg-emerald-50 flex items-center justify-center shadow-xs">
+                                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                                    </div>
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                        Semua Pengemudi Aman
+                                    </div>
+                                    <h3 class="text-sm font-bold font-heading text-slate-900">Tidak Ada Riwayat Peringatan</h3>
+                                    <p class="text-xs text-slate-500 leading-relaxed font-sans max-w-sm mx-auto">
+                                        Belum ada peringatan atau insiden yang tercatat untuk filter ini.
+                                    </p>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- =========================================================================
+     MODAL BUKTI FOTO INSIDEN & FORENSIK TELEMETRI
+     ========================================================================= -->
+<div id="snapshotModal" class="fixed inset-0 z-50 hidden bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div class="bg-white border border-slate-200 rounded-xl max-w-4xl w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-150 my-auto">
+        <!-- Header Modal -->
+        <div class="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+            <div class="flex items-center gap-3">
+                <span id="modalAlertBadge" class="px-2.5 py-1 rounded text-xs font-mono font-bold bg-red-50 text-red-700 border border-red-200 uppercase tracking-wider"></span>
+                <div>
+                    <h3 id="modalDriverName" class="font-bold text-slate-900 text-sm font-heading leading-tight"></h3>
+                    <p class="text-xs text-slate-500">Bukti Foto &amp; Data Deteksi</p>
+                </div>
+            </div>
+            <button type="button" onclick="closeSnapshotModal()" class="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer" title="Tutup Modal">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+
+        <!-- Layout 2 Kolom: Kiri Foto Bukti (6 Cols), Kanan Data Telemetri HUD (6 Cols) -->
+        <div class="grid grid-cols-1 md:grid-cols-12 divide-y md:divide-y-0 md:divide-x divide-slate-200 bg-white">
+            
+            <!-- Kolom Kiri: Foto Snapshot Bukti (6 Cols) -->
+            <div class="md:col-span-6 bg-zinc-950 p-4 sm:p-5 flex flex-col justify-between relative min-h-[300px]">
+                <div class="relative flex-1 flex items-center justify-center">
+                    <img id="modalImg" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22/%3E" 
+                         alt="Foto Insiden" 
+                         class="rounded-lg max-h-[320px] w-auto object-contain border border-zinc-800 shadow-md">
+                </div>
+                <div class="mt-3 pt-3 border-t border-zinc-800/80 flex items-center justify-between text-[11px] font-mono text-zinc-400">
+                    <span>Tangkapan Kamera Real-Time</span>
+                    <a id="modalFullLink" href="#" target="_blank" class="text-emerald-400 hover:underline inline-flex items-center gap-1 font-semibold">
+                        <span>Buka Gambar Penuh</span>
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Kolom Kanan: Telemetry HUD & Context (6 Cols) -->
+            <div class="md:col-span-6 p-5 sm:p-6 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                    <!-- Ringkasan Waktu & Durasi -->
+                    <div class="grid grid-cols-2 gap-3 pb-3 border-b border-slate-100">
+                        <div>
+                            <span class="text-[10px] font-mono font-semibold uppercase text-slate-400 tracking-wider block">Waktu Kejadian</span>
+                            <span id="modalTimestamp" class="text-xs font-bold font-mono text-slate-900 tabular-nums mt-0.5 block"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-mono font-semibold uppercase text-slate-400 tracking-wider block">Estimasi Durasi</span>
+                            <span id="modalDuration" class="text-xs font-bold font-mono text-slate-900 tabular-nums mt-0.5 block"></span>
+                        </div>
+                    </div>
+
+                    <!-- 3 Telemetry Sensor Readout Cards -->
+                    <div>
+                        <span class="text-[10px] font-mono font-semibold uppercase text-slate-400 tracking-wider block mb-2">Sensor Telemetri Terdeteksi:</span>
+                        <div class="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                            <!-- EAR Meter -->
+                            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                                <span class="text-[10px] text-slate-400 block uppercase">Mata (EAR)</span>
+                                <span id="modalEarVal" class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">-</span>
+                                <span class="text-[10px] text-slate-500 block">&lt; 0.22</span>
+                            </div>
+                            <!-- MAR Meter -->
+                            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                                <span class="text-[10px] text-slate-400 block uppercase">Mulut (MAR)</span>
+                                <span id="modalMarVal" class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">-</span>
+                                <span class="text-[10px] text-slate-500 block">&ge; 0.65</span>
+                            </div>
+                            <!-- Pose Meter -->
+                            <div class="p-2.5 rounded-lg border border-slate-200 bg-slate-50/70">
+                                <span class="text-[10px] text-slate-400 block uppercase">Sudut Pose</span>
+                                <span id="modalPoseVal" class="text-sm font-bold text-slate-900 block mt-0.5 tabular-nums">-</span>
+                                <span class="text-[10px] text-slate-500 block">&ge; 25&deg;</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Catatan Telemetri Detil -->
+                    <div id="modalNotesWrapper">
+                        <span class="text-[10px] font-mono font-semibold uppercase text-slate-400 tracking-wider block mb-1.5">Keterangan Faktual Insiden:</span>
+                        <div id="modalNotes" class="bg-slate-50 p-3 rounded-lg border border-slate-200 text-slate-800 text-xs font-sans leading-relaxed break-words"></div>
+                    </div>
+                </div>
+
+                <!-- Footer Modal -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5 font-sans">
+                    <button type="button" onclick="closeSnapshotModal()" class="h-9 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-medium transition-colors cursor-pointer">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openSnapshotModal(imgUrl, driverName, alertType, timestamp, notes, duration) {
+        document.getElementById('modalImg').src = imgUrl;
+        document.getElementById('modalDriverName').textContent = driverName || 'Pengemudi';
+        document.getElementById('modalAlertBadge').textContent = alertType || 'INSIDEN';
+        document.getElementById('modalTimestamp').textContent = timestamp || '-';
+        document.getElementById('modalDuration').textContent = duration || '-';
+
+        const notesWrapper = document.getElementById('modalNotesWrapper');
+        const notesElem = document.getElementById('modalNotes');
+        if (notes && notes.trim() !== '' && notes !== '-' && notes !== 'None') {
+            notesElem.textContent = notes;
+            notesWrapper.classList.remove('hidden');
+        } else {
+            notesWrapper.classList.add('hidden');
+        }
+
+        // Ekstraksi nilai telemetri dari string catatan
+        const earElem = document.getElementById('modalEarVal');
+        const marElem = document.getElementById('modalMarVal');
+        const poseElem = document.getElementById('modalPoseVal');
+
+        const earMatch = notes ? notes.match(/EAR:\s*([\d.]+)/i) : null;
+        const marMatch = notes ? notes.match(/MAR:\s*([\d.]+)/i) : null;
+        const yawMatch = notes ? notes.match(/Yaw:\s*([+\-\d.]+°?)/i) : null;
+        const pitchMatch = notes ? notes.match(/Pitch:\s*([+\-\d.]+°?)/i) : null;
+
+        if (earMatch) {
+            earElem.textContent = earMatch[1];
+            earElem.className = 'text-sm font-bold text-red-600 block mt-0.5 tabular-nums';
+        } else {
+            earElem.textContent = 'Normal';
+            earElem.className = 'text-sm font-bold text-slate-500 block mt-0.5';
+        }
+
+        if (marMatch) {
+            marElem.textContent = marMatch[1];
+            marElem.className = 'text-sm font-bold text-blue-600 block mt-0.5 tabular-nums';
+        } else {
+            marElem.textContent = 'Normal';
+            marElem.className = 'text-sm font-bold text-slate-500 block mt-0.5';
+        }
+
+        if (yawMatch) {
+            poseElem.textContent = 'Yaw ' + yawMatch[1];
+            poseElem.className = 'text-sm font-bold text-amber-600 block mt-0.5 tabular-nums';
+        } else if (pitchMatch) {
+            poseElem.textContent = 'Pitch ' + pitchMatch[1];
+            poseElem.className = 'text-sm font-bold text-amber-600 block mt-0.5 tabular-nums';
+        } else {
+            poseElem.textContent = 'Fokus';
+            poseElem.className = 'text-sm font-bold text-slate-500 block mt-0.5';
+        }
+
+        document.getElementById('modalFullLink').href = imgUrl;
+        document.getElementById('snapshotModal').classList.remove('hidden');
+    }
+
+    function closeSnapshotModal() {
+        document.getElementById('snapshotModal').classList.add('hidden');
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.btn-open-snapshot').forEach(function(button) {
+            button.addEventListener('click', function() {
+                openSnapshotModal(
+                    this.getAttribute('data-img'),
+                    this.getAttribute('data-driver'),
+                    this.getAttribute('data-type'),
+                    this.getAttribute('data-time'),
+                    this.getAttribute('data-notes'),
+                    this.getAttribute('data-duration')
+                );
+            });
+        });
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeSnapshotModal();
+        }
+    });
+</script>
+{% endblock %}
+

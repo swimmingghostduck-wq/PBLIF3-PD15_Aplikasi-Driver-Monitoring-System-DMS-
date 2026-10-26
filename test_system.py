@@ -46,11 +46,14 @@ class TestDMSSystem(unittest.TestCase):
         app = create_app()
         with app.app_context():
             admin = User.query.filter_by(username='admin').first()
-            driver = User.query.filter_by(username='driver').first()
+            driver = User.query.filter((User.username == 'apri') | (User.username == 'driver')).first()
+            nayla = User.query.filter_by(username='nayla').first()
             self.assertIsNotNone(admin)
             self.assertIsNotNone(driver)
+            self.assertIsNotNone(nayla)
             self.assertTrue(admin.check_password('admin123'))
             self.assertTrue(driver.check_password('driver123'))
+            self.assertTrue(nayla.check_password('driver123'))
 
     def test_03_detector_synthetic_frame(self):
         """Memastikan FaceLandmarkDetector menangani frame kosong & frame gambar dengan aman."""
@@ -323,10 +326,14 @@ class TestDMSSystem(unittest.TestCase):
             self.assertEqual(r_csv.mimetype, 'text/csv')
             self.assertIn(b'Uji Coba Filter CSV', r_csv.data)
 
-            # Uji endpoint Filter Dashboard
+            # Uji endpoint Filter Dashboard & Ringkasan Insiden
             r_filtered = client.get(f'/admin/dashboard?driver_id={driver_id}&alert_type=kantuk')
             self.assertEqual(r_filtered.status_code, 200)
             self.assertIn(b'Driver Test Baru', r_filtered.data)
+
+            r_alerts = client.get(f'/admin/alerts?driver_id={driver_id}&alert_type=kantuk')
+            self.assertEqual(r_alerts.status_code, 200)
+            self.assertIn(b'Driver Test Baru', r_alerts.data)
 
             # 4. Uji Reload Model AI (Perbaikan Bug Engine)
             r_reload = client.post('/admin/models/reload', follow_redirects=True)
@@ -335,6 +342,53 @@ class TestDMSSystem(unittest.TestCase):
             # Bersihkan data uji
             db.session.delete(test_alert)
             db.session.delete(updated_driver)
+            db.session.commit()
+
+    def test_12_admin_profile_management(self):
+        """Memastikan fitur Pengaturan Profil Administrator (GET & POST pembaruan data dan verifikasi sandi)."""
+        from app import create_app
+        from app.models import db, User
+        app = create_app()
+        app.config['TESTING'] = True
+        client = app.test_client()
+
+        with app.app_context():
+            # 1. Login sebagai admin
+            client.post('/auth/login', data={'username': 'admin', 'password': 'admin123'})
+
+            # 2. Akses halaman profil admin
+            r_get = client.get('/admin/profile')
+            self.assertEqual(r_get.status_code, 200)
+            self.assertIn(b'Pengaturan Profil', r_get.data)
+
+            # 3. Update nama lengkap dan NIM
+            r_post = client.post('/admin/profile', data={
+                'full_name': 'Administrator DMS Utama',
+                'username': 'admin',
+                'nim_nik': '1234567890'
+            }, follow_redirects=True)
+            self.assertEqual(r_post.status_code, 200)
+            self.assertIn(b'Profil data diri berhasil diperbarui', r_post.data)
+
+            # Verifikasi perubahan di database
+            admin = User.query.filter_by(username='admin').first()
+            self.assertEqual(admin.full_name, 'Administrator DMS Utama')
+            self.assertEqual(admin.nim_nik, '1234567890')
+
+            # 4. Uji penolakan ganti password jika current password salah
+            r_wrong_pass = client.post('/admin/profile', data={
+                'full_name': 'Administrator DMS Utama',
+                'username': 'admin',
+                'nim_nik': '1234567890',
+                'current_password': 'wrongpassword',
+                'new_password': 'newpassword123',
+                'confirm_password': 'newpassword123'
+            }, follow_redirects=True)
+            self.assertIn(b'Kata sandi saat ini yang Anda masukkan salah', r_wrong_pass.data)
+
+            # Kembalikan nama admin ke default
+            admin.full_name = 'Administrator DMS'
+            admin.nim_nik = ''
             db.session.commit()
 
 if __name__ == '__main__':

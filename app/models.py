@@ -19,7 +19,7 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(20), nullable=False, default='driver') # 'driver' atau 'admin'
     nim_nik = db.Column(db.String(30), nullable=True)
     is_active = db.Column(db.Boolean, default=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now)
 
     # Relasi
     sessions = db.relationship('MonitoringSession', backref='driver', lazy=True, cascade='all, delete-orphan')
@@ -53,7 +53,7 @@ class MonitoringSession(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     driver_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False, index=True)
-    start_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    start_time = db.Column(db.DateTime, default=datetime.now, nullable=False)
     end_time = db.Column(db.DateTime, nullable=True)
     total_drowsy = db.Column(db.Integer, default=0)
     total_distraction = db.Column(db.Integer, default=0)
@@ -76,7 +76,7 @@ class AlertLog(db.Model):
     severity = db.Column(db.String(20), default='BAHAYA')   # 'BAHAYA', 'PERINGATAN'
     duration_seconds = db.Column(db.Float, default=1.5)
     snapshot_path = db.Column(db.String(255), nullable=True)
-    timestamp = db.Column(db.DateTime, default=datetime.utcnow, nullable=False, index=True)
+    timestamp = db.Column(db.DateTime, default=datetime.now, nullable=False, index=True)
     notes = db.Column(db.Text, nullable=True)
 
     def to_dict(self):

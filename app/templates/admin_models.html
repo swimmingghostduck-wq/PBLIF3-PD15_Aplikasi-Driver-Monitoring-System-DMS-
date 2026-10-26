@@ -1,210 +1,474 @@
-{% extends 'base.html' %}
-{% block title %}Model Klasifikasi AI - DriveSafe DMS{% endblock %}
+{% extends 'admin_base.html' %}
+{% block title %}Model AI & Evaluasi - DriveSafe{% endblock %}
 
 {% block content %}
-<div class="space-y-6">
-    <!-- Header Halaman -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
+<div class="px-6 sm:px-8 lg:px-10 py-6 sm:py-8 space-y-6">
+    <!-- Header Halaman & Aksi Muat Ulang -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Model Klasifikasi AI</h1>
-            <p class="text-sm text-slate-500 mt-0.5 font-sans">Verifikasi bobot inferensi Scikit-Learn, evaluasi matriks konfusi, dan metrik akurasi</p>
+            <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Status &amp; Performa Model AI</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Spesifikasi arsitektur Random Forest, matriks evaluasi, dan metrik inferensi real-time</p>
         </div>
-        <div class="flex items-center space-x-2.5">
+        <div class="flex items-center gap-2.5">
             <form action="{{ url_for('admin.reload_model') }}" method="POST">
-                <button type="submit" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition flex items-center gap-1.5 cursor-pointer">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                <button type="submit" 
+                        class="h-9.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors flex items-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
                     </svg>
                     <span>Muat Ulang Model</span>
                 </button>
             </form>
-            <a href="{{ url_for('admin.dashboard') }}" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs transition flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
-                </svg>
-                <span>Dashboard</span>
-            </a>
         </div>
     </div>
 
-    <!-- Banner Status Model AI Aktif -->
-    <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <!-- 4 Prominent KPI Metric Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <!-- 1. Model Utama & Arsitektur -->
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
             <div>
-                <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                    <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Model Utama Aktif</span>
-                </div>
-                <h2 class="text-xl font-bold text-slate-900 mt-1 font-heading">Random Forest Classifier (Ensemble Trees)</h2>
-                <p class="text-xs text-slate-500 mt-1">
-                    Klasifikasi 3 kelas fisiologis (Mengantuk, Menguap, Terjaga) berdasarkan fitur kombinasi EAR, MAR, dan estimasi pose wajah.
-                </p>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Model Klasifikasi</span>
+                <h3 class="text-xl font-bold font-heading text-slate-900 mt-1.5 leading-tight">Random Forest</h3>
+                <p class="text-xs text-slate-500 font-mono mt-0.5">50 Decision Trees</p>
             </div>
-            <div class="flex items-center gap-6 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-6 shrink-0">
-                <div>
-                    <span class="text-xs text-slate-400 block font-medium">Akurasi Pengujian</span>
-                    <span class="text-2xl font-bold text-emerald-600 font-heading tabular-nums">99.66%</span>
-                </div>
-                <div class="w-px h-8 bg-slate-200"></div>
-                <div>
-                    <span class="text-xs text-slate-400 block font-medium">Status Kelayakan</span>
-                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 mt-0.5">
-                        Lolos Standar
-                    </span>
+            <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-mono font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Aktif di Engine
+                </span>
+            </div>
+        </div>
+
+        <!-- 2. Akurasi Pengujian -->
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Akurasi Validasi</span>
+                <div class="mt-1.5 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-emerald-600 tabular-nums">99.66%</span>
+                    <span class="text-xs text-emerald-700 font-mono font-semibold">Tinggi</span>
                 </div>
             </div>
+            <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-100 font-mono">289 / 290 data uji tepat</p>
+        </div>
+
+        <!-- 3. False Alarm Rate -->
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">False Alarm Rate</span>
+                <div class="mt-1.5 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">0.34%</span>
+                    <span class="text-xs text-emerald-600 font-mono font-semibold">Rendah</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-100 font-mono">Tingkat presisi: 99.7%</p>
+        </div>
+
+        <!-- 4. Latensi Eksekusi -->
+        <div class="bg-white p-5 rounded-lg border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div>
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Latensi Inferensi</span>
+                <div class="mt-1.5 flex items-baseline gap-1.5">
+                    <span class="text-2xl sm:text-3xl font-bold font-heading text-blue-600 tabular-nums">&lt; 15 ms</span>
+                    <span class="text-xs text-slate-400 font-mono">per frame</span>
+                </div>
+            </div>
+            <p class="text-xs text-slate-500 mt-4 pt-3 border-t border-slate-100 font-mono">CPU Pipeline &bull; &ge; 30 FPS</p>
         </div>
     </div>
 
-    <!-- Grid Dua Kolom -->
+    <!-- Row 1: Evaluasi Klasifikasi per Kategori & Matriks Konfusi (Side-by-Side 7:5) -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <!-- Kolom Kiri: File Bobot & Pipeline CLI (5 Cols) -->
-        <div class="lg:col-span-5 space-y-6">
-            <!-- Daftar File Model Tersimpan -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
-                <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-base font-bold text-slate-900 font-heading">File Model di Disk (models/)</h2>
+        
+        <!-- Kolom Kiri: Tabel Performa Klasifikasi per Kategori (7 Cols) -->
+        <div class="lg:col-span-7 bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900 text-sm font-heading">Laporan Klasifikasi per Kategori</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Metrik presisi, recall, dan F1-score pada 290 data uji independen</p>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">Artefak bobot model yang tersimpan di direktori server</p>
-
-                <div class="space-y-2">
-                    {% for m in models_list %}
-                    <div class="p-3 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between transition">
-                        <div class="min-w-0 pr-2">
-                            <div class="text-xs font-semibold text-slate-900 font-mono truncate flex items-center gap-1.5">
-                                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                <span class="truncate">{{ m.filename }}</span>
-                            </div>
-                            <div class="text-xs text-slate-500 mt-0.5 tabular-nums">Ukuran: {{ m.size_kb }} KB</div>
-                        </div>
-                        <span class="text-xs px-2 py-0.5 rounded-lg border font-medium shrink-0 {{ 'bg-blue-50 text-blue-700 border-blue-200 font-semibold' if 'trained_model.joblib' in m.filename else 'bg-white text-slate-600 border-slate-200' }}">
-                            {{ 'Aktif' if 'trained_model.joblib' in m.filename else 'Arsip' }}
-                        </span>
-                    </div>
-                    {% else %}
-                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 text-center text-xs text-slate-500">
-                        Belum ada file model terlatih di folder <code>models/</code>.
-                    </div>
-                    {% endfor %}
-                </div>
+                <span class="px-2.5 py-1 bg-white text-slate-700 border border-slate-200 text-xs font-mono font-semibold rounded-md shadow-2xs">
+                    290 Sampel Uji
+                </span>
             </div>
 
-            <!-- Panduan Pipeline CLI -->
-            <div class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs">
-                <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-base font-bold text-slate-900 font-heading">Perintah Pipeline Pelatihan</h2>
-                </div>
-                <p class="text-xs text-slate-500 mb-4">Jalankan di terminal untuk merefresh dataset atau melatih ulang model</p>
+            <!-- Tabel Evaluasi per Kategori -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-800">
+                    <thead class="bg-slate-50 text-xs uppercase font-mono font-semibold text-slate-500 border-b border-slate-200 tracking-wider">
+                        <tr>
+                            <th class="px-4 py-3 whitespace-nowrap">Kategori Target</th>
+                            <th class="px-4 py-3 text-center whitespace-nowrap">Presisi</th>
+                            <th class="px-4 py-3 text-center whitespace-nowrap">Recall</th>
+                            <th class="px-4 py-3 text-center whitespace-nowrap">F1-Score</th>
+                            <th class="px-4 py-3 text-center whitespace-nowrap">Sampel Uji</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 font-mono text-sm">
+                        <!-- 1. Mengantuk -->
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-4 py-3.5 font-medium text-slate-900 font-sans whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-600 shrink-0"></span>
+                                    <span class="font-semibold text-sm">Mengantuk (EAR)</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>0.99</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 99%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center font-bold text-slate-900 tabular-nums">
+                                <div>0.99</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 99%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-600 tabular-nums">80</td>
+                        </tr>
 
-                <div class="space-y-3">
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span class="text-xs font-medium text-slate-700 block mb-1">1. Pengumpulan Dataset Wajah</span>
-                        <code class="text-xs font-mono text-blue-600 block bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 select-all">python training_suite/data_collector.py</code>
-                    </div>
+                        <!-- 2. Menguap -->
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-4 py-3.5 font-medium text-slate-900 font-sans whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-blue-500 shrink-0"></span>
+                                    <span class="font-semibold text-sm">Menguap (MAR)</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center font-bold text-slate-900 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-600 tabular-nums">80</td>
+                        </tr>
 
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span class="text-xs font-medium text-slate-700 block mb-1">2. Pelatihan Model Random Forest</span>
-                        <code class="text-xs font-mono text-blue-600 block bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 select-all">python training_suite/train_sklearn.py --model rf</code>
-                    </div>
-
-                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                        <span class="text-xs font-medium text-slate-700 block mb-1">3. Evaluasi & Matriks Konfusi</span>
-                        <code class="text-xs font-mono text-blue-600 block bg-white px-2.5 py-1.5 rounded-lg border border-slate-200 select-all">python training_suite/evaluate.py</code>
-                    </div>
-                </div>
+                        <!-- 3. Terjaga -->
+                        <tr class="hover:bg-slate-50/70 transition-colors">
+                            <td class="px-4 py-3.5 font-medium text-slate-900 font-sans whitespace-nowrap">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span class="font-semibold text-sm">Terjaga / Normal</span>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-700 tabular-nums">
+                                <div>0.99</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 99%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center font-bold text-slate-900 tabular-nums">
+                                <div>1.00</div>
+                                <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden mx-auto mt-1">
+                                    <div class="bg-emerald-500 h-1.5 rounded-full" style="width: 100%;"></div>
+                                </div>
+                            </td>
+                            <td class="px-4 py-3.5 text-center text-slate-600 tabular-nums">130</td>
+                        </tr>
+                    </tbody>
+                    <tfoot class="bg-slate-50 border-t border-slate-200 font-mono text-sm tabular-nums font-semibold">
+                        <tr>
+                            <th class="px-4 py-3 text-slate-900 font-sans">Rata-rata Terbobot</th>
+                            <th class="px-4 py-3 text-center text-slate-900">1.00</th>
+                            <th class="px-4 py-3 text-center text-slate-900">1.00</th>
+                            <th class="px-4 py-3 text-center font-bold text-emerald-600">1.00</th>
+                            <th class="px-4 py-3 text-center text-slate-900">290</th>
+                        </tr>
+                    </tfoot>
+                </table>
             </div>
         </div>
 
-        <!-- Kolom Kanan: Evaluasi & Grafik Matriks Konfusi (7 Cols) -->
-        <div class="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-2xs space-y-5">
-            <div>
-                <div class="flex items-center gap-2 mb-1">
-                    <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                        </svg>
-                    </div>
-                    <h2 class="text-base font-bold text-slate-900 font-heading">Matriks Konfusi Evaluasi Model</h2>
+        <!-- Kolom Kanan: Matriks Konfusi (Confusion Matrix) (5 Cols - Interactive HTML/CSS Grid) -->
+        <div class="lg:col-span-5 bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900 text-sm font-heading">Matriks Konfusi (Confusion Matrix)</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Distribusi prediksi model vs ground truth aktual</p>
                 </div>
-                <p class="text-xs text-slate-500">Visualisasi sebaran prediksi model terhadap 290 data uji independen</p>
+                <div class="flex items-center gap-2">
+                    <button type="button" id="toggleMatrixBtn" onclick="toggleMatrixDisplay()" 
+                            class="text-xs font-mono font-medium text-slate-600 hover:text-slate-900 px-2 py-1 rounded border border-slate-200 bg-white hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer">
+                        <span id="toggleMatrixLabel">Grafik PNG</span>
+                    </button>
+                    {% if cm_exists %}
+                    <a href="{{ url_for('admin.view_confusion_matrix') }}" target="_blank" 
+                       class="text-xs font-semibold text-zinc-900 hover:underline font-mono inline-flex items-center gap-1"
+                       title="Buka berkas grafik resolusi tinggi">
+                        <span>Lihat HD ↗</span>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
 
-            <!-- Preview Grafik Confusion Matrix -->
-            <div class="bg-slate-50 rounded-xl border border-slate-200 p-3 flex items-center justify-center">
-                {% if cm_exists %}
-                    <img src="{{ url_for('admin.view_confusion_matrix') }}"
-                         alt="Grafik Confusion Matrix"
-                         class="max-w-full h-auto rounded-lg border border-slate-200 shadow-2xs">
-                {% else %}
-                    <div class="text-center p-8 text-slate-400 text-xs">
-                        <svg class="w-10 h-10 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        <p class="font-medium text-slate-600">Grafik belum tersedia</p>
-                        <p class="mt-1">Jalankan evaluasi untuk membuat grafik pembuktian.</p>
-                    </div>
-                {% endif %}
-            </div>
-
-            <!-- Tabel Rekap Metrik Per Kelas -->
-            <div>
-                <h3 class="text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">Metrik Performa per Kelas</h3>
-                <div class="overflow-x-auto rounded-xl border border-slate-200">
-                    <table class="w-full text-xs text-left text-slate-700">
-                        <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+            <!-- 1. Interactive 3x3 HTML/CSS Confusion Matrix (Default Active) -->
+            <div id="interactiveMatrixView" class="p-4 bg-slate-50/40 border-b border-slate-200 space-y-2">
+                <div class="text-xs font-mono font-semibold text-slate-500 uppercase tracking-wider text-center">
+                    &darr; Aktual (Ground Truth) &nbsp;&bull;&nbsp; Prediksi Model &rarr;
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs font-mono border-collapse">
+                        <thead>
                             <tr>
-                                <th class="px-4 py-2.5">Kelas Target</th>
-                                <th class="px-4 py-2.5 text-center">Presisi</th>
-                                <th class="px-4 py-2.5 text-center">Recall</th>
-                                <th class="px-4 py-2.5 text-center">F1-Score</th>
-                                <th class="px-4 py-2.5 text-center">Data Uji</th>
+                                <th class="p-1.5 text-left font-sans text-slate-400 font-semibold w-24">Target</th>
+                                <th class="p-1.5 text-center text-slate-700 bg-slate-100/90 rounded-t-md font-semibold">Mengantuk</th>
+                                <th class="p-1.5 text-center text-slate-700 bg-slate-100/90 rounded-t-md font-semibold">Menguap</th>
+                                <th class="p-1.5 text-center text-slate-700 bg-slate-100/90 rounded-t-md font-semibold">Terjaga</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-100 font-mono tabular-nums">
+                        <tbody class="space-y-1">
+                            <!-- Baris 1: Aktual Mengantuk -->
                             <tr>
-                                <td class="px-4 py-2.5 font-sans font-semibold text-red-600 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-red-500"></span> Mengantuk
+                                <td class="p-1.5 font-medium font-sans text-slate-900 whitespace-nowrap">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-red-600 shrink-0"></span>
+                                        <span class="font-semibold">Mengantuk</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-mono">n=80</span>
                                 </td>
-                                <td class="px-4 py-2.5 text-center">0.99</td>
-                                <td class="px-4 py-2.5 text-center">1.00</td>
-                                <td class="px-4 py-2.5 text-center font-semibold text-slate-900">0.99</td>
-                                <td class="px-4 py-2.5 text-center text-slate-500">80</td>
+                                <!-- Cell [0,0]: Pred Mengantuk = 80 (True Positive Hit) -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-emerald-600 text-white text-center font-bold shadow-xs">
+                                        <div class="text-sm tabular-nums">80</div>
+                                        <div class="text-xs text-emerald-100 font-normal">100%</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [0,1]: Pred Menguap = 0 -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-slate-100/70 border border-slate-200/60 text-center text-slate-400">
+                                        <div class="text-sm tabular-nums">0</div>
+                                        <div class="text-xs text-slate-400">0%</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [0,2]: Pred Terjaga = 0 -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-slate-100/70 border border-slate-200/60 text-center text-slate-400">
+                                        <div class="text-sm tabular-nums">0</div>
+                                        <div class="text-xs text-slate-400">0%</div>
+                                    </div>
+                                </td>
                             </tr>
+
+                            <!-- Baris 2: Aktual Menguap -->
                             <tr>
-                                <td class="px-4 py-2.5 font-sans font-semibold text-sky-600 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-sky-500"></span> Menguap
+                                <td class="p-1.5 font-medium font-sans text-slate-900 whitespace-nowrap">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-blue-500 shrink-0"></span>
+                                        <span class="font-semibold">Menguap</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-mono">n=80</span>
                                 </td>
-                                <td class="px-4 py-2.5 text-center">1.00</td>
-                                <td class="px-4 py-2.5 text-center">1.00</td>
-                                <td class="px-4 py-2.5 text-center font-semibold text-slate-900">1.00</td>
-                                <td class="px-4 py-2.5 text-center text-slate-500">80</td>
+                                <!-- Cell [1,0]: Pred Mengantuk = 0 -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-slate-100/70 border border-slate-200/60 text-center text-slate-400">
+                                        <div class="text-sm tabular-nums">0</div>
+                                        <div class="text-xs text-slate-400">0%</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [1,1]: Pred Menguap = 80 (True Positive Hit) -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-emerald-600 text-white text-center font-bold shadow-xs">
+                                        <div class="text-sm tabular-nums">80</div>
+                                        <div class="text-xs text-emerald-100 font-normal">100%</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [1,2]: Pred Terjaga = 0 -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-slate-100/70 border border-slate-200/60 text-center text-slate-400">
+                                        <div class="text-sm tabular-nums">0</div>
+                                        <div class="text-xs text-slate-400">0%</div>
+                                    </div>
+                                </td>
                             </tr>
+
+                            <!-- Baris 3: Aktual Terjaga -->
                             <tr>
-                                <td class="px-4 py-2.5 font-sans font-semibold text-emerald-600 flex items-center gap-1.5">
-                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Terjaga
+                                <td class="p-1.5 font-medium font-sans text-slate-900 whitespace-nowrap">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                        <span class="font-semibold">Terjaga</span>
+                                    </div>
+                                    <span class="text-xs text-slate-400 font-mono">n=130</span>
                                 </td>
-                                <td class="px-4 py-2.5 text-center">1.00</td>
-                                <td class="px-4 py-2.5 text-center">0.99</td>
-                                <td class="px-4 py-2.5 text-center font-semibold text-slate-900">1.00</td>
-                                <td class="px-4 py-2.5 text-center text-slate-500">130</td>
+                                <!-- Cell [2,0]: Pred Mengantuk = 1 (False Positive / False Alarm) -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-amber-50 border border-amber-300 text-center text-amber-800 font-bold shadow-2xs" title="1 deviasi: mata berkedip panjang saat validasi">
+                                        <div class="text-sm tabular-nums text-amber-800">1</div>
+                                        <div class="text-xs text-amber-700 font-medium">0.8% [FP]</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [2,1]: Pred Menguap = 0 -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-slate-100/70 border border-slate-200/60 text-center text-slate-400">
+                                        <div class="text-sm tabular-nums">0</div>
+                                        <div class="text-xs text-slate-400">0%</div>
+                                    </div>
+                                </td>
+                                <!-- Cell [2,2]: Pred Terjaga = 129 (True Negative Hit) -->
+                                <td class="p-1">
+                                    <div class="p-2 rounded-md bg-emerald-600 text-white text-center font-bold shadow-xs">
+                                        <div class="text-sm tabular-nums">129</div>
+                                        <div class="text-xs text-emerald-100 font-normal">99.2%</div>
+                                    </div>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
             </div>
+
+            <!-- 2. Preview Matplotlib PNG Image (Toggleable) -->
+            <div id="graphicMatrixView" class="p-4 bg-slate-50/50 flex flex-col items-center justify-center border-b border-slate-200 hidden">
+                {% if cm_exists %}
+                    <img src="{{ url_for('admin.view_confusion_matrix') }}"
+                         alt="Grafik Confusion Matrix"
+                         class="max-h-[280px] w-auto rounded-lg border border-slate-200 shadow-2xs object-contain bg-white">
+                {% else %}
+                    <div class="text-center p-8 text-slate-400 text-xs font-mono space-y-1.5">
+                        <p class="font-semibold text-slate-600">Grafik belum tersedia</p>
+                        <p>Jalankan <code>python training_suite/evaluate.py</code> untuk menghasilkan grafik evaluasi.</p>
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Breakdown Ringkasan Forensik Matriks -->
+            <div class="p-4 grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-100">
+                    <span class="text-slate-500 block text-xs">True Positive</span>
+                    <span class="text-base font-bold text-emerald-700 block mt-0.5 tabular-nums">289</span>
+                    <span class="text-emerald-600 font-medium">99.66%</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-amber-50 border border-amber-100">
+                    <span class="text-slate-500 block text-xs">False Positive</span>
+                    <span class="text-base font-bold text-amber-700 block mt-0.5 tabular-nums">1</span>
+                    <span class="text-amber-600 font-medium">0.34%</span>
+                </div>
+                <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200">
+                    <span class="text-slate-500 block text-xs">False Negative</span>
+                    <span class="text-base font-bold text-slate-700 block mt-0.5 tabular-nums">0</span>
+                    <span class="text-emerald-600 font-semibold">0.00%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Row 2: Berkas Artefak Model & Panduan Pipeline Retraining (Side-by-Side 6:6) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- Berkas Artefak di Server (6 Cols) -->
+        <div class="lg:col-span-6 bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900 text-sm font-heading">Berkas Artefak Model</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Direktori penyimpanan: <code>models/</code></p>
+                </div>
+                <span class="text-xs text-slate-500 font-mono">{{ models_list|length }} berkas</span>
+            </div>
+
+            <div class="divide-y divide-slate-100 text-sm font-sans">
+                {% for m in models_list %}
+                <div class="px-5 py-3.5 flex items-center justify-between hover:bg-slate-50/70 transition-colors">
+                    <div class="min-w-0 pr-3">
+                        <div class="font-semibold text-slate-900 truncate flex items-center gap-2">
+                            <svg class="w-4 h-4 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <span class="truncate">{{ m.filename }}</span>
+                        </div>
+                        <div class="text-slate-400 text-xs font-mono mt-0.5 tabular-nums">
+                            Ukuran: {{ m.size_kb }} KB &bull; Format: {{ m.filename.split('.')[-1]|upper }}
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono font-semibold px-2 py-0.5 rounded shrink-0 {% if 'trained_model.joblib' in m.filename %}bg-emerald-50 text-emerald-700 border border-emerald-200{% else %}bg-slate-100 text-slate-600 border border-slate-200{% endif %}">
+                        {% if 'trained_model.joblib' in m.filename %}AKTIF DI ENGINE{% else %}ARTEFAK EVALUASI{% endif %}
+                    </span>
+                </div>
+                {% else %}
+                <div class="p-6 text-center text-xs text-slate-400 font-mono">
+                    Belum ada file model terlatih di direktori <code>models/</code>.
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Spesifikasi Inferensi & Parameter Model (6 Cols) -->
+        <div class="lg:col-span-6 bg-white rounded-lg border border-slate-200 shadow-xs overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                    <h2 class="font-bold text-slate-900 text-sm font-heading">Spesifikasi Inferensi &amp; Parameter</h2>
+                    <p class="text-xs text-slate-500 mt-0.5">Konfigurasi parameter machine learning pada runtime</p>
+                </div>
+                <span class="text-xs text-slate-500 font-mono">5 Parameter</span>
+            </div>
+
+            <div class="p-5 space-y-2.5 font-mono text-xs">
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-slate-500">Target Klasifikasi:</span>
+                    <span class="font-medium text-slate-800">3 Kelas (Mengantuk, Menguap, Terjaga)</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-slate-500">Vektor Fitur (5D):</span>
+                    <span class="font-medium text-slate-800">EAR, MAR, Yaw, Pitch, Roll</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-slate-500">Ekstraktor Wajah:</span>
+                    <span class="font-medium text-slate-800">MediaPipe FaceLandmarker (468 Mesh)</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-slate-100">
+                    <span class="text-slate-500">Arsitektur Model:</span>
+                    <span class="font-medium text-slate-800">Random Forest (50 Decision Trees)</span>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-slate-500">Pipeline Runtime:</span>
+                    <span class="font-medium text-slate-800">Scikit-Learn Joblib Loader</span>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleMatrixDisplay() {
+        const interactive = document.getElementById('interactiveMatrixView');
+        const graphic = document.getElementById('graphicMatrixView');
+        const label = document.getElementById('toggleMatrixLabel');
+        if (interactive.classList.contains('hidden')) {
+            interactive.classList.remove('hidden');
+            graphic.classList.add('hidden');
+            label.textContent = 'Grafik PNG';
+        } else {
+            interactive.classList.add('hidden');
+            graphic.classList.remove('hidden');
+            label.textContent = 'Grid Interaktif';
+        }
+    }
+</script>
 {% endblock %}

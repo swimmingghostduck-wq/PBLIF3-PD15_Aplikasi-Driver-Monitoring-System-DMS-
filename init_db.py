@@ -38,20 +38,22 @@ def init_database():
         else:
             print("[i] Akun Admin sudah ada.")
 
-        # 2. Buat Akun Driver Default (Apri Catur)
-        driver_user = User.query.filter_by(username='driver').first()
+        # 2. Buat / Sinkronkan Akun Driver Utama (Apri Catur)
+        driver_user = User.query.filter((User.username == 'apri') | (User.username == 'driver')).first()
         if not driver_user:
             driver_user = User(
-                username='driver',
+                username='apri',
                 full_name='Apri Catur Pramudiansyah',
                 role='driver',
                 nim_nik='3312501067'
             )
             driver_user.set_password('driver123')
             db.session.add(driver_user)
-            print("[+] Akun Driver berhasil dibuat: driver / driver123 (Apri Catur Pramudiansyah)")
+            print("[+] Akun Driver berhasil dibuat: apri / driver123 (Apri Catur Pramudiansyah)")
         else:
-            print("[i] Akun Driver sudah ada.")
+            if driver_user.username == 'driver':
+                driver_user.username = 'apri'
+            print(f"[i] Akun Driver utama sudah ada: @{driver_user.username} ({driver_user.full_name}).")
 
         # 3. Buat Akun Driver Kedua (Nayla Azkyah)
         nayla_user = User.query.filter_by(username='nayla').first()
@@ -65,6 +67,8 @@ def init_database():
             nayla_user.set_password('driver123')
             db.session.add(nayla_user)
             print("[+] Akun Driver berhasil dibuat: nayla / driver123 (Nayla Azkyah Azra)")
+        else:
+            print(f"[i] Akun Driver kedua sudah ada: @{nayla_user.username} ({nayla_user.full_name}).")
 
         db.session.commit()
         print("\n" + "=" * 60)
@@ -72,7 +76,7 @@ def init_database():
         print("=" * 60)
         print("Akun yang tersedia untuk login:")
         print("  1. Administrator -> Username: admin  | Password: admin123")
-        print("  2. Driver Utama  -> Username: driver | Password: driver123")
+        print("  2. Driver Utama  -> Username: apri   | Password: driver123  (alias: driver)")
         print("  3. Driver Rekan  -> Username: nayla  | Password: driver123")
         print("=" * 60)
 

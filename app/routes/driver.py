@@ -3,8 +3,9 @@ import cv2
 import time
 import json
 import base64
+from datetime import datetime
 import numpy as np
-from flask import Blueprint, render_template, Response, jsonify, request, current_app
+from flask import Blueprint, render_template, Response, jsonify, request, current_app, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.models import db, AlertLog, MonitoringSession
 from dms_core.detector import FaceLandmarkDetector
@@ -32,6 +33,33 @@ latest_status = {
     'method': 'Baseline Geometris'
 }
 
+def generate_incident_note(alert_type, detection_res, tracker):
+    """
+    Menyusun keterangan telemetri insiden yang faktual dan informatif,
+    menggantikan string mentah model AI yang membingungkan bagi admin.
+    """
+    if alert_type == 'kantuk':
+        ear = detection_res.get('ear_avg', 0.0)
+        return f"Mata terpejam rapat (Nilai EAR: {ear:.2f})"
+    elif alert_type == 'tidak_fokus':
+        direction = tracker.last_direction if (tracker and hasattr(tracker, 'last_direction')) else 'Samping'
+        yaw = detection_res.get('yaw', 0.0)
+        pitch = detection_res.get('pitch', 0.0)
+        if 'Bawah' in direction:
+            return f"Kepala menunduk ke bawah (Sudut Pitch: {pitch:.1f}°)"
+        elif direction == 'Kanan':
+            return f"Menoleh ke arah kanan (Sudut Yaw: +{abs(yaw):.1f}°)"
+        elif direction == 'Kiri':
+            return f"Menoleh ke arah kiri (Sudut Yaw: -{abs(yaw):.1f}°)"
+        else:
+            return f"Pandangan beralih dari jalan ({direction})"
+    elif alert_type == 'menguap':
+        mar = detection_res.get('mar', 0.0)
+        return f"Bukaan mulut lebar / menguap (Nilai MAR: {mar:.2f})"
+    elif alert_type == 'wajah_hilang':
+        return "Wajah pengemudi tidak terdeteksi kamera"
+    return "Insiden kewaspadaan pengemudi tercatat"
+
 def init_dms_engine(app):
     global detector, classifier, tracker, alert_manager
     if detector is None:
@@ -55,6 +83,16 @@ def init_dms_engine(app):
             pitch_threshold=app.config.get('PITCH_THRESHOLD', 22.0)
         )
         alert_manager = AlertManager(snapshots_dir=app.config['SNAPSHOTS_DIR'])
+
+@driver_bp.before_request
+def ensure_driver():
+    """FR-14: Memastikan halaman antarmuka pengemudi hanya diakses oleh pengguna bertipe driver."""
+    if current_user.is_authenticated and current_user.is_admin():
+        # Jangan halangi endpoint API (/process_frame, /video_feed, /status_feed),
+        # tetapi amankan rute halaman web tampilan pengemudi (monitor & history).
+        if request.endpoint in ['driver.monitor', 'driver.history']:
+            flash('Modul pengemudi khusus untuk akun Driver. Anda dialihkan kembali ke Dashboard Admin.', 'info')
+            return redirect(url_for('admin.dashboard'))
 
 @driver_bp.route('/monitor')
 @login_required
@@ -96,22 +134,40 @@ def process_frame():
         # Update tracker durasi
         track_status = tracker.update(detection_res, pred_res)
 
-        # Simpan log jika ada event bahaya
-        if track_status['should_record_event']:
-            snapshot_file = alert_manager.save_snapshot(
-                frame, current_user.id, track_status['new_event_type']
-            )
-            with app.app_context():
-                new_log = AlertLog(
-                    driver_id=current_user.id,
-                    alert_type=track_status['new_event_type'],
-                    severity='BAHAYA' if track_status['new_event_type'] == 'kantuk' else 'PERINGATAN',
-                    duration_seconds=2.0,
-                    snapshot_path=snapshot_file,
-                    notes=f"Metode: {classifier.model_name} | EAR: {detection_res.get('ear_avg', 0.0):.3f}"
+        # Simpan log jika ada event bahaya (Smart Lifecycle: 1 snapshot di onset + durasi akumulatif)
+        phase = track_status.get('event_phase')
+        event_type = track_status.get('new_event_type')
+        duration = track_status.get('incident_duration', 2.0)
+
+        if phase == 'start' and event_type:
+            # Hanya simpan snapshot visual untuk event berisiko tinggi (kantuk & tidak_fokus)
+            # Menguap tidak perlu capture snapshot agar menghemat kapasitas storage
+            snapshot_file = None
+            if event_type in ['kantuk', 'tidak_fokus']:
+                snapshot_file = alert_manager.save_snapshot(
+                    frame, current_user.id, event_type
                 )
-                db.session.add(new_log)
+            incident_notes = generate_incident_note(event_type, detection_res, tracker)
+            new_log = AlertLog(
+                driver_id=current_user.id,
+                alert_type=event_type,
+                severity='BAHAYA' if event_type == 'kantuk' else 'PERINGATAN',
+                duration_seconds=duration,
+                snapshot_path=snapshot_file,
+                timestamp=datetime.now(),
+                notes=incident_notes
+            )
+            db.session.add(new_log)
+            db.session.commit()
+            tracker.active_log_id = new_log.id
+
+        elif phase in ['ongoing', 'end'] and tracker.active_log_id:
+            active_log = db.session.get(AlertLog, tracker.active_log_id)
+            if active_log:
+                active_log.duration_seconds = duration
                 db.session.commit()
+            if phase == 'end':
+                tracker.active_log_id = None
 
         # Format respon ke client
         return jsonify({
@@ -193,21 +249,40 @@ def generate_frames(driver_id, app):
                 'method': classifier.model_name
             })
 
-            if track_status['should_record_event']:
-                snapshot_file = alert_manager.save_snapshot(
-                    frame, driver_id, track_status['new_event_type']
-                )
+            # Simpan log jika ada event bahaya (Smart Lifecycle: 1 snapshot di onset + durasi akumulatif)
+            phase = track_status.get('event_phase')
+            event_type = track_status.get('new_event_type')
+            duration = track_status.get('incident_duration', 2.0)
+
+            if phase == 'start' and event_type:
+                snapshot_file = None
+                if event_type in ['kantuk', 'tidak_fokus']:
+                    snapshot_file = alert_manager.save_snapshot(
+                        frame, driver_id, event_type
+                    )
+                incident_notes = generate_incident_note(event_type, detection_res, tracker)
                 with app.app_context():
                     new_log = AlertLog(
                         driver_id=driver_id,
-                        alert_type=track_status['new_event_type'],
-                        severity='BAHAYA' if track_status['new_event_type'] == 'kantuk' else 'PERINGATAN',
-                        duration_seconds=2.0,
+                        alert_type=event_type,
+                        severity='BAHAYA' if event_type == 'kantuk' else 'PERINGATAN',
+                        duration_seconds=duration,
                         snapshot_path=snapshot_file,
-                        notes=f"Metode: {classifier.model_name} | EAR: {detection_res.get('ear_avg', 0.0):.3f}"
+                        timestamp=datetime.now(),
+                        notes=incident_notes
                     )
                     db.session.add(new_log)
                     db.session.commit()
+                    tracker.active_log_id = new_log.id
+
+            elif phase in ['ongoing', 'end'] and tracker.active_log_id:
+                with app.app_context():
+                    active_log = db.session.get(AlertLog, tracker.active_log_id)
+                    if active_log:
+                        active_log.duration_seconds = duration
+                        db.session.commit()
+                if phase == 'end':
+                    tracker.active_log_id = None
 
             annotated_frame = frame.copy()
             if detection_res.get('face_detected', False):

@@ -3,13 +3,14 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Header Halaman -->
-    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200/80 gap-4">
+    <!-- Header Halaman & Aksi Cepat -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-200 gap-3">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight font-heading">Riwayat Peringatan Saya</h1>
-            <p class="text-sm text-slate-500 mt-0.5 font-sans">Catatan insiden kewaspadaan pengemudi: <strong class="text-slate-800 font-semibold">{{ user.full_name }}</strong></p>
+            <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">Riwayat Peringatan Saya</h1>
+            <p class="text-sm text-slate-500 mt-0.5">Catatan telemetri keselamatan kabin: <strong class="text-slate-800 font-semibold">{{ user.full_name }}</strong></p>
         </div>
-        <a href="{{ url_for('driver.monitor') }}" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition flex items-center gap-1.5 w-fit">
+        <a href="{{ url_for('driver.monitor') }}" 
+           class="h-9 px-3.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-xs transition-colors inline-flex items-center gap-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
             </svg>
@@ -17,107 +18,136 @@
         </a>
     </div>
 
-    <!-- Ringkasan Statistik Kartu (White Cards) -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Kantuk</span>
-                <div class="text-3xl font-bold text-red-600 mt-1 font-heading">{{ total_kantuk }}</div>
-                <span class="text-[11px] text-slate-500">Mata terpejam &gt; 1.5 detik</span>
+    <!-- Unified Metric Strip (Anti Nested Cards / High-Density Linear Metric Strip) -->
+    <div class="bg-white border border-slate-200 rounded-lg divide-y sm:divide-y-0 sm:divide-x divide-slate-100 grid grid-cols-1 sm:grid-cols-3 shadow-xs">
+        <!-- 1. Total Kantuk -->
+        <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Total Kantuk (EAR)</span>
+                <span class="w-2 h-2 rounded-full bg-red-600"></span>
             </div>
-            <div class="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center border border-red-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18"></path>
-                </svg>
+            <div class="mt-2 flex items-baseline gap-1.5">
+                <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_kantuk }}</span>
+                <span class="text-xs text-slate-400 font-mono">insiden</span>
             </div>
+            <p class="text-xs text-slate-500 font-mono mt-1">Mata terpejam &gt; 1.2 detik</p>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Tidak Fokus</span>
-                <div class="text-3xl font-bold text-purple-600 mt-1 font-heading">{{ total_distraksi }}</div>
-                <span class="text-[11px] text-slate-500">Kepala menoleh samping &gt; 3 detik</span>
+        <!-- 2. Total Distraksi -->
+        <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Total Tidak Fokus</span>
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
             </div>
-            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center border border-purple-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                </svg>
+            <div class="mt-2 flex items-baseline gap-1.5">
+                <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_distraksi }}</span>
+                <span class="text-xs text-slate-400 font-mono">insiden</span>
             </div>
+            <p class="text-xs text-slate-500 font-mono mt-1">Menoleh / menunduk &gt; 2.5 detik</p>
         </div>
 
-        <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
-            <div>
-                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider block">Total Menguap</span>
-                <div class="text-3xl font-bold text-amber-600 mt-1 font-heading">{{ total_menguap }}</div>
-                <span class="text-[11px] text-slate-500">Indikasi kelelahan berkendara</span>
+        <!-- 3. Total Menguap -->
+        <div class="p-4 sm:p-5">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-mono font-semibold text-slate-400 block uppercase tracking-wider">Total Menguap</span>
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
             </div>
-            <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center border border-amber-100">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
+            <div class="mt-2 flex items-baseline gap-1.5">
+                <span class="text-2xl sm:text-3xl font-bold font-heading text-slate-900 tabular-nums">{{ total_menguap }}</span>
+                <span class="text-xs text-slate-400 font-mono">insiden</span>
             </div>
+            <p class="text-xs text-slate-500 font-mono mt-1">Bukaan mulut terindikasi lelah</p>
         </div>
     </div>
 
-    <!-- Tabel Riwayat Insiden (White Card) -->
-    <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">
-        <div class="px-6 py-4 border-b border-slate-200/80">
-            <h3 class="font-bold text-slate-900 text-base font-heading">Daftar Insiden Tersimpan</h3>
-            <p class="text-xs text-slate-500">Riwayat deteksi kondisi kantuk dan distraksi pada akun Anda</p>
+    <!-- Tabel Riwayat Insiden (Anti Badge Pollution & High Density Table) -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-xs overflow-hidden">
+        <div class="px-5 py-3.5 border-b border-slate-200 bg-slate-50/70 flex items-center justify-between">
+            <h2 class="font-bold text-slate-900 text-sm font-heading">Daftar Insiden Tersimpan</h2>
+            <span class="text-xs text-slate-500 font-mono">
+                <strong class="text-slate-900 tabular-nums">{{ alerts.total if alerts.total is defined else alerts.items|length }}</strong> rekaman
+            </span>
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm text-slate-700">
-                <thead class="bg-slate-50 text-xs uppercase font-semibold text-slate-500 border-b border-slate-200">
+            <table class="w-full text-left text-sm text-slate-800">
+                <thead class="bg-slate-50 text-xs uppercase font-mono font-semibold text-slate-500 border-b border-slate-200 tracking-wider">
                     <tr>
-                        <th class="px-6 py-3.5">Waktu Insiden</th>
-                        <th class="px-6 py-3.5">Jenis Peringatan</th>
-                        <th class="px-6 py-3.5">Tingkat Bahaya</th>
-                        <th class="px-6 py-3.5">Estimasi Durasi</th>
-                        <th class="px-6 py-3.5">Catatan Telemetri</th>
-                        <th class="px-6 py-3.5 text-center">Bukti Foto</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Waktu Insiden</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Klasifikasi Insiden</th>
+                        <th class="px-4 py-3 whitespace-nowrap">Tingkat</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Durasi</th>
+                        <th class="px-4 py-3">Keterangan Insiden</th>
+                        <th class="px-4 py-3 text-center whitespace-nowrap">Bukti Foto</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for item in alerts.items %}
-                    <tr class="hover:bg-slate-50/70 transition">
-                        <td class="px-6 py-4 font-mono text-xs text-slate-600 whitespace-nowrap">{{ item.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                        <td class="px-6 py-4 font-semibold whitespace-nowrap">
+                    <tr class="hover:bg-slate-50/70 transition-colors">
+                        <!-- Waktu Insiden -->
+                        <td class="px-4 py-3 text-slate-500 whitespace-nowrap tabular-nums text-xs font-mono">
+                            {{ item.timestamp.strftime('%d/%m/%Y %H:%M:%S') }}
+                        </td>
+
+                        <!-- Klasifikasi Insiden (Teks Biasa + Status Dot 6px, DILARANG Polusi Badge) -->
+                        <td class="px-4 py-3 whitespace-nowrap">
                             {% if item.alert_type == 'kantuk' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-50 text-red-700 border border-red-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Mengantuk
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-red-600 shrink-0"></span>
+                                    <span>Mengantuk (EAR)</span>
                                 </span>
                             {% elif item.alert_type == 'tidak_fokus' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-600"></span> Tidak Fokus
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0"></span>
+                                    <span>Tidak Fokus (Pose)</span>
                                 </span>
                             {% elif item.alert_type == 'menguap' %}
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-amber-600"></span> Menguap
+                                <span class="inline-flex items-center gap-2 font-medium text-slate-900 text-sm">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0"></span>
+                                    <span>Menguap (MAR)</span>
                                 </span>
                             {% else %}
-                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs bg-slate-100 text-slate-700 border border-slate-200">{{ item.alert_type }}</span>
+                                <span class="text-slate-700 text-sm">{{ item.alert_type }}</span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap">
+
+                        <!-- Tingkat Bahaya (Satu-satunya Pill Badge: Compact, Monospace, Uppercase) -->
+                        <td class="px-4 py-3 whitespace-nowrap">
                             {% if item.severity == 'BAHAYA' %}
-                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">BAHAYA</span>
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-mono font-bold bg-red-50 text-red-700 border border-red-200 tracking-wider">
+                                    BAHAYA
+                                </span>
                             {% else %}
-                                <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">PERINGATAN</span>
+                                <span class="inline-block px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200 tracking-wider">
+                                    {{ item.severity }}
+                                </span>
                             {% endif %}
                         </td>
-                        <td class="px-6 py-4 text-xs font-mono text-slate-600">{{ item.duration_seconds }}s</td>
-                        <td class="px-6 py-4 text-xs text-slate-600 font-mono max-w-xs truncate" title="{{ item.notes or '' }}">{{ item.notes or '-' }}</td>
-                        <td class="px-6 py-4 text-center whitespace-nowrap">
+
+                        <!-- Estimasi Durasi -->
+                        <td class="px-4 py-3 text-center text-xs font-mono tabular-nums text-slate-600 whitespace-nowrap">
+                            {{ "%.1f"|format(item.duration_seconds) }}s
+                        </td>
+
+                        <!-- Keterangan Insiden -->
+                        <td class="px-4 py-3 text-slate-700 max-w-xs truncate text-xs font-sans" title="{{ item.notes or '' }}">
+                            {% if item.notes %}
+                                <span>{{ item.notes }}</span>
+                            {% else %}
+                                <span class="text-slate-400 font-mono">-</span>
+                            {% endif %}
+                        </td>
+
+                        <!-- Bukti Foto -->
+                        <td class="px-4 py-3 text-center whitespace-nowrap">
                             {% if item.snapshot_path %}
                                 <a href="{{ url_for('static', filename='snapshots/' + item.snapshot_path) }}" target="_blank"
-                                   class="text-xs px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 rounded-lg border border-slate-200 transition inline-flex items-center gap-1.5 font-medium">
-                                    <svg class="w-3.5 h-3.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+                                   class="h-7.5 px-2.5 bg-white hover:bg-slate-50 text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center gap-1.5 font-sans text-xs font-medium shadow-2xs">
+                                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
                                     </svg>
-                                    <span>Lihat Foto</span>
+                                    <span>Bukti Foto</span>
                                 </a>
                             {% else %}
                                 <span class="text-xs text-slate-400 font-mono">-</span>
@@ -126,13 +156,13 @@
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="px-6 py-10 text-center text-slate-500">
-                            <div class="max-w-sm mx-auto">
-                                <svg class="w-10 h-10 text-slate-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        <td colspan="6" class="py-12 text-center text-slate-500 font-sans">
+                            <div class="max-w-xs mx-auto space-y-1.5">
+                                <svg class="w-8 h-8 text-slate-300 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                                 </svg>
-                                <p class="font-medium text-slate-700">Belum ada riwayat peringatan</p>
-                                <p class="text-xs text-slate-400 mt-1">Pertahankan konsentrasi dan keselamatan berkendara Anda!</p>
+                                <p class="text-sm font-semibold text-slate-700">Belum ada riwayat peringatan</p>
+                                <p class="text-xs text-slate-400">Pertahankan konsentrasi dan keselamatan berkendara Anda.</p>
                             </div>
                         </td>
                     </tr>
@@ -141,20 +171,28 @@
             </table>
         </div>
 
-        <!-- Paginasi (Light Style) -->
+        <!-- Paginasi (Linear / GitHub Style) -->
         {% if alerts.pages > 1 %}
-        <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center text-xs text-slate-600">
-            <span>Halaman {{ alerts.page }} dari {{ alerts.pages }}</span>
-            <div class="space-x-2">
+        <div class="px-5 py-3 bg-slate-50/70 border-t border-slate-200 flex justify-between items-center text-xs font-mono text-slate-500">
+            <span>Halaman <strong class="text-slate-900 tabular-nums">{{ alerts.page }}</strong> dari <strong class="text-slate-900 tabular-nums">{{ alerts.pages }}</strong></span>
+            <div class="flex items-center gap-1.5">
                 {% if alerts.has_prev %}
-                    <a href="{{ url_for('driver.history', page=alerts.prev_num) }}" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 text-slate-700 font-medium transition shadow-2xs">Sebelumnya</a>
+                    <a href="{{ url_for('driver.history', page=alerts.prev_num) }}" 
+                       class="h-8 px-3 bg-white hover:bg-slate-50 text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center shadow-2xs">
+                        Sebelumnya
+                    </a>
                 {% endif %}
                 {% if alerts.has_next %}
-                    <a href="{{ url_for('driver.history', page=alerts.next_num) }}" class="px-3 py-1.5 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 text-slate-700 font-medium transition shadow-2xs">Berikutnya</a>
+                    <a href="{{ url_for('driver.history', page=alerts.next_num) }}" 
+                       class="h-8 px-3 bg-white hover:bg-slate-50 text-slate-700 rounded-md border border-slate-200 transition-colors inline-flex items-center shadow-2xs">
+                        Berikutnya
+                    </a>
                 {% endif %}
             </div>
         </div>
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
 {% endblock %}

@@ -19,6 +19,9 @@ def login():
         remember = True if request.form.get('remember') else False
 
         user = User.query.filter_by(username=username).first()
+        if not user and username.lower() == 'driver':
+            # Alias backward-compatibility: 'driver' otomatis mengarah ke akun utama @apri
+            user = User.query.filter_by(username='apri').first()
         if not user or not user.check_password(password):
             flash('Username atau password yang Anda masukkan salah.', 'danger')
             return render_template('login.html', username=username)

@@ -1,10 +1,12 @@
 import os
+import re
 import time
 import io
 import csv
+import hashlib
 import joblib
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response
-from flask_login import login_required, current_user
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, Response, session
+from flask_login import login_required, current_user, login_user
 from app.models import db, User, AlertLog, MonitoringSession
 
 admin_bp = Blueprint('admin', __name__)
@@ -20,15 +22,31 @@ def ensure_admin():
 
 @admin_bp.route('/dashboard')
 def dashboard():
-    """FR-13: Admin dapat memantau data hasil monitoring, memfilter data, dan melihat statistik insiden."""
+    """FR-13: Executive Telematics Dashboard (Overview kesehatan armada, distribusi risiko, & feed aktivitas)."""
     # Statistik Global Keseluruhan
     total_drivers = User.query.filter_by(role='driver').count()
     total_alerts = AlertLog.query.count()
     total_drowsy = AlertLog.query.filter_by(alert_type='kantuk').count()
     total_distraction = AlertLog.query.filter_by(alert_type='tidak_fokus').count()
     total_yawn = AlertLog.query.filter_by(alert_type='menguap').count()
+    total_sessions = MonitoringSession.query.count()
 
-    # Parameter Filter & Pencarian
+    # Indeks Keselamatan Armada (0 - 100%)
+    if total_alerts == 0:
+        fleet_safety_score = 100.0
+    else:
+        fleet_safety_score = round(max(60.0, 100.0 - (total_alerts * 2.5)), 1)
+
+    # Distribusi Temporal Kejadian (Pola Waktu Insiden)
+    all_alert_logs = AlertLog.query.all()
+    time_bins = {
+        'Pagi (06-12)': sum(1 for a in all_alert_logs if 6 <= a.timestamp.hour < 12),
+        'Siang (12-18)': sum(1 for a in all_alert_logs if 12 <= a.timestamp.hour < 18),
+        'Malam (18-24)': sum(1 for a in all_alert_logs if 18 <= a.timestamp.hour < 24),
+        'Dini Hari (00-06)': sum(1 for a in all_alert_logs if 0 <= a.timestamp.hour < 6),
+    }
+
+    # Parameter Filter & Pencarian (untuk feed aktivitas terkini)
     selected_driver_id = request.args.get('driver_id', type=int)
     selected_alert_type = request.args.get('alert_type', type=str, default='').strip()
     search_query = request.args.get('q', type=str, default='').strip()
@@ -47,8 +65,8 @@ def dashboard():
             )
         )
 
-    # Ambil hingga 100 insiden terbaru sesuai filter
-    filtered_alerts = query.order_by(AlertLog.timestamp.desc()).limit(100).all()
+    # Feed 6 insiden terbaru untuk activity stream di dashboard
+    recent_alerts = query.order_by(AlertLog.timestamp.desc()).limit(6).all()
     all_drivers = User.query.filter_by(role='driver').order_by(User.full_name.asc()).all()
 
     # Periksa status file model yang aktif
@@ -79,8 +97,81 @@ def dashboard():
             'type': 'Neural Network (.pt)'
         }
 
+    # Roster pengemudi & skor keselamatan
+    driver_roster = []
+    for d in all_drivers:
+        drowsy_cnt = sum(1 for a in d.alerts if a.alert_type == 'kantuk')
+        distract_cnt = sum(1 for a in d.alerts if a.alert_type == 'tidak_fokus')
+        yawn_cnt = sum(1 for a in d.alerts if a.alert_type == 'menguap')
+        total_cnt = len(d.alerts)
+        score = max(50, 100 - (total_cnt * 8))
+        tier = 'Tier 1 Prima' if total_cnt == 0 else ('Tier 2 Standar' if total_cnt < 5 else 'Tier 3 Perhatian')
+        driver_roster.append({
+            'driver': d,
+            'total_alerts': total_cnt,
+            'safety_score': score,
+            'tier': tier,
+            'drowsy': drowsy_cnt,
+            'distract': distract_cnt,
+            'yawn': yawn_cnt
+        })
+    driver_roster.sort(key=lambda x: x['total_alerts'], reverse=True)
+
     return render_template(
         'admin_dashboard.html',
+        total_drivers=total_drivers,
+        total_alerts=total_alerts,
+        total_drowsy=total_drowsy,
+        total_distraction=total_distraction,
+        total_yawn=total_yawn,
+        total_sessions=total_sessions,
+        fleet_safety_score=fleet_safety_score,
+        time_bins=time_bins,
+        recent_alerts=recent_alerts,
+        driver_roster=driver_roster,
+        all_drivers=all_drivers,
+        selected_driver_id=selected_driver_id,
+        selected_alert_type=selected_alert_type,
+        search_query=search_query,
+        active_model_info=active_model_info,
+        user=current_user
+    )
+
+@admin_bp.route('/alerts')
+def alerts():
+    """FR-13: Halaman Ringkasan Insiden (Tabel audit riwayat insiden pengemudi lengkap dengan filter & ekspor)."""
+    # Statistik Global Keseluruhan
+    total_drivers = User.query.filter_by(role='driver').count()
+    total_alerts = AlertLog.query.count()
+    total_drowsy = AlertLog.query.filter_by(alert_type='kantuk').count()
+    total_distraction = AlertLog.query.filter_by(alert_type='tidak_fokus').count()
+    total_yawn = AlertLog.query.filter_by(alert_type='menguap').count()
+
+    # Parameter Filter & Pencarian
+    selected_driver_id = request.args.get('driver_id', type=int)
+    selected_alert_type = request.args.get('alert_type', type=str, default='').strip()
+    search_query = request.args.get('q', type=str, default='').strip()
+
+    query = AlertLog.query
+    if selected_driver_id:
+        query = query.filter(AlertLog.driver_id == selected_driver_id)
+    if selected_alert_type:
+        query = query.filter(AlertLog.alert_type == selected_alert_type)
+    if search_query:
+        query = query.join(User, AlertLog.driver_id == User.id).filter(
+            db.or_(
+                User.full_name.ilike(f'%{search_query}%'),
+                User.username.ilike(f'%{search_query}%'),
+                AlertLog.notes.ilike(f'%{search_query}%')
+            )
+        )
+
+    # Ambil hingga 100 insiden terbaru sesuai filter
+    filtered_alerts = query.order_by(AlertLog.timestamp.desc()).limit(100).all()
+    all_drivers = User.query.filter_by(role='driver').order_by(User.full_name.asc()).all()
+
+    return render_template(
+        'admin_alerts.html',
         total_drivers=total_drivers,
         total_alerts=total_alerts,
         total_drowsy=total_drowsy,
@@ -91,7 +182,6 @@ def dashboard():
         selected_driver_id=selected_driver_id,
         selected_alert_type=selected_alert_type,
         search_query=search_query,
-        active_model_info=active_model_info,
         user=current_user
     )
 
@@ -133,18 +223,27 @@ def export_alerts_csv():
         'File Snapshot Bukti'
     ])
 
+    def sanitize_csv_field(val):
+        """Mencegah CSV Formula Injection (DDE) jika data dibuka di Microsoft Excel atau LibreOffice."""
+        if val is None:
+            return ''
+        s = str(val).strip()
+        if s and s[0] in ('=', '+', '-', '@', '\t', '\r'):
+            return f"'{s}"
+        return s
+
     for a in alerts:
         writer.writerow([
             a.id,
             a.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            a.driver.full_name if a.driver else f'Driver #{a.driver_id}',
-            a.driver.username if a.driver else '-',
-            a.driver.nim_nik if (a.driver and a.driver.nim_nik) else '-',
-            a.alert_type,
-            a.severity,
+            sanitize_csv_field(a.driver.full_name if a.driver else f'Driver #{a.driver_id}'),
+            sanitize_csv_field(a.driver.username if a.driver else '-'),
+            sanitize_csv_field(a.driver.nim_nik if (a.driver and a.driver.nim_nik) else '-'),
+            sanitize_csv_field(a.alert_type),
+            sanitize_csv_field(a.severity),
             a.duration_seconds,
-            a.notes or '-',
-            a.snapshot_path or '-'
+            sanitize_csv_field(a.notes or '-'),
+            sanitize_csv_field(a.snapshot_path or '-')
         ])
 
     output.seek(0)
@@ -163,10 +262,11 @@ def delete_alert(alert_id):
         flash('Data insiden tidak ditemukan.', 'warning')
         return redirect(url_for('admin.dashboard'))
 
-    # Hapus file snapshot jika tersimpan di disk
+    # Hapus file snapshot jika tersimpan di disk (dengan pencegahan path traversal)
     if alert.snapshot_path:
         try:
-            snap_file = os.path.join(current_app.config['SNAPSHOTS_DIR'], alert.snapshot_path)
+            safe_basename = os.path.basename(alert.snapshot_path)
+            snap_file = os.path.join(current_app.config['SNAPSHOTS_DIR'], safe_basename)
             if os.path.exists(snap_file):
                 os.remove(snap_file)
         except Exception:
@@ -175,7 +275,7 @@ def delete_alert(alert_id):
     db.session.delete(alert)
     db.session.commit()
     flash(f'Catatan insiden #{alert_id} berhasil dihapus.', 'info')
-    return redirect(url_for('admin.dashboard'))
+    return redirect(request.referrer or url_for('admin.alerts'))
 
 @admin_bp.route('/alerts/clear', methods=['POST'])
 def clear_alerts():
@@ -184,7 +284,7 @@ def clear_alerts():
     AlertLog.query.delete()
     db.session.commit()
     flash(f'Seluruh data log uji coba ({total} insiden) berhasil dibersihkan dari database.', 'info')
-    return redirect(url_for('admin.dashboard'))
+    return redirect(request.referrer or url_for('admin.alerts'))
 
 @admin_bp.route('/drivers')
 def manage_drivers():
@@ -204,8 +304,28 @@ def create_driver():
         flash('Username, Nama Lengkap, dan Password wajib diisi.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
 
+    if len(full_name) > 100:
+        flash('Nama Lengkap tidak boleh lebih dari 100 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if len(username) < 3 or len(username) > 50:
+        flash('Username harus berdurasi antara 3 hingga 50 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+        flash('Username hanya boleh memuat huruf, angka, garis bawah (_), titik (.), dan strip (-).', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if nim_nik and len(nim_nik) > 30:
+        flash('NIM/NIK tidak boleh lebih dari 30 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
     if len(password) < 6:
         flash('Password minimal harus terdiri dari 6 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if len(password) > 128:
+        flash('Password tidak boleh lebih dari 128 karakter.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
 
     if User.query.filter_by(username=username).first():
@@ -241,6 +361,22 @@ def edit_driver(driver_id):
         flash('Nama Lengkap dan Username tidak boleh kosong.', 'danger')
         return redirect(url_for('admin.manage_drivers'))
 
+    if len(full_name) > 100:
+        flash('Nama Lengkap tidak boleh lebih dari 100 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if len(username) < 3 or len(username) > 50:
+        flash('Username harus berdurasi antara 3 hingga 50 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+        flash('Username hanya boleh memuat huruf, angka, garis bawah (_), titik (.), dan strip (-).', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
+    if nim_nik and len(nim_nik) > 30:
+        flash('NIM/NIK tidak boleh lebih dari 30 karakter.', 'danger')
+        return redirect(url_for('admin.manage_drivers'))
+
     # Validasi username unik (kecuali milik diri sendiri)
     duplicate_user = User.query.filter(User.username == username, User.id != driver_id).first()
     if duplicate_user:
@@ -254,6 +390,9 @@ def edit_driver(driver_id):
     if new_password:
         if len(new_password) < 6:
             flash('Password baru minimal harus 6 karakter.', 'danger')
+            return redirect(url_for('admin.manage_drivers'))
+        if len(new_password) > 128:
+            flash('Password baru tidak boleh lebih dari 128 karakter.', 'danger')
             return redirect(url_for('admin.manage_drivers'))
         driver.set_password(new_password)
         flash(f'Profil dan password driver {full_name} berhasil diperbarui.', 'success')
@@ -333,3 +472,89 @@ def reload_model():
         flash('Engine klasifikasi belum aktif.', 'warning')
 
     return redirect(url_for('admin.manage_models'))
+
+@admin_bp.route('/profile', methods=['GET', 'POST'])
+def profile():
+    """Halaman Pengaturan Profil & Data Diri Administrator."""
+    admin_user = db.session.get(User, current_user.id)
+    if not admin_user:
+        flash('Data akun pengguna tidak ditemukan.', 'danger')
+        return redirect(url_for('admin.dashboard'))
+
+    # Format ID Unik Administrator
+    hash_seed = f"{admin_user.id}-{admin_user.username}-{admin_user.created_at or ''}"
+    short_hash = hashlib.sha256(hash_seed.encode()).hexdigest()[:6].upper()
+    unique_admin_id = f"DS-ADM-{admin_user.id:04d}-{short_hash}"
+
+    if request.method == 'POST':
+        full_name = request.form.get('full_name', '').strip()
+        username = request.form.get('username', '').strip()
+        nim_nik = request.form.get('nim_nik', '').strip()
+        current_password = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+
+        if not full_name or not username:
+            flash('Nama Lengkap dan Username wajib diisi.', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        # Validasi keamanan input (panjang & karakter)
+        if len(full_name) > 100:
+            flash('Nama Lengkap tidak boleh lebih dari 100 karakter.', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        if len(username) < 3 or len(username) > 50:
+            flash('Username harus berdurasi antara 3 hingga 50 karakter.', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        if not re.match(r'^[a-zA-Z0-9_.-]+$', username):
+            flash('Username hanya boleh memuat huruf, angka, garis bawah (_), titik (.), dan strip (-).', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        if nim_nik and len(nim_nik) > 30:
+            flash('NIM/NIK tidak boleh lebih dari 30 karakter.', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        # Cek jika username baru bentrok dengan user lain
+        existing = User.query.filter(User.username == username, User.id != admin_user.id).first()
+        if existing:
+            flash(f'Username "@{username}" sudah digunakan akun lain. Silakan pilih username lain.', 'danger')
+            return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+        admin_user.full_name = full_name
+        admin_user.username = username
+        admin_user.nim_nik = nim_nik
+
+        # Penanganan ganti password baru (Re-Authentication & Integrity)
+        if new_password:
+            if not current_password:
+                flash('Masukkan kata sandi saat ini untuk memverifikasi penggantian kata sandi.', 'warning')
+                return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+            if not admin_user.check_password(current_password):
+                flash('Kata sandi saat ini yang Anda masukkan salah. Perubahan kata sandi dibatalkan.', 'danger')
+                return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+            if len(new_password) < 6:
+                flash('Kata sandi baru minimal harus terdiri dari 6 karakter.', 'danger')
+                return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+            if len(new_password) > 128:
+                flash('Kata sandi baru tidak boleh melebihi 128 karakter demi keamanan komputasi.', 'danger')
+                return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+            if new_password != confirm_password:
+                flash('Konfirmasi kata sandi baru tidak cocok.', 'danger')
+                return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
+
+            admin_user.set_password(new_password)
+            db.session.commit()
+
+            # Refresh sesi login untuk menjaga integritas kredensial aktif
+            login_user(admin_user)
+            session['_last_active'] = time.time()
+
+            flash('Profil data diri dan kata sandi baru Anda berhasil diperbarui!', 'success')
+        else:
+            db.session.commit()
+            flash('Profil data diri berhasil diperbarui!', 'success')
+
+        return redirect(url_for('admin.profile'))
+
+    return render_template('admin_profile.html', user=admin_user, unique_admin_id=unique_admin_id)
