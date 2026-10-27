@@ -107,25 +107,28 @@
        Mobile  : semua tile bertumpuk (utama dulu)
        >=768px : CAM 1 besar di kiri, CAM 2 dan CAM 3 bertumpuk di kanan */
     .cluster-grid {
+        --gh: clamp(480px, calc(100vh - 240px), 720px);   /* tinggi area kamera */
+        --n: 2;                                           /* jumlah tile samping (diatur JS) */
         position: relative;
         display: grid;
         gap: 12px;
         grid-template-columns: minmax(0, 1fr);
-        grid-template-areas: "main" "s2" "s3";
     }
     @media (min-width: 768px) {
         .cluster-grid {
             grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-            grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
-            grid-template-areas: "main s2" "main s3";
-            height: clamp(480px, calc(100vh - 240px), 720px);
+            grid-template-rows: repeat(var(--n), minmax(230px, 1fr));
+            height: var(--gh);
+            overflow-x: hidden; overflow-y: auto;   /* kolom kanan bisa di-scroll jika kamera > 3 */
+            scrollbar-width: thin;
         }
+        .cam-tile[data-slot="main"] {   /* CAM 1: kiri, tetap terlihat saat kolom kanan di-scroll */
+            grid-column: 1; grid-row: 1 / -1;
+            position: sticky; top: 0; align-self: start; height: var(--gh);
+        }
+        .cam-tile[data-slot="side"] { grid-column: 2; }
     }
-
-    /* Posisi tile ditentukan atribut data-slot (diatur oleh JS: applySlots) */
-    .cam-tile[data-slot="main"] { grid-area: main; order: 0; }
-    .cam-tile[data-slot="s2"]   { grid-area: s2;   order: 1; }
-    .cam-tile[data-slot="s3"]   { grid-area: s3;   order: 2; }
+    /* urutan tile diatur lewat style.order (JS: applySlots) */
 
     .cam-tile {
         display: flex; flex-direction: column;
@@ -164,6 +167,14 @@
     #cameraCluster:not(.fs-on) .is-thumb #standbyPlaceholder .w-20 { width: 3rem; height: 3rem; font-size: 1.5rem; }
     #cameraCluster:not(.fs-on) .is-thumb #permissionDeniedNotice { margin: 8px; padding: 12px; }
 
+    /* ---------- Kamera tambahan ---------- */
+    .cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #020617; }
+    .x-standby { padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; }
+    .x-standby .x-emoji { font-size: 28px; margin-bottom: 4px; }
+    .x-btn-del { font-size: 11px; font-weight: 700; color: #dc2626; cursor: pointer; background: none; border: 0; padding: 0 2px; }
+    .x-btn-del:hover { text-decoration: underline; }
+    #cameraCluster:not(.fs-on) .is-thumb .x-standby p { display: none; }
+
     /* ---------- Layar penuh: 1 kamera per layar, geser untuk kamera lain ---------- */
     .fs-nav { display: none; }
     #cameraCluster.fs-fallback { position: fixed; inset: 0; z-index: 60; }
@@ -184,6 +195,7 @@
     #cameraCluster.fs-on .cluster-grid::-webkit-scrollbar { display: none; }
     #cameraCluster.fs-on .cam-tile {
         flex: 0 0 100%; width: 100%; height: 100%;
+        position: relative; top: auto; align-self: stretch;
         scroll-snap-align: start; scroll-snap-stop: always;
         border-radius: 12px;
     }
@@ -220,6 +232,10 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera</h2>
             <div class="flex items-center gap-2">
+                <button type="button" id="addCamBtn" onclick="addCamera()"
+                        class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
+                    + Tambah Kamera <span id="addCamCount" class="font-mono font-medium"></span>
+                </button>
                 <button type="button" id="swapBtn" onclick="swapCameras()"
                         class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition cursor-pointer">
                     &#8646; Tukar Kamera Utama
@@ -1163,16 +1179,18 @@
     const ovPose = document.getElementById('ovPose');
 
     // ===== Slot kamera: index 0 = utama (kiri besar), 1 = kanan atas, 2 = kanan bawah =====
-    const SLOT_NAMES = ['main', 's2', 's3'];
     let slotOrder = [tileDriver, tileObject, tileDetail];
 
     function applySlots() {
+        clusterGrid.style.setProperty('--n', Math.max(1, slotOrder.length - 1));
         slotOrder.forEach((tile, i) => {
-            tile.dataset.slot = SLOT_NAMES[i];
+            tile.dataset.slot = (i === 0) ? 'main' : 'side';
+            tile.style.order = i;
             tile.classList.toggle('is-main', i === 0);
             tile.classList.toggle('is-thumb', i !== 0);
         });
         renderFsNav();
+        updateAddBtn();
     }
 
     // Jadikan tile tertentu sebagai kamera utama (tile utama lama menempati posisi tile tsb)
@@ -1266,7 +1284,7 @@
         if (e.key === 'ArrowLeft') { fsStep(-1); }
     });
 
-    applySlots();
+    // (applySlots() dipanggil di akhir script, setelah semua const terdefinisi)
     function enterFsFallback() {          // untuk browser yang tidak mendukung Fullscreen API (mis. iPhone)
         clusterEl.classList.add('fs-fallback');
         setFsUi(true);
@@ -1336,6 +1354,158 @@ function toggleClusterFullscreen() {
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape' && clusterEl.classList.contains('fs-fallback')) exitFsFallback();
     });
+
+
+    // ===== Tambah kamera (+): tile kamera tambahan, preview langsung =====
+    const MAX_EXTRA_CAMS = 4;            // batas kamera tambahan (ubah sesuai kebutuhan)
+    let extraCamSeq = 0;
+    const extraTiles = [];
+    const addCamBtn = document.getElementById('addCamBtn');
+    const addCamCount = document.getElementById('addCamCount');
+
+    function updateAddBtn() {
+        if (!addCamBtn) return;
+        addCamBtn.disabled = extraTiles.length >= MAX_EXTRA_CAMS;
+        addCamCount.innerText = extraTiles.length ? '(' + extraTiles.length + '/' + MAX_EXTRA_CAMS + ')' : '';
+    }
+
+    function usedDeviceIds() {
+        const ids = [];
+        [currentStream, objStream].concat(extraTiles.map(t => t._stream)).forEach(st => {
+            const tr = st && st.getVideoTracks()[0];
+            if (tr && tr.getSettings().deviceId) ids.push(tr.getSettings().deviceId);
+        });
+        return ids;
+    }
+
+    async function refreshExtraSelect(tile, preferFree) {
+        const sel = tile.querySelector('.x-select');
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return;
+        const keep = sel.value;
+        const devices = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'videoinput');
+        sel.innerHTML = '';
+        if (!devices.length) {
+            sel.innerHTML = '<option value="">Tidak ada kamera terdeteksi</option>';
+            return;
+        }
+        devices.forEach((d, i) => {
+            const o = document.createElement('option');
+            o.value = d.deviceId;
+            o.innerText = d.label || ('Kamera ' + (i + 1));
+            sel.appendChild(o);
+        });
+        if (keep && devices.some(d => d.deviceId === keep)) {
+            sel.value = keep;
+        } else if (preferFree) {                     // pilih kamera yang belum dipakai tile lain
+            const used = usedDeviceIds();
+            const free = devices.find(d => !used.includes(d.deviceId));
+            if (free) sel.value = free.deviceId;
+        }
+    }
+
+    function addCamera() {
+        if (extraTiles.length >= MAX_EXTRA_CAMS) return;
+        extraCamSeq++;
+        const title = 'Kamera Tambahan ' + extraCamSeq;
+        const tile = document.createElement('section');
+        tile.className = 'cam-tile is-thumb';
+        tile.dataset.title = title;
+        tile.setAttribute('aria-label', title);
+        tile.innerHTML =
+            '<div class="tile-head bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">' +
+                '<span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">' +
+                    '<span class="x-dot w-2 h-2 rounded-full bg-slate-400"></span>' + title + '</span>' +
+                '<span class="flex items-center gap-3">' +
+                    '<button type="button" class="make-main-btn text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer" onclick="makeMain(this.closest(\'.cam-tile\'))">Jadikan utama</button>' +
+                    '<button type="button" class="x-btn-del" title="Hapus kamera ini" onclick="removeExtraCamera(this.closest(\'.cam-tile\'))">&#10005; Hapus</button>' +
+                '</span>' +
+            '</div>' +
+            '<div class="tile-controls px-3 py-2 border-b border-slate-200 flex flex-wrap items-center gap-2">' +
+                '<select class="x-select min-w-0 flex-1 bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:bg-white focus:outline-none focus:border-blue-600 transition" ' +
+                        'onchange="if (this.closest(\'.cam-tile\')._stream) startExtraCamera(this.closest(\'.cam-tile\'))"><option value="">Mencari kamera...</option></select>' +
+                '<button type="button" class="x-toggle px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer" ' +
+                        'onclick="toggleExtraCamera(this.closest(\'.cam-tile\'))">Nyalakan</button>' +
+            '</div>' +
+            '<div class="tile-view">' +
+                '<video class="cam-video x-video hidden" autoplay playsinline muted></video>' +
+                '<div class="x-standby"><div class="x-emoji">&#128249;</div>' +
+                    '<div class="text-sm font-bold text-white">Kamera Nonaktif</div>' +
+                    '<p class="mt-1">Pilih perangkat kamera lalu klik <strong>Nyalakan</strong>. Bisa USB, webcam lain, atau kamera ponsel.</p></div>' +
+            '</div>' +
+            '<div class="tile-foot bg-slate-50 px-3 py-2 border-t border-slate-200 text-xs text-slate-500">' +
+                '<span class="x-status">Kamera belum aktif</span></div>';
+
+        clusterGrid.appendChild(tile);
+        extraTiles.push(tile);
+        slotOrder.push(tile);
+        applySlots();
+        refreshExtraSelect(tile, true);
+        if (isFsOn()) fsGoTo(slotOrder.length - 1);
+        else tile.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+
+    function extraSetStatus(tile, text) { tile.querySelector('.x-status').innerText = text; }
+
+    async function startExtraCamera(tile) {
+        const sel = tile.querySelector('.x-select');
+        const btn = tile.querySelector('.x-toggle');
+        const vid = tile.querySelector('.x-video');
+        stopExtraCamera(tile, true);
+        btn.disabled = true;
+        extraSetStatus(tile, 'Meminta akses kamera...');
+        try {
+            const video = { width: { ideal: 640 }, height: { ideal: 480 } };
+            if (sel.value) video.deviceId = { exact: sel.value };
+            const stream = await navigator.mediaDevices.getUserMedia({ video: video, audio: false });
+            tile._stream = stream;
+            vid.srcObject = stream;
+            await vid.play();
+            tile.querySelector('.x-standby').classList.add('hidden');
+            vid.classList.remove('hidden');
+            tile.querySelector('.x-dot').className = 'x-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+            btn.innerText = 'Matikan';
+            btn.className = 'x-toggle px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition cursor-pointer';
+            extraSetStatus(tile, 'Aktif · ' + vid.videoWidth + 'x' + vid.videoHeight);
+            stream.getVideoTracks()[0].addEventListener('ended', () => stopExtraCamera(tile, false, 'Kamera terputus'));
+            refreshExtraSelect(tile, false);       // label perangkat baru muncul setelah izin diberikan
+        } catch (err) {
+            console.error('Kamera tambahan gagal:', err);
+            tile._stream = null;
+            extraSetStatus(tile, 'Gagal: ' + (err.message || err.name) + '. Coba kamera lain atau cek izin.');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function stopExtraCamera(tile, silent, msg) {
+        if (tile._stream) { tile._stream.getTracks().forEach(t => t.stop()); tile._stream = null; }
+        const vid = tile.querySelector('.x-video');
+        vid.srcObject = null;
+        vid.classList.add('hidden');
+        tile.querySelector('.x-standby').classList.remove('hidden');
+        tile.querySelector('.x-dot').className = 'x-dot w-2 h-2 rounded-full bg-slate-400';
+        const btn = tile.querySelector('.x-toggle');
+        btn.innerText = 'Nyalakan';
+        btn.className = 'x-toggle px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer';
+        if (!silent) extraSetStatus(tile, msg || 'Kamera dimatikan');
+    }
+
+    function toggleExtraCamera(tile) {
+        if (tile._stream) stopExtraCamera(tile); else startExtraCamera(tile);
+    }
+
+    function removeExtraCamera(tile) {
+        stopExtraCamera(tile, true);
+        extraTiles.splice(extraTiles.indexOf(tile), 1);
+        slotOrder.splice(slotOrder.indexOf(tile), 1);   // jika ia kamera utama, tile berikutnya naik jadi utama
+        tile.remove();
+        applySlots();
+        if (isFsOn()) fsGoTo(Math.min(fsIndex(), slotOrder.length - 1), true);
+    }
+
+    if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
+        navigator.mediaDevices.addEventListener('devicechange', () => extraTiles.forEach(t => refreshExtraSelect(t, false)));
+    }
 
     // ===== Tutorial pop-up bergambar (slider) =====
     const TUT_KEY = 'dsTutorialSeen_{{ Auth::id() }}';
@@ -1592,5 +1762,7 @@ const tutTrack = document.getElementById('tutorialTrack');
             objBusy = false;
         }
     }
+
+    applySlots();   // inisialisasi posisi kamera
 </script>
 @endsection
