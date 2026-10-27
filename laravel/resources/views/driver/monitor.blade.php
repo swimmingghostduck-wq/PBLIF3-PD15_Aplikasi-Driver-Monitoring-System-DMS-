@@ -102,30 +102,166 @@
     <!-- ====== KLASTER KAMERA (kamera utama + kamera kecil + panel detail) ====== -->
     <style>
     /* ===== Klaster kamera ===== */
-    #cameraCluster { display: flex; flex-direction: column; gap: 12px; }
-    .cluster-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "thumb" "details"; }
+    #cameraCluster { 
+        display: flex; 
+        flex-direction: column; 
+        gap: 12px; 
+        }
+    .cluster-grid { 
+        display: grid; 
+        gap: 16px; 
+        grid-template-columns: minmax(0, 1fr); 
+        grid-template-areas: "main" "thumb" "details"; 
+        }
     @media (min-width: 1024px) {
-        .cluster-grid { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "main thumb" "main details"; }
+        .cluster-grid { 
+            grid-template-columns: minmax(0, 1fr) 340px; 
+            grid-template-rows: auto minmax(0, 1fr); 
+            grid-template-areas: "main thumb" "main details"; }
     }
-    .cam-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; background: #fff; }
-    .cam-tile.is-main { grid-area: main; }
-    .cam-tile.is-thumb { grid-area: thumb; }
-    .details-pane { grid-area: details; min-height: 0; overflow-y: auto; }
-    .tile-view { position: relative; background: #020617; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .is-main .tile-view { flex: 1; min-height: 320px; }
-    .is-thumb .tile-view { min-height: 130px; }
-    .cam-canvas { width: 100%; height: auto; object-fit: contain; }
-    .is-main .cam-canvas { max-height: 70vh; }
-    .is-thumb .cam-canvas { max-height: 11rem; }
-    .is-main .make-main-btn { display: none; }
-    .is-thumb #standbyPlaceholder, .is-thumb #objStandby { padding: 12px; }
-    .is-thumb #standbyPlaceholder p, .is-thumb #objStandby p, .is-thumb #permissionDeniedNotice ol { display: none; }
-    .is-thumb #standbyPlaceholder .w-20 { width: 3rem; height: 3rem; font-size: 1.5rem; }
+    .cam-tile { 
+        display: flex; 
+        flex-direction: 
+        column; min-width: 0; 
+        min-height: 0; 
+        border: 1px solid #E2E8F0; 
+        border-radius: 16px; 
+        overflow: hidden; 
+        background: #fff; 
+        }
+    .cam-tile.is-main { 
+        grid-area: main; 
+        }
+    .cam-tile.is-thumb { 
+        grid-area: thumb; 
+        }
+    .details-pane { 
+        grid-area: details; 
+        min-height: 0; 
+        overflow-y: auto; 
+        }
+    .tile-view { 
+        position: relative; 
+        background: #020617; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center;
+        overflow: hidden; 
+        }
+    .is-main .tile-view { 
+        flex: 1; 
+        min-height: 320px; 
+        }
+    .is-thumb .tile-view { 
+        min-height: 130px; 
+        }
+    .cam-canvas { 
+        width: 100%; 
+        height: auto; 
+        object-fit: contain; 
+        }
+    .is-main .cam-canvas { 
+        max-height: 70vh; 
+        }
+    .is-thumb .cam-canvas { 
+        max-height: 11rem; 
+        }
+    .is-main .make-main-btn { 
+        display: none; 
+        }
+    .is-thumb #standbyPlaceholder, .is-thumb #objStandby { 
+        padding: 12px; 
+        }
+    .is-thumb #standbyPlaceholder p, .is-thumb #objStandby p, .is-thumb #permissionDeniedNotice ol { 
+        display: none; 
+        }
+    .is-thumb #standbyPlaceholder .w-20 { 
+        width: 3rem; 
+        height: 3rem; 
+        font-size: 1.5rem; 
+        }
     /* Layar penuh: klaster (kamera + panel detail) memenuhi layar, panel detail bisa di-scroll */
-    #cameraCluster.fs-on { background: #fff; padding: 12px; height: 100vh; width: 100vw; box-sizing: border-box; border-radius: 0; border: 0; overflow: hidden; }
-    #cameraCluster.fs-fallback { position: fixed; inset: 0; z-index: 60; }
-    #cameraCluster.fs-on .cluster-grid { flex: 1; min-height: 0; overflow-y: auto; }
-    #cameraCluster.fs-on .is-main .cam-canvas { max-height: calc(100vh - 190px); }
+    #cameraCluster.fs-on { 
+        background: #fff; 
+        padding: 12px; 
+        height: 100vh; 
+        width: 100vw; 
+        box-sizing: border-box; 
+        border-radius: 0; 
+        border: 0; 
+        overflow: hidden; 
+    }
+    #cameraCluster.fs-fallback { 
+        position: fixed; 
+        inset: 0; 
+        z-index: 60; 
+    }
+    #cameraCluster.fs-on .cluster-grid { 
+        flex: 1; 
+        min-height: 0; 
+        overflow-y: auto; 
+    }
+    #cameraCluster.fs-on .is-main .cam-canvas { 
+        max-height: calc(100vh - 190px); 
+    }
+    
+
+
+/* Temporary fix: keep driver camera visible in fullscreen */
+#cameraCluster.fs-on .cluster-grid {
+    display: grid !important;
+    grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr) !important;
+    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+        "main thumb"
+        "main details" !important;
+    flex: 1 1 auto;
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+}
+
+#cameraCluster.fs-on #tileDriver {
+    grid-area: main !important;
+    min-width: 0;
+    min-height: 0;
+}
+
+#cameraCluster.fs-on #tileObject {
+    grid-area: thumb !important;
+    min-width: 0;
+    min-height: 0;
+}
+
+#cameraCluster.fs-on #detailPane {
+    grid-area: details !important;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+#cameraCluster.fs-on #tileDriver .tile-view,
+#cameraCluster.fs-on #tileObject .tile-view {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+#cameraCluster.fs-on #tileDriver #displayCanvas:not(.hidden),
+#cameraCluster.fs-on #tileObject #objCanvas:not(.hidden) {
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+
+@media (min-width: 1024px) {
+    #cameraCluster.fs-on .cluster-grid {
+        overflow: hidden;
+    }
+}
+
+
+
     @media (min-width: 1024px) {
         #cameraCluster.fs-on .cluster-grid { overflow: hidden; }
     }
@@ -1121,18 +1257,55 @@
         setFsUi(false);
         document.body.style.overflow = '';
     }
-    function toggleClusterFullscreen() {
-        const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
-        if (nativeEl === clusterEl) {
-            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-            return;
+    
+function toggleClusterFullscreen() {
+    if (!clusterEl || !fsBtn || !fsText) return;
+
+    const nativeEl =
+        document.fullscreenElement ||
+        document.webkitFullscreenElement;
+
+    // If already in native fullscreen, exit it
+    if (nativeEl === clusterEl) {
+        const exitFullscreen =
+            document.exitFullscreen ||
+            document.webkitExitFullscreen;
+
+        if (exitFullscreen) {
+            exitFullscreen.call(document).catch?.(() => {
+                enterFsFallback();
+            });
         }
-        if (clusterEl.classList.contains('fs-fallback')) { exitFsFallback(); return; }
-        const req = clusterEl.requestFullscreen || clusterEl.webkitRequestFullscreen;
-        if (!req) { enterFsFallback(); return; }
-        const p = req.call(clusterEl);
-        if (p && p.catch) p.catch(() => enterFsFallback());
+        return;
     }
+
+    // If using the fallback view, close it
+    if (clusterEl.classList.contains('fs-fallback')) {
+        exitFsFallback();
+        return;
+    }
+
+    // Try the browser's native fullscreen
+    const requestFullscreen =
+        clusterEl.requestFullscreen ||
+        clusterEl.webkitRequestFullscreen;
+
+    if (requestFullscreen) {
+        try {
+            const result = requestFullscreen.call(clusterEl);
+
+            if (result && typeof result.catch === 'function') {
+                result.catch(() => enterFsFallback());
+            }
+        } catch (error) {
+            enterFsFallback();
+        }
+    } else {
+        // Use the page's existing fallback mode
+        enterFsFallback();
+    }
+}
+
     function syncFullscreenState() {
         const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
         if (nativeEl === clusterEl) setFsUi(true);
