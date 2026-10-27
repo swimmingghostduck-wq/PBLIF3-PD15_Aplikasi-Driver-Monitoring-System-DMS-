@@ -192,7 +192,7 @@
 
                 <div class="rounded-xl bg-slate-50 border border-slate-200 p-4">
                     <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                        Nomor Polisi
+                        Nomor Kendaraan
                     </div>
                     <div class="mt-1.5 text-sm font-bold text-slate-900 font-mono">
                         {{ $user->vehicle_plate ?: '-' }}

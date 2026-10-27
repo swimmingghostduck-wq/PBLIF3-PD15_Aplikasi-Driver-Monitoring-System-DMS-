@@ -378,54 +378,126 @@
     </section>
 </div>
 
-    <!-- Tutorial pop-up (muncul otomatis untuk pengguna baru) -->
-    <div id="tutorialModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 items-center justify-center p-4 flex" role="dialog" aria-modal="true" aria-labelledby="tutorialHeading">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden">
-            <div class="flex items-center justify-between px-5 pt-4">
-                <span id="tutorialHeading" class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Cara Menggunakan DriveSafe</span>
-                <button type="button" onclick="closeTutorial()" aria-label="Tutup tutorial" class="w-8 h-8 text-slate-500 hover:text-slate-800 text-2xl leading-none cursor-pointer">&times;</button>
-            </div>
-            <div class="overflow-hidden mt-3">
-                <div id="tutorialTrack" class="flex transition-transform duration-300 ease-out">
-                    <div class="min-w-full px-5">
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="40" y="20" width="240" height="140" rx="10" fill="#fff" stroke="#CBD5E1"/><rect x="40" y="20" width="240" height="22" rx="10" fill="#E2E8F0"/><circle cx="56" cy="31" r="4" fill="#94A3B8"/><circle cx="70" cy="31" r="4" fill="#94A3B8"/>
-<rect x="66" y="58" width="188" height="86" rx="8" fill="#fff" stroke="#94A3B8"/><text x="160" y="82" text-anchor="middle" font-size="11" fill="#0F172A">localhost ingin memakai kamera Anda</text>
-<rect x="92" y="102" width="66" height="24" rx="6" fill="#2563EB"/><text x="125" y="118" text-anchor="middle" font-size="11" font-weight="bold" fill="#fff">Izinkan</text>
-<rect x="166" y="102" width="66" height="24" rx="6" fill="#E2E8F0"/><text x="199" y="118" text-anchor="middle" font-size="11" fill="#0F172A">Blokir</text></svg></div>
-                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">1. Izinkan Akses Kamera</h3>
-                        <p class="mt-1 text-sm text-slate-600">Klik <strong>Akses Kamera</strong>, lalu pilih <strong>Izinkan</strong> pada pop-up browser agar DriveSafe dapat melihat wajah Anda.</p>
-                    </div>
-                    <div class="min-w-full px-5">
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="60" y="14" width="200" height="152" rx="12" fill="#0F172A"/><ellipse cx="160" cy="88" rx="44" ry="56" fill="none" stroke="#60A5FA" stroke-width="2.5" stroke-dasharray="7 5"/>
-<circle cx="160" cy="88" r="32" fill="#FCD9B6"/><circle cx="148" cy="82" r="3.5" fill="#0F172A"/><circle cx="172" cy="82" r="3.5" fill="#0F172A"/><path d="M149 99Q160 107 171 99" stroke="#0F172A" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-<text x="160" y="158" text-anchor="middle" font-size="10" fill="#93C5FD">Wajah di tengah, cahaya cukup</text></svg></div>
-                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">2. Posisikan Wajah</h3>
-                        <p class="mt-1 text-sm text-slate-600">Duduk menghadap kamera dengan wajah di tengah layar dan pencahayaan yang cukup. Hindari cahaya kuat dari belakang.</p>
-                    </div>
-                    <div class="min-w-full px-5">
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="20" y="20" width="280" height="140" rx="12" fill="#CBD5E1"/><path d="M150 160 L170 160 L190 80 L130 80 Z" fill="#64748B"/><path d="M160 150 V132 M160 118 V104 M160 94 V84" stroke="#fff" stroke-width="3"/>
-<circle cx="70" cy="100" r="26" fill="#FCD9B6"/><circle cx="78" cy="94" r="3.5" fill="#0F172A"/><circle cx="62" cy="94" r="3.5" fill="#0F172A"/>
-<path d="M104 100 H236" stroke="#2563EB" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8"/><path d="M228 90 L246 100 L228 110 Z" fill="#2563EB"/>
-<text x="160" y="46" text-anchor="middle" font-size="12" font-weight="bold" fill="#0F172A">Pandangan lurus ke jalan</text></svg></div>
-                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">3. Lihat ke Depan</h3>
-                        <p class="mt-1 text-sm text-slate-600">Pandang ke depan seperti saat berkendara. Sistem memantau mata, mulut, dan arah kepala Anda secara real-time.</p>
-                    </div>
-                    <div class="min-w-full px-5">
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#EFF6FF"/><rect x="30" y="50" width="260" height="80" rx="12" fill="#DC2626"/><path d="M62 108 L82 70 L102 108 Z" fill="#fff"/><rect x="80" y="82" width="4" height="14" fill="#DC2626"/><circle cx="82" cy="102" r="2.5" fill="#DC2626"/>
-<text x="120" y="88" font-size="14" font-weight="bold" fill="#fff">PERINGATAN: MENGANTUK</text><text x="120" y="108" font-size="10" fill="#FEE2E2">Alarm suara berbunyi</text>
-<path d="M250 20 q10 10 0 20 M260 14 q16 16 0 32" stroke="#DC2626" stroke-width="3" fill="none" stroke-linecap="round"/></svg></div>
-                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">4. Peringatan Muncul</h3>
-                        <p class="mt-1 text-sm text-slate-600">Jika terdeteksi mengantuk atau tidak fokus, banner merah dan alarm suara akan muncul. Riwayatnya tersimpan di menu Riwayat.</p>
-                    </div>
-                    <div class="min-w-full px-5">
-                        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50"><svg viewBox="0 0 320 180" class="w-full h-full" font-family="Arial, sans-serif" aria-hidden="true"><rect width="320" height="180" fill="#0F172A"/><path d="M0 180 L120 70 H200 L320 180 Z" fill="#334155"/><path d="M160 178 V160 M160 146 V132 M160 122 V112" stroke="#E2E8F0" stroke-width="3"/>
-<rect x="130" y="82" width="56" height="34" fill="none" stroke="#10B981" stroke-width="3"/><rect x="130" y="64" width="86" height="18" fill="#10B981"/><text x="135" y="77" font-size="10" font-weight="bold" fill="#0F172A">Mobil - JAUH</text>
-<rect x="206" y="100" width="76" height="62" fill="none" stroke="#EF4444" stroke-width="3"/><rect x="206" y="82" width="96" height="18" fill="#EF4444"/><text x="211" y="95" font-size="10" font-weight="bold" fill="#fff">Motor - DEKAT</text></svg></div>
-                        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">5. Kamera Deteksi Objek</h3>
-                        <p class="mt-1 text-sm text-slate-600">Nyalakan kamera kedua yang menghadap jalan. Objek di depan diberi label Jauh, Sedang, atau Dekat. Objek yang terlalu dekat memicu peringatan.</p>
-                    </div>
-                </div>
-            </div>
+    <!-- Tutorial Modal: overlay layar penuh -->
+<div
+    id="tutorialModal"
+    class="hidden fixed inset-0 z-[99999] items-center justify-center bg-black/60 p-4"
+    style="position: fixed; inset: 0; width: 100%; height: 100%;"
+    role="dialog"
+    aria-modal="true"
+    aria-label="Tutorial penggunaan DriveSafe"
+>
+    <!-- Kotak tutorial -->
+    <div class="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white shadow-2xl">
+
+        <!-- Area slide -->
+        <div class="overflow-hidden">
+            <div id="tutorialTrack" class="flex transition-transform duration-300 ease-out">
+
+    <!-- SLIDE 1 -->
+    <div class="min-w-full px-5">
+        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50">
+            <img
+                src="{{ asset('images/tutorial/camera-permission.png') }}"
+                alt="Cara memberikan izin kamera"
+                class="w-full h-full object-cover"
+            >
+        </div>
+
+        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">
+            1. Izinkan Akses Kamera
+        </h3>
+
+        <p class="mt-1 text-sm text-slate-600">
+            Klik tombol Akses Kamera, lalu pilih "Izinkan" ketika browser meminta akses ke kamera.
+        </p>
+    </div>
+
+
+    <!-- SLIDE 2 -->
+    <div class="min-w-full px-5">
+        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50">
+            <img
+                src="{{ asset('images/tutorial/position-face.png') }}"
+                alt="Posisikan wajah di tengah kamera"
+                class="w-full h-full object-cover"
+            >
+        </div>
+
+        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">
+            2. Posisikan Wajah
+        </h3>
+
+        <p class="mt-1 text-sm text-slate-600">
+            Duduk menghadap kamera dengan wajah di tengah layar dan pencahayaan yang cukup.
+            Hindari cahaya kuat dari belakang.
+        </p>
+    </div>
+
+
+    <!-- SLIDE 3 -->
+    <div class="min-w-full px-5">
+        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50">
+            <img
+                src="{{ asset('images/tutorial/look-forward.png') }}"
+                alt="Pengemudi melihat ke depan"
+                class="w-full h-full object-cover"
+            >
+        </div>
+
+        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">
+            3. Lihat ke Depan
+        </h3>
+
+        <p class="mt-1 text-sm text-slate-600">
+            Pandang ke depan seperti saat berkendara. Sistem memantau mata, mulut,
+            dan arah kepala Anda secara real-time.
+        </p>
+    </div>
+
+
+    <!-- SLIDE 4 -->
+    <div class="min-w-full px-5">
+        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50">
+            <img
+                src="{{ asset('images/tutorial/warning.png') }}"
+                alt="Peringatan ketika pengemudi mengantuk"
+                class="w-full h-full object-cover"
+            >
+        </div>
+
+        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">
+            4. Peringatan Muncul
+        </h3>
+
+        <p class="mt-1 text-sm text-slate-600">
+            Jika terdeteksi mengantuk atau tidak fokus, banner merah dan alarm suara
+            akan muncul. Riwayatnya tersimpan di menu Riwayat.
+        </p>
+    </div>
+
+
+    <!-- SLIDE 5 -->
+    <div class="min-w-full px-5">
+        <div class="rounded-xl overflow-hidden border border-slate-200 aspect-video bg-blue-50">
+            <img
+                src="{{ asset('images/tutorial/object-detection.png') }}"
+                alt="Kamera mendeteksi objek di jalan"
+                class="w-full h-full object-cover"
+            >
+        </div>
+
+        <h3 class="mt-4 text-lg font-heading font-bold text-slate-900">
+            5. Kamera Deteksi Objek
+        </h3>
+
+        <p class="mt-1 text-sm text-slate-600">
+            Nyalakan kamera kedua yang menghadap jalan. Objek di depan diberi label
+            Jauh, Sedang, atau Dekat. Objek yang terlalu dekat memicu peringatan.
+        </p>
+    </div>
+
+</div>
             <div class="px-5 pb-5 pt-4">
                 <div class="flex justify-center gap-2 mb-4"><button type="button" onclick="tutorialGo(0)" aria-label="Slide 1" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(1)" aria-label="Slide 2" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(2)" aria-label="Slide 3" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(3)" aria-label="Slide 4" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button><button type="button" onclick="tutorialGo(4)" aria-label="Slide 5" class="tut-dot w-2.5 h-2.5 rounded-full bg-slate-300 cursor-pointer"></button></div>
                 <div class="flex items-center justify-between">
@@ -434,8 +506,10 @@
                     <button id="tutNext" type="button" onclick="tutorialNext()" class="px-4 py-2 text-xs font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 cursor-pointer">Berikutnya</button>
                 </div>
             </div>
+            </div>
         </div>
     </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -1075,7 +1149,23 @@
     const TUT_COUNT = 5;
     let tutIndex = 0;
     const tutModal = document.getElementById('tutorialModal');
-    const tutTrack = document.getElementById('tutorialTrack');
+
+// Move popup outside the page content containers
+if (tutModal) {
+    document.body.appendChild(tutModal);
+
+    Object.assign(tutModal.style, {
+        position: 'fixed',
+        inset: '0',
+        width: '100%',
+        height: '100%',
+        zIndex: '99999',
+        alignItems: 'center',
+        justifyContent: 'center'
+    });
+}
+
+const tutTrack = document.getElementById('tutorialTrack');
 
     function renderTutorial() {
         tutTrack.style.transform = 'translateX(-' + (tutIndex * 100) + '%)';
@@ -1086,14 +1176,28 @@
         document.getElementById('tutNext').innerText = (tutIndex === TUT_COUNT - 1) ? 'Mulai' : 'Berikutnya';
     }
     function openTutorial() {
+        if (!tutModal || !tutTrack) return;
+
         tutIndex = 0;
         renderTutorial();
+
         tutModal.classList.remove('hidden');
-        document.getElementById('tutNext').focus();
-    }
+        tutModal.style.display = 'flex';
+
+        document.body.style.overflow = 'hidden';
+        document.getElementById('tutNext')?.focus();
+    }   
     function closeTutorial() {
+        if (!tutModal) return;
+
         tutModal.classList.add('hidden');
-        try { localStorage.setItem(TUT_KEY, '1'); } catch (e) {}
+        tutModal.style.display = 'none';
+
+        document.body.style.overflow = '';
+
+        try {
+            localStorage.setItem(TUT_KEY, '1');
+        } catch (e) {}
     }
     function tutorialNext() {
         if (tutIndex >= TUT_COUNT - 1) { closeTutorial(); return; }
