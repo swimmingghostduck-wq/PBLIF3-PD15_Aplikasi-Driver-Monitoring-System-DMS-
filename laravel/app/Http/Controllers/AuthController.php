@@ -15,9 +15,12 @@ class AuthController extends Controller
     public function showLogin()
     {
         if (Auth::check()) {
-            return Auth::user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('driver.dashboard');
+            $user = Auth::user();
+            if ($user) {
+                return $user->isAdmin()
+                    ? redirect()->route('admin.dashboard')
+                    : redirect()->route('driver.dashboard');
+            }
         }
 
         return view('auth.login');
@@ -56,12 +59,21 @@ class AuthController extends Controller
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
-        if ($user->isAdmin()) {
-            return redirect()->intended(route('admin.dashboard'))
-                ->with('success', "Selamat datang kembali, {$user->full_name}!");
+        $intended = $request->session()->pull('url.intended');
+        $defaultRoute = $user->isAdmin() ? route('admin.dashboard') : route('driver.dashboard');
+
+        if (!$intended || str_contains($intended, '/login') || str_contains($intended, '/register') || str_contains($intended, '/logout')) {
+            $targetUrl = $defaultRoute;
+        } else {
+            // Hindari pengemudi diarahkan ke area admin yang sebelumnya tersimpan di session
+            if (!$user->isAdmin() && str_contains($intended, '/admin')) {
+                $targetUrl = $defaultRoute;
+            } else {
+                $targetUrl = $intended;
+            }
         }
 
-        return redirect()->intended(route('driver.dashboard'))
+        return redirect()->to($targetUrl)
             ->with('success', "Selamat datang kembali, {$user->full_name}!");
     }
 
@@ -71,9 +83,12 @@ class AuthController extends Controller
     public function showRegister()
     {
         if (Auth::check()) {
-            return Auth::user()->isAdmin()
-                ? redirect()->route('admin.dashboard')
-                : redirect()->route('driver.dashboard');
+            $user = Auth::user();
+            if ($user) {
+                return $user->isAdmin()
+                    ? redirect()->route('admin.dashboard')
+                    : redirect()->route('driver.dashboard');
+            }
         }
 
         return view('auth.register');

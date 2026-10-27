@@ -49,7 +49,7 @@ class DmsWebTest extends TestCase
 
         $response = $this->actingAs($admin)->get('/admin/alerts');
         $response->assertStatus(200);
-        $response->assertSee('Ringkasan Insiden Armada');
+        $response->assertSee('Ringkasan Insiden Pengemudi');
     }
 
     /**

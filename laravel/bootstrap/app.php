@@ -17,7 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
         $middleware->redirectGuestsTo('/login');
         $middleware->redirectUsersTo(function () {
-            if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isAdmin()) {
+            $user = \Illuminate\Support\Facades\Auth::user();
+            if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
                 return route('admin.dashboard');
             }
             return route('driver.dashboard');

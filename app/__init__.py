@@ -13,7 +13,10 @@ login_manager.session_protection = 'strong'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return db.session.get(User, int(user_id))
+    try:
+        return db.session.get(User, int(user_id))
+    except Exception:
+        return None
 
 def create_app(config_class=Config):
     """Factory function untuk membuat instansiasi aplikasi Flask."""
@@ -57,6 +60,15 @@ def create_app(config_class=Config):
     app.register_blueprint(driver_bp, url_prefix='/driver')
     app.register_blueprint(admin_bp, url_prefix='/admin')
 
+    # Pre-warm AI Engine saat booting agar siap melayani frame webcam secara instan
+    with app.app_context():
+        try:
+            from app.routes.driver import init_dms_engine, warmup_dms_engine
+            init_dms_engine(app)
+            warmup_dms_engine()
+        except Exception as e:
+            print(f"[AI Engine] Notice saat pre-warming: {e}")
+
     @app.before_request
     def handle_incoming_request():
         # Izinkan preflight CORS
@@ -71,22 +83,26 @@ def create_app(config_class=Config):
            request.is_json:
             return None
 
-        # Jika request berasal dari browser (HTML), alihkan ke Laravel di port 8000
-        if request.accept_mimetypes.accept_html:
-            path = request.path
-            path_mapping = {
-                '/': '/',
-                '/splash': '/',
-                '/auth/login': '/login',
-                '/auth/register': '/register',
-                '/auth/logout': '/logout',
-                '/driver/monitor': '/driver/monitor',
-                '/driver/history': '/driver/dashboard',
-                '/driver/dashboard': '/driver/dashboard',
-                '/driver/profile': '/admin/profile',
-            }
-            target_path = path_mapping.get(path, path)
-            return redirect(f'http://127.0.0.1:8000{target_path}')
+        # Segala request halaman web dialihkan langsung ke Laravel di port 8000
+        path = request.path
+        path_mapping = {
+            '/': '/',
+            '/splash': '/',
+            '/auth/login': '/login',
+            '/auth/register': '/register',
+            '/auth/logout': '/logout',
+            '/driver/monitor': '/driver/monitor',
+            '/driver/history': '/driver/dashboard',
+            '/driver/dashboard': '/driver/dashboard',
+            '/driver/profile': '/driver/profile',
+            '/admin/dashboard': '/admin/dashboard',
+            '/admin/alerts': '/admin/alerts',
+            '/admin/drivers': '/admin/drivers',
+            '/admin/models': '/admin/models',
+            '/admin/profile': '/admin/profile',
+        }
+        target_path = path_mapping.get(path, path)
+        return redirect(f'http://127.0.0.1:8000{target_path}')
 
     @app.after_request
     def add_cors_headers(response):
@@ -98,7 +114,7 @@ def create_app(config_class=Config):
     @app.errorhandler(500)
     @app.errorhandler(404)
     def handle_global_errors(e):
-        if request.accept_mimetypes.accept_html and not request.is_json:
+        if not request.is_json and not request.path.startswith('/driver/process_frame'):
             return redirect('http://127.0.0.1:8000' + request.path)
         return {'error': str(e), 'service': 'DMS AI Microservice'}, (getattr(e, 'code', 500))
 
