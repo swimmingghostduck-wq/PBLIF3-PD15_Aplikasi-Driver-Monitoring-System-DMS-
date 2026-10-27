@@ -99,6 +99,40 @@
         </div>
     </div>
 
+    <!-- ====== KLASTER KAMERA (kamera utama + kamera kecil + panel detail) ====== -->
+    <style>
+    /* ===== Klaster kamera ===== */
+    #cameraCluster { display: flex; flex-direction: column; gap: 12px; }
+    .cluster-grid { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); grid-template-areas: "main" "thumb" "details"; }
+    @media (min-width: 1024px) {
+        .cluster-grid { grid-template-columns: minmax(0, 1fr) 340px; grid-template-rows: auto minmax(0, 1fr); grid-template-areas: "main thumb" "main details"; }
+    }
+    .cam-tile { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; background: #fff; }
+    .cam-tile.is-main { grid-area: main; }
+    .cam-tile.is-thumb { grid-area: thumb; }
+    .details-pane { grid-area: details; min-height: 0; overflow-y: auto; }
+    .tile-view { position: relative; background: #020617; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .is-main .tile-view { flex: 1; min-height: 320px; }
+    .is-thumb .tile-view { min-height: 130px; }
+    .cam-canvas { width: 100%; height: auto; object-fit: contain; }
+    .is-main .cam-canvas { max-height: 70vh; }
+    .is-thumb .cam-canvas { max-height: 11rem; }
+    .is-main .make-main-btn { display: none; }
+    .is-thumb #standbyPlaceholder, .is-thumb #objStandby { padding: 12px; }
+    .is-thumb #standbyPlaceholder p, .is-thumb #objStandby p, .is-thumb #permissionDeniedNotice ol { display: none; }
+    .is-thumb #standbyPlaceholder .w-20 { width: 3rem; height: 3rem; font-size: 1.5rem; }
+    /* Layar penuh: klaster (kamera + panel detail) memenuhi layar, panel detail bisa di-scroll */
+    #cameraCluster.fs-on { background: #fff; padding: 12px; height: 100vh; width: 100vw; box-sizing: border-box; border-radius: 0; border: 0; overflow: hidden; }
+    #cameraCluster.fs-fallback { position: fixed; inset: 0; z-index: 60; }
+    #cameraCluster.fs-on .cluster-grid { flex: 1; min-height: 0; overflow-y: auto; }
+    #cameraCluster.fs-on .is-main .cam-canvas { max-height: calc(100vh - 190px); }
+    @media (min-width: 1024px) {
+        #cameraCluster.fs-on .cluster-grid { overflow: hidden; }
+    }
+</style>
+
+    <div id="cameraCluster" class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3 sm:p-4">
+
     <!-- Alert Banner Darurat (Muncul otomatis saat kantuk/distraksi terdeteksi) -->
     <div id="alarmBanner" class="hidden p-4 rounded-2xl bg-red-600 text-white shadow-xl alarm-pulsing flex items-center justify-between">
         <div class="flex items-center space-x-4">
@@ -113,26 +147,39 @@
         <span class="px-3 py-1 bg-black/40 rounded-lg text-xs font-mono font-bold">NFR-03 REAL-TIME</span>
     </div>
 
-    <!-- Grid Konten: Video Stream & Panel Telemetri -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Kolom Kiri: Video Feed Stream & Canvas Overlay (White Frame + Dark Viewport) -->
-        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs flex flex-col">
-            <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
-                    <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-400"></span> Feed MediaPipe & AI Detection
-                </span>
-                <span id="modelBadge" class="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono font-medium">
-                    Model: Memuat...
-                </span>
+        <!-- Toolbar klaster -->
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera</h2>
+            <div class="flex items-center gap-2">
+                <button type="button" id="swapBtn" onclick="swapCameras()"
+                        class="px-3 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 transition cursor-pointer">
+                    &#8646; Tukar Kamera Utama
+                </button>
+                <button type="button" id="fsBtn" onclick="toggleClusterFullscreen()" aria-pressed="false"
+                        class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"></path></svg>
+                    <span id="fsText">Layar Penuh</span>
+                </button>
             </div>
+        </div>
 
-            <div class="relative bg-slate-950 flex items-center justify-center min-h-[380px] sm:min-h-[460px] overflow-hidden">
-                <!-- Video Element Tersembunyi (Input Stream dari Browser) -->
-                <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
-                <canvas id="captureCanvas" width="640" height="480" class="hidden"></canvas>
+        <div class="cluster-grid">
 
-                <!-- Canvas Utama Tampilan dengan Anotasi Landmark -->
-                <canvas id="displayCanvas" width="640" height="480" class="w-full h-auto object-contain max-h-[520px] hidden"></canvas>
+            <!-- Kamera Pengemudi -->
+            <section id="tileDriver" class="cam-tile is-main" aria-label="Kamera Pengemudi">
+                <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
+                        <span id="streamIndicator" class="w-2 h-2 rounded-full bg-slate-400"></span> Kamera Pengemudi
+                    </span>
+                    <span class="flex items-center gap-2">
+                        <span id="modelBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-mono font-medium">Model: Memuat...</span>
+                        <button type="button" onclick="swapCameras()" class="make-main-btn text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer">Jadikan utama</button>
+                    </span>
+                </div>
+                <div class="tile-view">
+                    <video id="webcamVideo" autoplay playsinline muted class="hidden"></video>
+                    <canvas id="captureCanvas" width="640" height="480" class="hidden"></canvas>
+                    <canvas id="displayCanvas" width="640" height="480" class="cam-canvas hidden"></canvas>
 
                 <!-- Placeholder Standby Sebelum Izin Diberikan / Saat Kamera Mati -->
                 <div id="standbyPlaceholder" class="p-8 text-center flex flex-col items-center justify-center space-y-4">
@@ -173,15 +220,58 @@
                     </div>
                 </div>
             </div>
+                <!-- Overlay: status dan arah pandangan (tetap terlihat saat layar penuh) -->
+                <div id="driverOverlay" class="hidden absolute left-2 top-2 flex flex-col items-start gap-1 pointer-events-none">
+                    <span id="ovStatus" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-slate-700 text-white">STANDBY</span>
+                    <span id="ovPose" class="px-2.5 py-1 rounded-lg text-[11px] font-medium bg-black/70 text-white">Arah: -</span>
+                </div>
+                </div>
+                <div class="bg-slate-50 px-4 py-2 border-t border-slate-200 text-xs text-slate-500">
+                    <span id="fpsCounter" class="font-mono">FPS: 0 &middot; Resolusi: 640x480</span>
+                </div>
+            </section>
 
-            <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
-                <span id="fpsCounter" class="font-mono">FPS: 0 &middot; Resolusi: 640x480</span>
-                <span class="text-slate-400">PBL IF3-PD15 Simulation Mode</span>
-            </div>
-        </div>
+            <!-- Kamera Objek -->
+            <section id="tileObject" class="cam-tile is-thumb" aria-label="Kamera Objek">
+                <div class="bg-slate-50 px-4 py-2.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+                    <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera Objek (Jalan)</span>
+                    <button type="button" onclick="swapCameras()" class="make-main-btn text-[11px] font-semibold text-blue-700 hover:underline cursor-pointer">Jadikan utama</button>
+                </div>
+                <div class="px-3 py-2 border-b border-slate-200 flex flex-wrap items-center gap-2">
+                    <label for="objCamSelect" class="sr-only">Pilih kamera objek</label>
+                    <select id="objCamSelect" class="min-w-0 flex-1 bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-2.5 py-1.5 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
+                        <option value="">Mencari kamera...</option>
+                    </select>
+                    <button id="objToggleBtn" type="button" onclick="toggleObjectCamera()"
+                            class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer">
+                        <span id="objToggleText">Nyalakan Kamera Objek</span>
+                    </button>
+                </div>
+                <div id="objAlert" class="hidden px-3 py-2 bg-red-600 text-white text-xs font-bold flex items-center gap-2">
+                    <span>⚠️</span><span id="objAlertText">Objek terlalu dekat!</span>
+                </div>
+                <div class="tile-view">
+                    <video id="objVideo" autoplay playsinline muted class="hidden"></video>
+                    <canvas id="objCanvas" width="640" height="480" class="cam-canvas hidden"></canvas>
+                    <div id="objStandby" class="p-6 text-center space-y-2">
+                        <div class="text-3xl">🚗</div>
+                        <h3 class="text-sm font-bold text-white font-heading">Kamera Objek Nonaktif</h3>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto">Arahkan kamera ke jalan di depan, lalu klik <strong>Nyalakan Kamera Objek</strong>. Disarankan memakai kamera kedua (USB / kamera ponsel).</p>
+                    </div>
+                </div>
+                <div class="bg-slate-50 px-3 py-2 border-t border-slate-200 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                    <span id="objStatus">Kamera objek belum aktif</span>
+                    <span class="flex items-center gap-2.5">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Jauh</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Sedang</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Dekat</span>
+                    </span>
+                    <span id="objSummary" class="font-mono text-slate-600">-</span>
+                </div>
+            </section>
 
-        <!-- Kolom Kanan: Panel Telemetri & Indikator AI (White Cards) -->
-        <div class="space-y-4">
+            <!-- Panel Detail (bisa di-scroll saat layar penuh) -->
+            <aside id="detailPane" class="details-pane space-y-4" aria-label="Detail deteksi">
             <!-- Kartu Status Utama (White Card) -->
             <div class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-2xs">
                 <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Status Kewaspadaan Saat Ini</h3>
@@ -259,52 +349,7 @@
                     <p id="poseNotice" class="text-[10px] text-slate-500">Menghadap lurus ke depan</p>
                 </div>
             </div>
-
-            
-        </div>
-    </div>
-
-    <!-- Kamera Deteksi Objek -->
-    <div class="bg-white rounded-2xl border border-slate-200/90 overflow-hidden shadow-2xs">
-        <div class="bg-slate-50 px-4 py-3 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-            <div>
-                <span class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera Deteksi Objek (Jalan di Depan)</span>
-                <p class="text-[11px] text-slate-500 mt-0.5">Mendeteksi orang, sepeda, motor, mobil, bus, dan truk. Jarak bersifat estimasi relatif dari ukuran objek di layar.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2.5">
-                <label for="objCamSelect" class="sr-only">Pilih kamera objek</label>
-                <select id="objCamSelect" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs rounded-xl px-3 py-2 focus:bg-white focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-100 transition">
-                    <option value="">Mencari kamera...</option>
-                </select>
-                <button id="objToggleBtn" type="button" onclick="toggleObjectCamera()"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition flex items-center gap-2 cursor-pointer">
-                    <span id="objToggleText">Nyalakan Kamera Objek</span>
-                </button>
-            </div>
-        </div>
-
-        <div id="objAlert" class="hidden px-4 py-3 bg-red-600 text-white text-sm font-bold flex items-center gap-2">
-            <span>⚠️</span><span id="objAlertText">Objek terlalu dekat!</span>
-        </div>
-
-        <div class="relative bg-slate-950 flex items-center justify-center min-h-[300px] overflow-hidden">
-            <video id="objVideo" autoplay playsinline muted class="hidden"></video>
-            <canvas id="objCanvas" width="640" height="480" class="w-full h-auto max-h-[480px] hidden"></canvas>
-            <div id="objStandby" class="p-8 text-center space-y-2">
-                <div class="text-4xl">🚗</div>
-                <h3 class="text-base font-bold text-white font-heading">Kamera Objek Nonaktif</h3>
-                <p class="text-xs text-slate-400 max-w-md mx-auto">Arahkan kamera ke jalan di depan, lalu klik <strong>Nyalakan Kamera Objek</strong>. Disarankan memakai kamera kedua (USB / kamera ponsel).</p>
-            </div>
-        </div>
-
-        <div class="bg-slate-50 px-4 py-2.5 border-t border-slate-200 text-xs text-slate-500 flex flex-wrap items-center justify-between gap-2">
-            <span id="objStatus">Kamera objek belum aktif</span>
-            <span class="flex items-center gap-3">
-                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>Jauh</span>
-                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>Sedang</span>
-                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span>Dekat</span>
-            </span>
-            <span id="objSummary" class="font-mono text-slate-600">-</span>
+            </aside>
         </div>
     </div>
     </div>
@@ -676,6 +721,7 @@
         fpsCounter.innerText = "FPS: 0 | Resolusi: 640x480";
 
         statusText.innerText = "Standby (Kamera Mati)";
+        driverOverlay.classList.add('hidden');
         statusSub.innerText = "Kamera sedang dinonaktifkan";
         statusText.className = "text-2xl font-black text-slate-400";
         statusIcon.innerText = "⚪";
@@ -857,6 +903,13 @@
         poseNotice.innerText = poseDesc;
         poseNotice.className = poseClass;
 
+        // Overlay di atas video: status + arah pandangan
+        const ovLabel = data.is_alarm_active ? (data.alarm_type || 'BAHAYA') : (data.status_label || 'TERJAGA');
+        const ovTone = data.is_alarm_active ? 'red'
+            : (ovLabel === 'TERJAGA' ? 'green' : (['TIDAK_FOKUS', 'MENGUAP', 'MENGANTUK'].includes(ovLabel) ? 'amber' : 'slate'));
+        setOverlay(ovLabel.replace(/_/g, ' '), ovTone, 'Arah: ' + poseDirection + ' (' + Math.abs(yaw).toFixed(0) + '\u00B0)');
+        driverOverlay.classList.remove('hidden');
+
         // Skor Kantuk
         const score = (data.drowsy_score || 0.0) * 100;
         drowsyScoreText.innerText = Math.round(score) + "%";
@@ -948,6 +1001,74 @@
         await requestAndStartCamera();
         loadObjCameras();
     }
+
+    // ===== Klaster kamera: tukar kamera utama & layar penuh =====
+    const clusterEl = document.getElementById('cameraCluster');
+    const tileDriver = document.getElementById('tileDriver');
+    const tileObject = document.getElementById('tileObject');
+    const fsText = document.getElementById('fsText');
+    const fsBtn = document.getElementById('fsBtn');
+    const driverOverlay = document.getElementById('driverOverlay');
+    const ovStatus = document.getElementById('ovStatus');
+    const ovPose = document.getElementById('ovPose');
+
+    function swapCameras() {
+        const driverIsMain = tileDriver.classList.contains('is-main');
+        tileDriver.classList.toggle('is-main', !driverIsMain);
+        tileDriver.classList.toggle('is-thumb', driverIsMain);
+        tileObject.classList.toggle('is-main', driverIsMain);
+        tileObject.classList.toggle('is-thumb', !driverIsMain);
+    }
+
+    function setOverlay(label, tone, pose) {
+        const tones = {
+            red: 'bg-red-600 text-white',
+            amber: 'bg-amber-400 text-slate-900',
+            green: 'bg-emerald-600 text-white',
+            slate: 'bg-slate-700 text-white'
+        };
+        ovStatus.className = 'px-2.5 py-1 rounded-lg text-xs font-bold ' + (tones[tone] || tones.slate);
+        ovStatus.innerText = label;
+        if (pose !== undefined) ovPose.innerText = pose;
+    }
+
+    function setFsUi(on) {
+        clusterEl.classList.toggle('fs-on', on);
+        fsText.innerText = on ? 'Keluar Layar Penuh' : 'Layar Penuh';
+        fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    function enterFsFallback() {          // untuk browser yang tidak mendukung Fullscreen API (mis. iPhone)
+        clusterEl.classList.add('fs-fallback');
+        setFsUi(true);
+        document.body.style.overflow = 'hidden';
+    }
+    function exitFsFallback() {
+        clusterEl.classList.remove('fs-fallback');
+        setFsUi(false);
+        document.body.style.overflow = '';
+    }
+    function toggleClusterFullscreen() {
+        const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
+        if (nativeEl === clusterEl) {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+            return;
+        }
+        if (clusterEl.classList.contains('fs-fallback')) { exitFsFallback(); return; }
+        const req = clusterEl.requestFullscreen || clusterEl.webkitRequestFullscreen;
+        if (!req) { enterFsFallback(); return; }
+        const p = req.call(clusterEl);
+        if (p && p.catch) p.catch(() => enterFsFallback());
+    }
+    function syncFullscreenState() {
+        const nativeEl = document.fullscreenElement || document.webkitFullscreenElement;
+        if (nativeEl === clusterEl) setFsUi(true);
+        else if (!clusterEl.classList.contains('fs-fallback')) setFsUi(false);
+    }
+    document.addEventListener('fullscreenchange', syncFullscreenState);
+    document.addEventListener('webkitfullscreenchange', syncFullscreenState);
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && clusterEl.classList.contains('fs-fallback')) exitFsFallback();
+    });
 
     // ===== Tutorial pop-up bergambar (slider) =====
     const TUT_KEY = 'dsTutorialSeen_{{ Auth::id() }}';
