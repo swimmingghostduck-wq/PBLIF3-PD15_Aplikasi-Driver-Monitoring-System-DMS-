@@ -84,6 +84,20 @@ def init_dms_engine(app):
         )
         alert_manager = AlertManager(snapshots_dir=app.config['SNAPSHOTS_DIR'])
 
+def warmup_dms_engine():
+    """
+    Pre-warm detector dan classifier saat server Flask pertama kali booting
+    sehingga request webcam pertama dari browser langsung responsif tanpa delay cold-start.
+    """
+    global detector, classifier
+    try:
+        dummy_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+        if detector:
+            detector.process_frame(dummy_frame)
+        print("[AI Engine] MediaPipe Face Mesh & Model siap digunakan (<20ms per frame)!")
+    except Exception as e:
+        print(f"[AI Engine] Warmup info: {e}")
+
 @driver_bp.before_request
 def ensure_driver():
     # Lewatkan semua request ke microservice

@@ -75,7 +75,7 @@ class DriverController extends Controller
         }
 
         try {
-            $response = Http::timeout(2.5)->post('http://127.0.0.1:5000/driver/process_frame', [
+            $response = Http::timeout(6.0)->post('http://127.0.0.1:5000/driver/process_frame', [
                 'image' => $imageData,
                 'driver_id' => $driverId
             ]);

@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 400" width="100%" height="100%" fill="none">
+  <!-- Clean Flat Background Elements (No muddy gradients) -->
+  <rect x="0" y="0" width="540" height="400" rx="24" fill="#F8FAFC" />
+  
+  <!-- Flat Decorative Shapes -->
+  <circle cx="270" cy="200" r="160" fill="#EFF6FF" />
+  <circle cx="80" cy="90" r="40" fill="#EEF2F6" />
+  <circle cx="460" cy="110" r="50" fill="#E0F2FE" />
+  
+  <!-- Subtle Road Base -->
+  <path d="M 40 370 Q 270 340 500 370 L 500 400 L 40 400 Z" fill="#E2E8F0" />
+  <path d="M 120 400 L 220 320 L 320 320 L 420 400 Z" fill="#94A3B8" />
+  <!-- Road White Dash Line -->
+  <line x1="270" y1="330" x2="270" y2="395" stroke="#FFFFFF" stroke-width="4" stroke-dasharray="10 8" />
+
+  <!-- ========================================================
+       MAIN CAR & FRIENDLY DRIVER (Flat 2D Vector Style)
+       ======================================================== -->
+  <g transform="translate(60, 40)">
+    <!-- Car Windshield & Frame -->
+    <path d="M 70 190 Q 95 105 160 85 L 260 85 Q 325 105 350 190 Z" fill="#DBEAFE" stroke="#93C5FD" stroke-width="3" />
+    
+    <!-- Rearview Mirror & Visors -->
+    <rect x="110" y="92" width="70" height="10" rx="3" fill="#94A3B8" />
+    <rect x="240" y="92" width="70" height="10" rx="3" fill="#94A3B8" />
+    <rect x="198" y="98" width="24" height="10" rx="2" fill="#475569" />
+    <line x1="210" y1="85" x2="210" y2="98" stroke="#64748B" stroke-width="2" />
+    <!-- Safety charm hanging -->
+    <circle cx="210" cy="118" r="4" fill="#10B981" />
+
+    <!-- Driver Person (Canva Friendly Style) -->
+    <!-- Head -->
+    <ellipse cx="210" cy="148" rx="28" ry="30" fill="#FED7AA" />
+    <!-- Hair -->
+    <path d="M 180 144 C 180 112 202 108 220 110 C 238 108 246 122 244 140 C 237 128 226 126 210 128 C 197 130 188 135 180 144 Z" fill="#1E293B" />
+    
+    <!-- Friendly Face Details -->
+    <!-- Eyebrows -->
+    <path d="M 197 141 Q 202 138 207 141" stroke="#334155" stroke-width="1.8" stroke-linecap="round" fill="none" />
+    <path d="M 215 141 Q 220 138 225 141" stroke="#334155" stroke-width="1.8" stroke-linecap="round" fill="none" />
+    <!-- Eyes (Focused, smiling) -->
+    <circle cx="202" cy="148" r="3" fill="#0F172A" />
+    <circle cx="220" cy="148" r="3" fill="#0F172A" />
+    <circle cx="203" cy="147" r="1" fill="#FFFFFF" />
+    <circle cx="221" cy="147" r="1" fill="#FFFFFF" />
+    <!-- Cheerful Blushes -->
+    <ellipse cx="196" cy="155" rx="3.5" ry="2" fill="#FCA5A5" />
+    <ellipse cx="226" cy="155" rx="3.5" ry="2" fill="#FCA5A5" />
+    <!-- Friendly Smile -->
+    <path d="M 206 159 Q 211 165 216 159" stroke="#C2410C" stroke-width="2" stroke-linecap="round" fill="none" />
+
+    <!-- Neck & Polo Collar -->
+    <rect x="203" y="176" width="16" height="12" fill="#FDBA74" />
+    <path d="M 170 198 L 198 184 L 224 184 L 252 198 L 260 250 L 160 250 Z" fill="#2563EB" />
+    <polygon points="198,184 211,202 224,184" fill="#FFFFFF" />
+    <line x1="211" y1="202" x2="211" y2="230" stroke="#1D4ED8" stroke-width="2" />
+
+    <!-- Car Interior Dashboard -->
+    <path d="M 50 198 Q 210 178 370 198 L 385 255 Q 210 240 35 255 Z" fill="#1E293B" />
+
+    <!-- Steering Wheel -->
+    <circle cx="210" cy="202" r="42" fill="none" stroke="#475569" stroke-width="7" />
+    <circle cx="210" cy="202" r="42" fill="none" stroke="#0F172A" stroke-width="2" />
+    <circle cx="210" cy="202" r="12" fill="#334155" />
+    <circle cx="210" cy="202" r="6" fill="#2563EB" />
+    <line x1="168" y1="202" x2="198" y2="202" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+    <line x1="222" y1="202" x2="252" y2="202" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+    <line x1="210" y1="214" x2="210" y2="242" stroke="#334155" stroke-width="5" stroke-linecap="round" />
+
+    <!-- Driver's Hands on Wheel -->
+    <ellipse cx="170" cy="200" rx="9" ry="10" fill="#FED7AA" />
+    <ellipse cx="250" cy="200" rx="9" ry="10" fill="#FED7AA" />
+
+    <!-- Car Outer Hood & Body (Solid Pure Blue) -->
+    <path d="M 20 236 Q 210 216 400 236 L 410 295 Q 210 305 10 295 Z" fill="#2563EB" />
+    <!-- Grill Line -->
+    <path d="M 30 290 Q 210 298 390 290 L 392 295 Q 210 305 28 295 Z" fill="#1D4ED8" />
+
+    <!-- Headlights -->
+    <polygon points="35,248 85,244 80,262 30,264" fill="#FDE047" />
+    <polygon points="385,248 335,244 340,262 390,264" fill="#FDE047" />
+    
+    <!-- Plate badge -->
+    <rect x="190" y="254" width="40" height="14" rx="4" fill="#0F172A" />
+    <text x="210" y="264" font-family="system-ui, sans-serif" font-size="8" font-weight="bold" fill="#38BDF8" text-anchor="middle">DRIVE</text>
+  </g>
+
+  <!-- ========================================================
+       FLOATING FLAT BADGES (Canva Style, Clean Solid Fill)
+       ======================================================== -->
+  
+  <!-- Badge 1: Fokus Terjaga (Top Right) -->
+  <g transform="translate(370, 75)">
+    <rect x="0" y="0" width="145" height="46" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+    <circle cx="23" cy="23" r="13" fill="#DCFCE7" />
+    <!-- Checkmark Icon -->
+    <path d="M 18 23 L 21 26 L 28 19" stroke="#16A34A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="44" y="20" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#0F172A">Fokus Terjaga</text>
+    <text x="44" y="33" font-family="system-ui, sans-serif" font-size="9" font-weight="600" fill="#16A34A">Mata Waspada</text>
+  </g>
+
+  <!-- Badge 2: Bebas Kantuk (Top Left) -->
+  <g transform="translate(25, 100)">
+    <rect x="0" y="0" width="135" height="46" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+    <circle cx="23" cy="23" r="13" fill="#DBEAFE" />
+    <!-- Eye Open Icon -->
+    <path d="M 16 23 Q 23 17 30 23 Q 23 29 16 23 Z" fill="none" stroke="#2563EB" stroke-width="1.8" />
+    <circle cx="23" cy="23" r="2.5" fill="#2563EB" />
+    <text x="44" y="20" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#0F172A">Bebas Kantuk</text>
+    <text x="44" y="33" font-family="system-ui, sans-serif" font-size="9" font-weight="500" fill="#64748B">Kabin Nyaman</text>
+  </g>
+
+  <!-- Badge 3: Proteksi Real-Time (Bottom Right) -->
+  <g transform="translate(360, 260)">
+    <rect x="0" y="0" width="155" height="46" rx="14" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="1.5" />
+    <circle cx="23" cy="23" r="13" fill="#FEF3C7" />
+    <!-- Shield Icon -->
+    <path d="M 23 15 L 29 18 V 23 Q 29 28 23 31 Q 17 28 17 23 V 18 Z" fill="#F59E0B" />
+    <path d="M 21 23 L 23 25 L 26 21" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+    <text x="44" y="20" font-family="system-ui, sans-serif" font-size="11" font-weight="700" fill="#0F172A">Perjalanan Aman</text>
+    <text x="44" y="33" font-family="system-ui, sans-serif" font-size="9" font-weight="500" fill="#64748B">Proteksi Real-Time</text>
+  </g>
+
+  <!-- Crisp Flat Canva Sparkles -->
+  <g fill="#F59E0B">
+    <path d="M 80 55 L 82 60 L 87 62 L 82 64 L 80 69 L 78 64 L 73 62 L 78 60 Z" />
+    <path d="M 470 50 L 472 55 L 477 57 L 472 59 L 470 64 L 468 59 L 463 57 L 468 55 Z" />
+    <path d="M 60 230 L 61 234 L 65 235 L 61 236 L 60 240 L 59 236 L 55 235 L 59 234 Z" fill="#3B82F6" />
+    <circle cx="490" cy="220" r="3" fill="#3B82F6" />
+    <circle cx="50" cy="300" r="2.5" fill="#10B981" />
+  </g>
+</svg>
