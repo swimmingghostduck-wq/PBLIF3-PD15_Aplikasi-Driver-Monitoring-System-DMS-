@@ -126,4 +126,28 @@ class DriverController extends Controller
 
         return response()->json(['success' => true, 'id' => $alert->id]);
     }
+
+    public function updateProfile(Request $request)
+{
+    $user = Auth::user();
+
+    $validated = $request->validate([
+        'full_name' => 'required|string|max:100',
+        'username' => 'required|string|max:50|unique:users,username,' . $user->id,
+        'email' => 'nullable|email|max:255|unique:users,email,' . $user->id,
+        'nim_nik' => 'nullable|string|max:30',
+
+        'vehicle_type' => 'nullable|string|max:50',
+        'vehicle_brand' => 'nullable|string|max:100',
+        'vehicle_model' => 'nullable|string|max:100',
+        'vehicle_plate' => 'nullable|string|max:20',
+        'vehicle_year' => 'nullable|integer|min:1900|max:' . date('Y'),
+    ]);
+
+    $user->update($validated);
+
+    return redirect()
+        ->route('driver.profile')
+        ->with('success', 'Profil berhasil diperbarui.');
+    }
 }

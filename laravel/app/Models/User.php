@@ -19,6 +19,11 @@ class User extends Authenticatable
         'role',
         'nim_nik',
         'is_active',
+        'vehicle_type',
+        'vehicle_brand',
+        'vehicle_model',
+        'vehicle_plate',
+        'vehicle_year',
     ];
 
     protected $hidden = [
