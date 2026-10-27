@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" class="h-full">
+<html lang="id" class="h-full bg-[#0A1329]">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -21,7 +21,14 @@
                     },
                     colors: {
                         primary: '#2563EB',
-                        secondary: '#0EA5E9'
+                        secondary: '#0EA5E9',
+                        fleet: {
+                            950: '#070E20',
+                            900: '#0A1329',
+                            800: '#0D1C3E',
+                            700: '#10234E',
+                            600: '#2563EB'
+                        }
                     }
                 }
             }
@@ -34,188 +41,197 @@
         }
     </style>
 </head>
-<body class="min-h-screen lg:h-screen lg:overflow-hidden w-full bg-white text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col lg:flex-row">
+<body class="min-h-screen w-full bg-[#0A1329] bg-gradient-to-b from-[#10234E] via-[#0D1C3E] to-[#070E20] bg-fixed text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
 
     <!-- ========================================================
-         SEKSI KIRI: ILUSTRASI CANVA FLAT & MANFAAT PENGEMUDI
+         HEADER ATAS (BERSIH, TANPA BADGE KETERANGAN OPERASIONAL)
          ======================================================== -->
-    <div class="w-full lg:w-1/2 lg:h-screen bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200 p-6 sm:p-8 lg:p-8 xl:p-10 flex flex-col justify-between shrink-0">
-        
-        <!-- Bagian Atas: Heading Bersih & Jelas -->
+    <header class="w-full max-w-[920px] mx-auto px-2 py-2 flex items-center justify-between relative z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 3v6m0 6v6M3 12h6m6 0h6" stroke-linecap="round" />
+                </svg>
+            </div>
+            <div>
+                <span class="text-lg font-bold font-heading text-white tracking-tight leading-none block">DriveSafe</span>
+                <span class="text-[10px] font-medium text-blue-200">Driver Monitoring System</span>
+            </div>
+        </div>
+
         <div>
-            <h2 class="text-xl sm:text-2xl lg:text-[1.65rem] xl:text-3xl font-bold font-heading text-slate-900 leading-snug tracking-tight">
-                Bergabung Bersama <span class="text-blue-600">Pengemudi Aman</span>
-            </h2>
-            <p class="text-xs sm:text-sm text-slate-500 mt-1.5 max-w-md leading-relaxed">
-                Aktifkan akun Anda untuk mulai pemantauan kabin cerdas yang siap melindungi keselamatan di setiap kilometer.
-            </p>
+            <a href="{{ route('login') }}" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md transition">
+                Masuk ke Akun
+            </a>
         </div>
-
-        <!-- Bagian Tengah: Ilustrasi Canva Flat (Responsif, Fleksibel, Bebas Potong) -->
-        <div class="flex-1 min-h-0 flex items-center justify-center my-auto py-2">
-            <img src="{{ asset('images/register-canva.svg') }}" 
-                 alt="Ilustrasi Registrasi Pengemudi DriveSafe" 
-                 class="w-auto h-auto max-h-[220px] sm:max-h-[250px] lg:max-h-[270px] xl:max-h-[310px] max-w-full object-contain select-none pointer-events-none">
-        </div>
-
-        <!-- Bagian Bawah: Keunggulan Fitur Pengemudi -->
-        <div class="pt-3 border-t border-slate-200/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
-            <div class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span class="font-medium text-slate-700">Aktivasi Instan</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span class="font-medium text-slate-700">Skor Keselamatan</span>
-            </div>
-            <div class="flex items-center gap-1.5">
-                <svg class="w-4 h-4 text-indigo-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                <span class="font-medium text-slate-700">Siap Berkendara</span>
-            </div>
-        </div>
-    </div>
+    </header>
 
     <!-- ========================================================
-         SEKSI KANAN: FORMULIR PENDAFTARAN KOMPAK & RAPI
+         KONTEN UTAMA: MODAL SPLIT DUA KOLOM PROPORSI BESAR (BORDERLESS)
          ======================================================== -->
-    <div class="w-full lg:w-1/2 lg:h-screen flex flex-col justify-center px-6 sm:px-10 lg:px-12 xl:px-16 py-6 sm:py-8 lg:py-6 overflow-y-auto">
-        <div class="w-full max-w-[400px] mx-auto">
-            
-            <!-- Brand Logo & Header -->
-            <div class="mb-3.5">
-                <div class="flex items-center gap-2.5 mb-2">
-                    <div class="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
-                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <circle cx="12" cy="12" r="9" />
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M12 3v6m0 6v6M3 12h6m6 0h6" stroke-linecap="round" />
-                        </svg>
+    <main class="w-full max-w-[920px] min-h-[520px] md:min-h-[560px] mx-auto bg-white rounded-2xl shadow-2xl shadow-black/60 overflow-hidden grid grid-cols-1 md:grid-cols-2 relative my-auto border-0">
+        
+        <!-- ========================================================
+             SEKSI KIRI: FORMULIR PENDAFTARAN (KOTAK INPUT LEGA & ERGONOMIS)
+             ======================================================== -->
+        <div class="p-7 sm:p-9 lg:p-10 flex flex-col justify-between bg-white order-2 md:order-1 overflow-y-auto">
+            <div>
+                <!-- Header Formulir -->
+                <div class="mb-4">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <a href="{{ route('login') }}" class="text-slate-400 hover:text-slate-700 transition p-1 -ml-1 rounded-lg" title="Kembali ke login">
+                            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+                            </svg>
+                        </a>
+                        <h1 class="text-2xl sm:text-[1.65rem] font-bold font-heading text-slate-900 tracking-tight">
+                            Daftar Akun Pengemudi
+                        </h1>
                     </div>
-                    <div>
-                        <span class="text-lg font-bold font-heading text-slate-900 tracking-tight leading-none block">DriveSafe</span>
-                        <span class="text-[10px] font-medium text-slate-400">Driver Safety Intelligence</span>
-                    </div>
+                    <p class="text-xs sm:text-sm text-slate-500 ml-6 leading-relaxed">
+                        Lengkapi data diri Anda untuk mengaktifkan pemantauan keselamatan kabin.
+                    </p>
                 </div>
 
-                <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 tracking-tight">
-                    Daftar Akun Pengemudi
-                </h1>
-                <p class="text-xs text-slate-500 mt-1 leading-normal">
+                <!-- Notifikasi Error Validasi -->
+                @if ($errors->any())
+                <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-xs border border-red-200">
+                    <ul class="list-disc list-inside space-y-0.5">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
+                <!-- Formulir Registrasi dengan Kotak Input Standard & Umum -->
+                <form method="POST" action="{{ route('register') }}" class="space-y-3.5">
+                    @csrf
+
+                    <!-- Nama Lengkap: Standar Web (h-11, rounded-lg, border-slate-300, bg-white) -->
+                    <div>
+                        <label for="full_name" class="block text-xs font-medium text-slate-700 mb-1.5">
+                            Nama Lengkap
+                        </label>
+                        <input type="text" id="full_name" name="full_name" value="{{ old('full_name') }}" required autofocus
+                               placeholder="Contoh: Budi Santoso"
+                               class="w-full h-11 px-3.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                    </div>
+
+                    <!-- Username & NIK (2 Kolom Proporsional) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label for="username" class="block text-xs font-medium text-slate-700 mb-1.5">
+                                Username
+                            </label>
+                            <input type="text" id="username" name="username" value="{{ old('username') }}" required
+                                   placeholder="budi_driver"
+                                   class="w-full h-11 px-3.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                        </div>
+
+                        <div>
+                            <label for="nim_nik" class="block text-xs font-medium text-slate-700 mb-1.5">
+                                NIK <span class="text-slate-400 font-normal lowercase">(opsional)</span>
+                            </label>
+                            <input type="text" id="nim_nik" name="nim_nik" value="{{ old('nim_nik') }}"
+                                   placeholder="16 digit NIK"
+                                   class="w-full h-11 px-3.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                        </div>
+                    </div>
+
+                    <!-- Kata Sandi & Konfirmasi Sandi (2 Kolom Proporsional) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                        <div>
+                            <label for="password" class="block text-xs font-medium text-slate-700 mb-1.5">
+                                Kata Sandi
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="password" name="password" required
+                                       placeholder="Min 6 karakter"
+                                       class="w-full h-11 pl-3.5 pr-11 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                                <button type="button" onclick="togglePasswordVisibility('password', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded focus:outline-none transition cursor-pointer"
+                                        title="Tampilkan / Sembunyikan Kata Sandi">
+                                    <svg class="w-5 h-5 eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="password_confirmation" class="block text-xs font-medium text-slate-700 mb-1.5">
+                                Konfirmasi Sandi
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="password_confirmation" name="password_confirmation" required
+                                       placeholder="Ulangi sandi"
+                                       class="w-full h-11 pl-3.5 pr-11 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                                <button type="button" onclick="togglePasswordVisibility('password_confirmation', this)"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded focus:outline-none transition cursor-pointer"
+                                        title="Tampilkan / Sembunyikan Kata Sandi">
+                                    <svg class="w-5 h-5 eye-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tombol Submit Standar Umum Web (h-11, rounded-lg, solid blue) -->
+                    <button type="submit"
+                            class="w-full h-11 mt-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-medium text-sm rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer">
+                        <span>Daftar Akun Pengemudi</span>
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Tautan Masuk Bawah -->
+            <div class="mt-5 pt-4 border-t border-slate-100 text-center">
+                <p class="text-xs sm:text-sm text-slate-500">
                     Sudah memiliki akun pengemudi? 
                     <a href="{{ route('login') }}" class="text-blue-600 font-semibold hover:underline">
                         Masuk di sini
                     </a>
                 </p>
             </div>
-
-            <!-- Notifikasi Error Validasi -->
-            @if ($errors->any())
-            <div class="mb-3 p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs">
-                <ul class="list-disc list-inside space-y-0.5">
-                    @foreach ($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
-                </ul>
-            </div>
-            @endif
-
-            <!-- Formulir Pendaftaran -->
-            <form method="POST" action="{{ route('register') }}" class="space-y-2.5">
-                @csrf
-
-                <!-- Nama Lengkap -->
-                <div>
-                    <label for="full_name" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        Nama Lengkap
-                    </label>
-                    <input type="text" id="full_name" name="full_name" value="{{ old('full_name') }}" required autofocus
-                           placeholder="Contoh: Budi Santoso"
-                           class="w-full h-9 px-3 rounded-lg border border-slate-300 text-slate-900 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
-                </div>
-
-                <!-- Username & NIK / Identitas (2 Kolom) -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div>
-                        <label for="username" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                            Username
-                        </label>
-                        <input type="text" id="username" name="username" value="{{ old('username') }}" required
-                               placeholder="budi_driver"
-                               class="w-full h-9 px-3 rounded-lg border border-slate-300 text-slate-900 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
-                    </div>
-
-                    <div>
-                        <label for="nim_nik" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                            NIK <span class="text-slate-400 font-normal lowercase">(opsional)</span>
-                        </label>
-                        <input type="text" id="nim_nik" name="nim_nik" value="{{ old('nim_nik') }}"
-                               placeholder="16 digit NIK"
-                               class="w-full h-9 px-3 rounded-lg border border-slate-300 text-slate-900 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
-                    </div>
-                </div>
-
-                <!-- Kata Sandi -->
-                <div>
-                    <label for="password" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        Kata Sandi
-                    </label>
-                    <div class="relative">
-                        <input type="password" id="password" name="password" required
-                               placeholder="Minimal 6 karakter"
-                               class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-slate-900 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
-                        <button type="button" onclick="togglePasswordVisibility('password', this)"
-                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md focus:outline-none"
-                                title="Tampilkan / Sembunyikan Kata Sandi">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Konfirmasi Kata Sandi -->
-                <div>
-                    <label for="password_confirmation" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-                        Konfirmasi Kata Sandi
-                    </label>
-                    <div class="relative">
-                        <input type="password" id="password_confirmation" name="password_confirmation" required
-                               placeholder="Ulangi kata sandi"
-                               class="w-full h-9 pl-3 pr-10 rounded-lg border border-slate-300 text-slate-900 text-xs sm:text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600 transition">
-                        <button type="button" onclick="togglePasswordVisibility('password_confirmation', this)"
-                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded-md focus:outline-none"
-                                title="Tampilkan / Sembunyikan Kata Sandi">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Tombol Submit -->
-                <button type="submit"
-                        class="w-full h-10 mt-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-sm rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 group">
-                    <span>Daftar Akun Pengemudi</span>
-                    <svg class="w-4 h-4 transform group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                </button>
-            </form>
-
-            <!-- Catatan Ketentuan & Privasi -->
-            <p class="text-[11px] text-slate-400 text-center mt-3 leading-normal">
-                Dengan mendaftar, Anda menyetujui Ketentuan Layanan & Kebijakan Privasi DriveSafe.
-            </p>
         </div>
-    </div>
+
+        <!-- ========================================================
+             SEKSI KANAN: COVER VISUAL LIFESTYLE (LEGA, TEKS AKURAT)
+             ======================================================== -->
+        <div class="hidden md:flex relative h-full w-full bg-slate-900 overflow-hidden order-1 md:order-2 flex-col justify-end p-8 lg:p-10 select-none">
+            <!-- Gambar Cover Vektor (Full Bleed, High-Res, No White Border) -->
+            <img src="{{ asset('images/register-cover.svg') }}" 
+                 alt="DriveSafe Driver Safety System" 
+                 class="absolute inset-0 w-full h-full object-cover">
+            
+            <!-- Lapisan Gradien Bayangan Halus untuk Legibilitas Teks Bersih -->
+            <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent"></div>
+
+            <!-- Konten Teks yang Diperbarui (Sistem Keselamatan Aktif) -->
+            <div class="relative z-10 text-white">
+                <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-600 text-[10px] font-bold uppercase tracking-wider text-white mb-2.5 shadow-md">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    SISTEM KESELAMATAN AKTIF
+                </div>
+                <h3 class="text-xl sm:text-2xl font-bold font-heading text-white leading-tight">
+                    Perjalanan Terlindungi, Fokus Terjaga
+                </h3>
+                <p class="text-xs sm:text-sm text-slate-200 mt-2 leading-relaxed max-w-sm">
+                    Daftarkan akun Anda untuk mengaktifkan pemantauan Computer Vision cerdas yang menjaga fokus dan mencegah risiko microsleep di setiap kilometer.
+                </p>
+            </div>
+        </div>
+
+    </main>
 
     <!-- Script Toggle Password Visibility -->
     <script>

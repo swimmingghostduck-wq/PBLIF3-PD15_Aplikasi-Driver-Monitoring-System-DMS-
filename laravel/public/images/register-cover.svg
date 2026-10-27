@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 560" width="100%" height="100%" fill="none">
+  <defs>
+    <linearGradient id="skyRegAtmosphere" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#312E81" />
+      <stop offset="50%" stop-color="#4338CA" />
+      <stop offset="85%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#A5B4FC" />
+    </linearGradient>
+    <radialGradient id="sunRegGlow" cx="50%" cy="65%" r="45%">
+      <stop offset="0%" stop-color="#FDE68A" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#F59E0B" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#4338CA" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <!-- Sky Canvas -->
+  <rect width="440" height="560" fill="url(#skyRegAtmosphere)" />
+  <rect width="440" height="560" fill="url(#sunRegGlow)" />
+
+  <!-- Road & Landscape Horizon -->
+  <path d="M 0 320 Q 140 280 260 305 T 440 285 L 440 430 L 0 430 Z" fill="#312E81" opacity="0.6" />
+  <path d="M 0 350 Q 180 310 320 335 T 440 320 L 440 450 L 0 450 Z" fill="#1E1B4B" opacity="0.8" />
+
+  <!-- Road Base -->
+  <path d="M 0 420 L 440 420 L 440 560 L 0 560 Z" fill="#1E293B" />
+  <line x1="220" y1="430" x2="220" y2="550" stroke="#FBBF24" stroke-width="4" stroke-dasharray="14 10" />
+
+  <!-- Parked Blue Vehicle in Perspective Behind Driver -->
+  <g transform="translate(170, 240)">
+    <path d="M 25 110 Q 45 45 105 35 L 195 35 Q 240 60 260 110 L 265 150 L 10 150 Z" fill="#1D4ED8" />
+    <path d="M 55 100 L 100 48 L 140 48 L 140 100 Z" fill="#DBEAFE" opacity="0.9" />
+    <path d="M 150 100 L 150 48 L 185 48 L 220 100 Z" fill="#DBEAFE" opacity="0.9" />
+    <circle cx="70" cy="150" r="28" fill="#0F172A" />
+    <circle cx="70" cy="150" r="14" fill="#64748B" />
+    <circle cx="215" cy="150" r="28" fill="#0F172A" />
+    <circle cx="215" cy="150" r="14" fill="#64748B" />
+  </g>
+
+  <!-- Friendly Standing Driver Character -->
+  <g transform="translate(50, 130)">
+    <!-- Legs / Pants -->
+    <rect x="74" y="215" width="20" height="120" rx="10" fill="#0F172A" />
+    <rect x="106" y="215" width="20" height="120" rx="10" fill="#0F172A" />
+    <ellipse cx="80" cy="336" rx="15" ry="7" fill="#090D16" />
+    <ellipse cx="120" cy="336" rx="15" ry="7" fill="#090D16" />
+
+    <!-- Driver Jacket -->
+    <rect x="64" y="115" width="72" height="110" rx="16" fill="#2563EB" />
+    <polygon points="84,115 100,138 116,115" fill="#FFFFFF" />
+    <line x1="100" y1="138" x2="100" y2="220" stroke="#1D4ED8" stroke-width="2.5" />
+
+    <!-- Left Arm Holding Car Keys -->
+    <path d="M 64 125 Q 35 160 48 195" stroke="#2563EB" stroke-width="16" stroke-linecap="round" fill="none" />
+    <circle cx="48" cy="198" r="9" fill="#FED7AA" />
+    <circle cx="48" cy="212" r="5" fill="none" stroke="#F59E0B" stroke-width="2.5" />
+    <path d="M 48 217 L 48 230 M 48 223 L 53 223" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Right Arm Holding Clipboard -->
+    <path d="M 136 125 Q 165 160 152 195" stroke="#2563EB" stroke-width="16" stroke-linecap="round" fill="none" />
+    <circle cx="152" cy="198" r="9" fill="#FED7AA" />
+    <rect x="140" y="172" width="44" height="58" rx="6" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2" transform="rotate(8 140 172)" />
+    <line x1="152" y1="190" x2="174" y2="193" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="151" y1="202" x2="172" y2="205" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" />
+    <line x1="150" y1="214" x2="170" y2="217" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Head & Smiling Face -->
+    <ellipse cx="100" cy="72" rx="32" ry="34" fill="#FED7AA" />
+    <path d="M 66 68 C 66 35 88 30 108 32 C 128 30 136 44 133 64 C 125 50 115 48 100 50 C 85 52 75 58 66 68 Z" fill="#1E293B" />
+    <circle cx="90" cy="72" r="3.2" fill="#0F172A" />
+    <circle cx="112" cy="72" r="3.2" fill="#0F172A" />
+    <circle cx="91" cy="71" r="1" fill="#FFFFFF" />
+    <circle cx="113" cy="71" r="1" fill="#FFFFFF" />
+    <path d="M 94 84 Q 101 90 108 84" stroke="#C2410C" stroke-width="2.2" stroke-linecap="round" fill="none" />
+    <circle cx="84" cy="79" r="3" fill="#FCA5A5" opacity="0.5" />
+    <circle cx="118" cy="79" r="3" fill="#FCA5A5" opacity="0.5" />
+  </g>
+
+  <!-- Clean Bottom Dashboard Floor (No Text, Leaves Room for HTML Overlay) -->
+  <rect x="0" y="440" width="440" height="120" fill="#0A0F1D" />
+</svg>
