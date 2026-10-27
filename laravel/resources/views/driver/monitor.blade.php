@@ -260,19 +260,7 @@
                 </div>
             </div>
 
-            <!-- Petunjuk Pengujian (Light Card) -->
-            <div class="bg-blue-50/70 p-4 rounded-2xl border border-blue-100 text-xs text-blue-900 space-y-1.5">
-                <div class="font-semibold text-blue-900 flex items-center gap-1.5">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>Panduan Pengujian Deteksi:</span>
-                </div>
-                <p>1. Pejamkan mata &gt; 1.2 detik untuk menguji alarm kantuk.</p>
-                <p>2. Menoleh ke samping &gt; 3.0 detik untuk menguji alarm menoleh.</p>
-                <p>3. Menunduk ke bawah &gt; 3.0 detik untuk menguji alarm menunduk.</p>
-                <p>4. Buka mulut lebar-lebar untuk menguji deteksi menguap.</p>
-            </div>
+            
         </div>
     </div>
 
