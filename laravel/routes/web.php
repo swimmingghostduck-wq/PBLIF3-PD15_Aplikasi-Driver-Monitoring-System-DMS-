@@ -15,14 +15,14 @@ use App\Http\Controllers\DriverController;
 |
 */
 
-// Root redirect
+// Root: splash untuk tamu, dashboard untuk yang sudah login
 Route::get('/', function () {
     if (Auth::check()) {
         return Auth::user()->isAdmin()
             ? redirect()->route('admin.dashboard')
-            : redirect()->route('driver.dashboard');
+            : redirect()->route('driver.monitor');
     }
-    return redirect()->route('login');
+    return view('splash');
 });
 
 // ==========================================
