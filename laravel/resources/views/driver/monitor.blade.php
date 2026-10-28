@@ -45,6 +45,11 @@
                 </svg>
                 <span>Tes Alarm</span>
             </button>
+            <button type="button" onclick="openSettings()" title="Pengaturan suara, peringatan, kamera &amp; tampilan"
+                    class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs flex items-center gap-1.5 transition cursor-pointer">
+                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                <span>Pengaturan</span>
+            </button>
             <a href="{{ route('driver.dashboard') }}" class="px-3.5 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-xl border border-blue-200 shadow-2xs transition flex items-center gap-1.5">
                 <svg class="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -109,35 +114,54 @@
     .cluster-grid {
         --gh: clamp(480px, calc(100vh - 240px), 720px);   /* tinggi area kamera */
         --n: 2;                                           /* jumlah tile samping (diatur JS) */
+        --cols: 2; --cols-eq: 2;                          /* jumlah kolom untuk preset top / grid (diatur JS) */
         position: relative;
         display: grid;
         gap: 12px;
         grid-template-columns: minmax(0, 1fr);
     }
     @media (min-width: 768px) {
-        .cluster-grid {
+        /* --- Preset "side": utama kiri besar, sisanya bertumpuk di kanan (default, sesuai mockup) --- */
+        .cluster-grid[data-layout="side"], .cluster-grid[data-layout="side-right"] {
             grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
             grid-template-rows: repeat(var(--n), minmax(230px, 1fr));
             height: var(--gh);
-            overflow-x: hidden; overflow-y: auto;   /* kolom kanan bisa di-scroll jika kamera > 3 */
+            overflow-x: hidden; overflow-y: auto;   /* kolom samping bisa di-scroll jika kamera > 3 */
             scrollbar-width: thin;
         }
-        .cam-tile[data-slot="main"] {   /* CAM 1: kiri, tetap terlihat saat kolom kanan di-scroll */
-            grid-column: 1; grid-row: 1 / -1;
-            position: sticky; top: 0; align-self: start; height: var(--gh);
+        .cluster-grid[data-layout="side-right"] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); }
+        [data-layout="side"] .cam-tile[data-slot="main"], [data-layout="side-right"] .cam-tile[data-slot="main"] {
+            grid-row: 1 / -1; position: sticky; top: 0; align-self: start; height: var(--gh);
         }
-        .cam-tile[data-slot="side"] { grid-column: 2; }
+        [data-layout="side"] .cam-tile[data-slot="main"] { grid-column: 1; }
+        [data-layout="side"] .cam-tile[data-slot="side"] { grid-column: 2; }
+        [data-layout="side-right"] .cam-tile[data-slot="main"] { grid-column: 2; }
+        [data-layout="side-right"] .cam-tile[data-slot="side"] { grid-column: 1; }
+
+        /* --- Preset "top": utama lebar di atas, sisanya berjajar di bawah --- */
+        .cluster-grid[data-layout="top"] {
+            grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+            grid-template-rows: clamp(300px, 52vh, 520px);
+            grid-auto-rows: clamp(250px, 36vh, 340px);
+        }
+        [data-layout="top"] .cam-tile[data-slot="main"] { grid-column: 1 / -1; grid-row: 1; }
+
+        /* --- Preset "grid": semua kamera sama besar --- */
+        .cluster-grid[data-layout="grid"] {
+            grid-template-columns: repeat(var(--cols-eq), minmax(0, 1fr));
+            grid-auto-rows: clamp(260px, 40vh, 380px);
+        }
     }
     /* urutan tile diatur lewat style.order (JS: applySlots) */
 
     .cam-tile {
         display: flex; flex-direction: column;
         min-width: 0; min-height: 0;
-        border: 2px solid #E2E8F0; border-radius: 16px;
-        overflow: hidden; background: #fff;
+        border: 2px solid var(--ds-border, #E2E8F0); border-radius: 16px;
+        overflow: hidden; background: var(--ds-card, #fff);
         transition: border-color .15s ease, box-shadow .15s ease;
     }
-    .cam-tile.is-main { border-color: #2563EB; }   /* garis biru = kamera utama */
+    .cam-tile.is-main { border-color: var(--ac-600, #2563EB); }   /* garis biru = kamera utama */
     .cam-tile > .tile-head,
     .cam-tile > .tile-foot,
     .cam-tile > .tile-controls { flex: none; }
@@ -152,11 +176,11 @@
         .is-thumb .tile-view { min-height: 190px; }
     }
     /* Canvas mengisi tile tanpa mengubah rasio gambar */
-    .cam-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .cam-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: var(--cam-fit, contain); }
     .is-main .make-main-btn { display: none; }
 
     /* Isi panel detail bisa di-scroll di dalam tile */
-    .detail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px; background: #F8FAFC; }
+    .detail-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 12px; background: var(--ds-bg2, #F8FAFC); }
 
     /* Tile kecil (bukan layar penuh): ringkas teks placeholder */
     #cameraCluster:not(.fs-on) .is-thumb #standbyPlaceholder,
@@ -168,18 +192,87 @@
     #cameraCluster:not(.fs-on) .is-thumb #permissionDeniedNotice { margin: 8px; padding: 12px; }
 
     /* ---------- Kamera tambahan ---------- */
-    .cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #020617; }
+    .cam-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: var(--cam-fit, contain); background: #020617; }
     .x-standby { padding: 16px; text-align: center; color: #94a3b8; font-size: 12px; }
     .x-standby .x-emoji { font-size: 28px; margin-bottom: 4px; }
     .x-btn-del { font-size: 11px; font-weight: 700; color: #dc2626; cursor: pointer; background: none; border: 0; padding: 0 2px; }
     .x-btn-del:hover { text-decoration: underline; }
     #cameraCluster:not(.fs-on) .is-thumb .x-standby p { display: none; }
 
+    /* ---------- Opsi tampilan dari Pengaturan ---------- */
+    #cameraCluster.no-overlay #driverOverlay { display: none !important; }
+
+    /* Kilatan layar saat peringatan */
+    #alertFlash { position: fixed; inset: 0; z-index: 70; pointer-events: none; opacity: 0; transition: opacity .15s;
+                  box-shadow: inset 0 0 0 10px rgba(239,68,68,.95), inset 0 0 120px 30px rgba(239,68,68,.45); }
+    #alertFlash.on { opacity: 1; animation: ds-flash .5s infinite alternate ease-in-out; }
+    @keyframes ds-flash { from { opacity: .35; } to { opacity: 1; } }
+
+    /* ---------- Panel Pengaturan ---------- */
+    .st-overlay { position: fixed; inset: 0; z-index: 80; display: none; }
+    .st-overlay.open { display: block; }
+    .st-backdrop { position: absolute; inset: 0; background: rgba(2, 6, 23, .55); }
+    .st-panel { position: absolute; top: 0; right: 0; height: 100%; width: min(440px, 100%); display: flex; flex-direction: column;
+                background: var(--ds-card, #fff); color: var(--ds-text, #0F172A); box-shadow: -12px 0 40px rgba(0,0,0,.25);
+                font-family: Inter, ui-sans-serif, system-ui, sans-serif; font-size: 13px; }
+    .st-head { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid var(--ds-border, #E2E8F0); }
+    .st-head h2 { margin: 0; font-size: 16px; font-weight: 700; }
+    .st-x { width: 32px; height: 32px; border-radius: 9999px; border: 1px solid var(--ds-border, #E2E8F0); background: transparent; color: inherit; cursor: pointer; }
+    .st-tabs { display: flex; gap: 4px; padding: 8px 12px 0; border-bottom: 1px solid var(--ds-border, #E2E8F0); overflow-x: auto; }
+    .st-tab { padding: 8px 12px; border: 0; background: none; color: var(--ds-muted, #64748B); font-weight: 600; font-size: 12.5px; cursor: pointer;
+              border-bottom: 2px solid transparent; white-space: nowrap; }
+    .st-tab.active { color: var(--ac-700, #1D4ED8); border-bottom-color: var(--ac-600, #2563EB); }
+    html[data-theme="dark"] .st-tab.active { color: var(--ac-300, #93C5FD); }
+    .st-body { flex: 1 1 auto; overflow-y: auto; padding: 14px 18px 24px; }
+    .st-pane { display: none; } .st-pane.active { display: block; }
+    .st-h { margin: 16px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ds-muted, #64748B); }
+    .st-h:first-child { margin-top: 0; }
+    .st-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--ds-border, #E2E8F0); cursor: pointer; }
+    .st-row:last-child { border-bottom: 0; }
+    .st-row b { display: block; font-weight: 600; }
+    .st-row small { display: block; color: var(--ds-muted, #64748B); font-size: 11.5px; margin-top: 1px; }
+    .st-switch { appearance: none; -webkit-appearance: none; flex: none; width: 38px; height: 22px; border-radius: 9999px; background: #CBD5E1; position: relative; cursor: pointer; transition: background .15s; }
+    .st-switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px; border-radius: 9999px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .15s; }
+    .st-switch:checked { background: var(--ac-600, #2563EB); }
+    .st-switch:checked::after { transform: translateX(16px); }
+    .st-field { width: 100%; padding: 8px 10px; border-radius: 10px; border: 1px solid var(--ds-border, #CBD5E1); background: var(--ds-bg2, #F8FAFC); color: inherit; font-size: 13px; }
+    .st-range { width: 100%; accent-color: var(--ac-600, #2563EB); }
+    .st-btn { padding: 8px 14px; border-radius: 10px; border: 1px solid var(--ds-border, #CBD5E1); background: var(--ds-card, #fff); color: inherit; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+    .st-btn.primary { background: var(--ac-600, #2563EB); border-color: var(--ac-600, #2563EB); color: #fff; }
+    .st-btn.danger { color: #DC2626; }
+    .st-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+    .st-seg { display: flex; border: 1px solid var(--ds-border, #CBD5E1); border-radius: 10px; overflow: hidden; }
+    .st-seg label { flex: 1; text-align: center; padding: 7px 6px; cursor: pointer; font-weight: 600; font-size: 12px; color: var(--ds-muted, #64748B); }
+    .st-seg input { display: none; }
+    .st-seg label:has(input:checked) { background: var(--ac-600, #2563EB); color: #fff; }
+    .st-layouts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .st-lay { border: 2px solid var(--ds-border, #E2E8F0); border-radius: 12px; padding: 8px; cursor: pointer; text-align: center; font-size: 11.5px; font-weight: 600; color: var(--ds-muted, #64748B); }
+    .st-lay input { display: none; }
+    .st-lay:has(input:checked) { border-color: var(--ac-600, #2563EB); color: var(--ds-text, #0F172A); }
+    .st-lay em { display: block; margin-top: 6px; font-style: normal; }
+    .st-mini { display: grid; gap: 3px; width: 100%; aspect-ratio: 16 / 10; }
+    .st-mini i { background: var(--ds-border, #CBD5E1); border-radius: 3px; }
+    .st-mini i:first-child { background: var(--ac-600, #2563EB); }
+    .mini-side   { grid-template-columns: 1.4fr 1fr; grid-template-rows: 1fr 1fr; }
+    .mini-side i:first-child { grid-row: 1 / 3; }
+    .mini-side-r { grid-template-columns: 1fr 1.4fr; grid-template-rows: 1fr 1fr; }
+    .mini-side-r i:first-child { grid-column: 2; grid-row: 1 / 3; }
+    .mini-side-r i:nth-child(2) { grid-column: 1; grid-row: 1; } .mini-side-r i:nth-child(3) { grid-column: 1; grid-row: 2; }
+    .mini-top    { grid-template-columns: 1fr 1fr; grid-template-rows: 1.5fr 1fr; }
+    .mini-top i:first-child { grid-column: 1 / 3; }
+    .mini-grid   { grid-template-columns: 1fr 1fr 1fr; }
+    .st-swatches { display: flex; gap: 10px; flex-wrap: wrap; }
+    .st-sw { position: relative; width: 34px; height: 34px; border-radius: 9999px; cursor: pointer; border: 3px solid transparent; box-shadow: 0 0 0 1px var(--ds-border, #CBD5E1); }
+    .st-sw input { display: none; }
+    .st-sw:has(input:checked) { border-color: var(--ds-card, #fff); box-shadow: 0 0 0 3px var(--ds-text, #0F172A); }
+    .st-foot { display: flex; justify-content: space-between; gap: 8px; padding: 12px 18px; border-top: 1px solid var(--ds-border, #E2E8F0); }
+    .st-note { color: var(--ds-muted, #64748B); font-size: 11.5px; margin-top: 6px; }
+
     /* ---------- Layar penuh: 1 kamera per layar, geser untuk kamera lain ---------- */
     .fs-nav { display: none; }
     #cameraCluster.fs-fallback { position: fixed; inset: 0; z-index: 60; }
     #cameraCluster.fs-on {
-        background: #fff; padding: 12px; box-sizing: border-box;
+        background: var(--ds-card, #fff); padding: 12px; box-sizing: border-box;
         width: 100vw; height: 100vh; height: 100dvh;
         border-radius: 0; border: 0; overflow: hidden;
         margin: 0 !important;   /* cegah margin dari space-y-6 induknya */
@@ -204,14 +297,14 @@
         display: flex; flex: none; align-items: center; justify-content: center; gap: 14px;
     }
     .fs-nav button.fs-arrow {
-        width: 36px; height: 36px; border-radius: 9999px; border: 1px solid #CBD5E1;
-        background: #fff; color: #334155; font-weight: 700; cursor: pointer;
+        width: 36px; height: 36px; border-radius: 9999px; border: 1px solid var(--ds-border, #CBD5E1);
+        background: var(--ds-card, #fff); color: var(--ds-text, #334155); font-weight: 700; cursor: pointer;
     }
     .fs-nav button.fs-arrow:disabled { opacity: .35; cursor: default; }
     .fs-nav-center { display: flex; flex-direction: column; align-items: center; gap: 6px; }
     .fs-dots { display: flex; align-items: center; gap: 8px; }
-    .fs-dot { width: 10px; height: 10px; border-radius: 9999px; background: #CBD5E1; border: 0; cursor: pointer; padding: 0; transition: all .2s; }
-    .fs-dot.active { background: #2563EB; width: 24px; }
+    .fs-dot { width: 10px; height: 10px; border-radius: 9999px; background: var(--ds-border, #CBD5E1); border: 0; cursor: pointer; padding: 0; transition: all .2s; }
+    .fs-dot.active { background: var(--ac-600, #2563EB); width: 24px; }
     </style>
 
     <div id="cameraCluster" class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs p-3 sm:p-4">
@@ -232,6 +325,8 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <h2 class="text-xs font-bold text-slate-700 uppercase tracking-wider">Kamera</h2>
             <div class="flex items-center gap-2">
+                <button type="button" onclick="openSettings()" title="Pengaturan" aria-label="Pengaturan"
+                        class="w-9 h-9 flex items-center justify-center bg-white hover:bg-slate-50 text-slate-700 rounded-xl border border-slate-300 transition cursor-pointer">&#9881;</button>
                 <button type="button" id="addCamBtn" onclick="addCamera()"
                         class="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-xl border border-blue-200 transition cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed">
                     + Tambah Kamera <span id="addCamCount" class="font-mono font-medium"></span>
@@ -427,6 +522,140 @@
                 </div>
             </section>
         </div><!-- /cluster-grid -->
+
+        <!-- Kilatan layar (peringatan) -->
+        <div id="alertFlash" aria-hidden="true"></div>
+
+        <!-- ===== PANEL PENGATURAN (di dalam klaster agar tetap bisa dibuka saat layar penuh) ===== -->
+        <div id="settingsModal" class="st-overlay" role="presentation">
+            <div class="st-backdrop" onclick="closeSettings()"></div>
+            <aside class="st-panel" role="dialog" aria-modal="true" aria-labelledby="stTitle">
+                <div class="st-head">
+                    <h2 id="stTitle">Pengaturan</h2>
+                    <button type="button" class="st-x" onclick="closeSettings()" aria-label="Tutup">&#10005;</button>
+                </div>
+                <div class="st-tabs" role="tablist">
+                    <button type="button" class="st-tab active" data-tab="sound" onclick="stTab('sound')">Suara</button>
+                    <button type="button" class="st-tab" data-tab="alert" onclick="stTab('alert')">Peringatan</button>
+                    <button type="button" class="st-tab" data-tab="camera" onclick="stTab('camera')">Kamera</button>
+                    <button type="button" class="st-tab" data-tab="look" onclick="stTab('look')">Tampilan</button>
+                </div>
+
+                <div class="st-body">
+                    <!-- ===== SUARA ===== -->
+                    <section class="st-pane active" data-pane="sound">
+                        <div class="st-h">Alarm</div>
+                        <label class="st-row"><span><b>Suara alarm aktif</b><small>Sama dengan tombol &ldquo;Audio Alarm&rdquo;.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="sound.enabled"></label>
+
+                        <div class="st-h">Jenis suara</div>
+                        <select class="st-field" data-k="sound.type" aria-label="Jenis suara alarm">
+                            <option value="siren">Sirine (naik-turun)</option>
+                            <option value="beep">Bip ganda</option>
+                            <option value="chime">Lonceng lembut</option>
+                            <option value="buzzer">Buzzer</option>
+                            <option value="horn">Klakson</option>
+                            <option value="custom">Suara kustom (unggah sendiri)</option>
+                        </select>
+                        <div id="stCustomWrap" class="st-inline" style="display:none">
+                            <input type="file" id="stCustomFile" accept="audio/*" onchange="onCustomSoundFile(this)" class="text-xs">
+                            <span id="stCustomName" class="st-note"></span>
+                        </div>
+
+                        <div class="st-h">Volume</div>
+                        <input type="range" class="st-range" min="0" max="100" step="1" data-k="sound.volume" data-scale="100" aria-label="Volume alarm">
+                        <div class="st-inline">
+                            <button type="button" class="st-btn" onclick="previewSound()">&#9654; Uji suara</button>
+                            <span id="stVolText" class="st-note"></span>
+                        </div>
+                    </section>
+
+                    <!-- ===== PERINGATAN ===== -->
+                    <section class="st-pane" data-pane="alert">
+                        <div class="st-h">Jenis peringatan (bisa lebih dari satu)</div>
+                        <label class="st-row"><span><b>Banner merah</b><small>Pesan besar di atas kamera.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="alerts.banner"></label>
+                        <label class="st-row"><span><b>Kilatan layar</b><small>Bingkai merah berkedip di seluruh layar.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="alerts.flash"></label>
+                        <label class="st-row"><span><b>Suara ucapan</b><small>Membacakan pesan peringatan (Bahasa Indonesia).</small></span>
+                            <input type="checkbox" class="st-switch" data-k="alerts.voice"></label>
+                        <label class="st-row"><span><b>Getar</b><small>Hanya di perangkat yang mendukung (mis. ponsel Android).</small></span>
+                            <input type="checkbox" class="st-switch" data-k="alerts.vibrate"></label>
+
+                        <div class="st-h">Peringatkan saat</div>
+                        <label class="st-row"><span><b>Mengantuk</b><small>Mata tertutup terlalu lama.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="events.KANTUK"></label>
+                        <label class="st-row"><span><b>Tidak fokus</b><small>Menoleh / menunduk terlalu lama.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="events.TIDAK_FOKUS"></label>
+                        <label class="st-row"><span><b>Menguap</b><small>Menguap berulang kali.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="events.MENGUAP"></label>
+                        <label class="st-row"><span><b>Wajah tidak terdeteksi</b></span>
+                            <input type="checkbox" class="st-switch" data-k="events.WAJAH_HILANG"></label>
+                        <label class="st-row"><span><b>Objek terlalu dekat</b><small>Dari kamera objek (jalan).</small></span>
+                            <input type="checkbox" class="st-switch" data-k="events.OBJEK_DEKAT"></label>
+
+                        <div class="st-inline"><button type="button" class="st-btn primary" onclick="testAlert()">Tes peringatan</button></div>
+                        <p class="st-note">Tes memakai pengaturan di atas selama 3 detik.</p>
+                    </section>
+
+                    <!-- ===== KAMERA ===== -->
+                    <section class="st-pane" data-pane="camera">
+                        <div class="st-h">Tata letak</div>
+                        <div class="st-layouts">
+                            <label class="st-lay"><input type="radio" name="stLayout" value="side" data-k="camera.layout"><span class="st-mini mini-side"><i></i><i></i><i></i></span><em>Utama di kiri</em></label>
+                            <label class="st-lay"><input type="radio" name="stLayout" value="side-right" data-k="camera.layout"><span class="st-mini mini-side-r"><i></i><i></i><i></i></span><em>Utama di kanan</em></label>
+                            <label class="st-lay"><input type="radio" name="stLayout" value="top" data-k="camera.layout"><span class="st-mini mini-top"><i></i><i></i><i></i></span><em>Utama di atas</em></label>
+                            <label class="st-lay"><input type="radio" name="stLayout" value="grid" data-k="camera.layout"><span class="st-mini mini-grid"><i></i><i></i><i></i></span><em>Sama besar</em></label>
+                        </div>
+                        <p class="st-note">Di layar penuh selalu 1 kamera per layar (geser untuk kamera lain).</p>
+
+                        <div class="st-h">Kamera utama saat halaman dibuka</div>
+                        <select class="st-field" data-k="camera.mainCam" aria-label="Kamera utama">
+                            <option value="driver">Kamera Pengemudi</option>
+                            <option value="object">Kamera Objek (Jalan)</option>
+                            <option value="detail">Status &amp; Metrik Deteksi</option>
+                        </select>
+
+                        <div class="st-h">Tampilan video</div>
+                        <div class="st-seg">
+                            <label><input type="radio" name="stFit" value="contain" data-k="camera.fit">Muat utuh</label>
+                            <label><input type="radio" name="stFit" value="cover" data-k="camera.fit">Isi penuh (potong tepi)</label>
+                        </div>
+                        <label class="st-row"><span><b>Cerminkan kamera pengemudi</b><small>Seperti cermin: kiri-kanan dibalik.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="camera.mirror"></label>
+                        <label class="st-row"><span><b>Overlay status di atas video</b><small>Label status dan arah pandangan.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="camera.overlay"></label>
+                        <label class="st-row"><span><b>Tampilkan panel Status &amp; Metrik</b><small>Matikan agar hanya kamera yang tampil.</small></span>
+                            <input type="checkbox" class="st-switch" data-k="camera.showDetail"></label>
+                    </section>
+
+                    <!-- ===== TAMPILAN ===== -->
+                    <section class="st-pane" data-pane="look">
+                        <div class="st-h">Tema</div>
+                        <div class="st-seg">
+                            <label><input type="radio" name="stMode" value="light" data-k="theme.mode">Terang</label>
+                            <label><input type="radio" name="stMode" value="dark" data-k="theme.mode">Gelap</label>
+                            <label><input type="radio" name="stMode" value="auto" data-k="theme.mode">Otomatis</label>
+                        </div>
+                        <p class="st-note">&ldquo;Otomatis&rdquo; mengikuti pengaturan perangkat Anda. Berlaku di semua halaman pengemudi.</p>
+
+                        <div class="st-h">Warna aksen</div>
+                        <div class="st-swatches">
+                            <label class="st-sw" style="background:#2563EB" title="Biru"><input type="radio" name="stAccent" value="blue" data-k="theme.accent"></label>
+                            <label class="st-sw" style="background:#059669" title="Hijau"><input type="radio" name="stAccent" value="emerald" data-k="theme.accent"></label>
+                            <label class="st-sw" style="background:#7C3AED" title="Ungu"><input type="radio" name="stAccent" value="violet" data-k="theme.accent"></label>
+                            <label class="st-sw" style="background:#E11D48" title="Merah muda"><input type="radio" name="stAccent" value="rose" data-k="theme.accent"></label>
+                            <label class="st-sw" style="background:#EA580C" title="Oranye"><input type="radio" name="stAccent" value="orange" data-k="theme.accent"></label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="st-foot">
+                    <button type="button" class="st-btn danger" onclick="resetSettings()">Kembalikan default</button>
+                    <button type="button" class="st-btn primary" onclick="closeSettings()">Selesai</button>
+                </div>
+            </aside>
+        </div>
 
         <!-- Navigasi geser (hanya tampil di layar penuh) -->
         <div id="fsNav" class="fs-nav" aria-label="Navigasi kamera layar penuh">
@@ -668,35 +897,48 @@
         }
     }
 
-    function playAlarmSound() {
-        if (!isAudioEnabled) return;
+    // ===== Preset suara alarm (disintesis dengan Web Audio, tanpa file) =====
+    function tone(c, t, freq, dur, type, peak) {
+        const o = c.createOscillator(), g = c.createGain();
+        o.type = type; o.frequency.setValueAtTime(freq, t);
+        g.gain.setValueAtTime(Math.max(peak, 0.0002), t);
+        g.gain.exponentialRampToValueAtTime(0.0002, t + dur);
+        o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + dur + 0.02);
+    }
+    const SOUND_PRESETS = {
+        siren:  { ms: 380, play(c, t, v) {            // sirine naik-turun (default lama)
+            const o = c.createOscillator(), g = c.createGain();
+            o.type = 'sawtooth';
+            o.frequency.setValueAtTime(920, t); o.frequency.linearRampToValueAtTime(680, t + 0.15); o.frequency.linearRampToValueAtTime(920, t + 0.3);
+            g.gain.setValueAtTime(0.4 * v, t); g.gain.exponentialRampToValueAtTime(0.01, t + 0.35);
+            o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + 0.36); } },
+        beep:   { ms: 460, play(c, t, v) { tone(c, t, 1000, 0.14, 'square', 0.28 * v); tone(c, t + 0.22, 1000, 0.14, 'square', 0.28 * v); } },
+        chime:  { ms: 1000, play(c, t, v) { tone(c, t, 880, 0.6, 'sine', 0.5 * v); tone(c, t + 0.3, 1320, 0.7, 'sine', 0.45 * v); } },
+        buzzer: { ms: 520, play(c, t, v) { tone(c, t, 180, 0.45, 'sawtooth', 0.45 * v); tone(c, t, 190, 0.45, 'square', 0.2 * v); } },
+        horn:   { ms: 700, play(c, t, v) { tone(c, t, 420, 0.55, 'square', 0.22 * v); tone(c, t, 530, 0.55, 'square', 0.22 * v); } }
+    };
+    let customAudio = null;     // suara kustom (diunggah di Pengaturan)
+
+    function playAlarmSound(force) {
+        if (!isAudioEnabled && !force) return;
+        const vol = (typeof cfg !== 'undefined') ? cfg.sound.volume : 0.7;
+        if (vol <= 0.001) return;
+        const type = (typeof cfg !== 'undefined') ? cfg.sound.type : 'siren';
+
+        if (type === 'custom' && customAudio) {
+            if (!customAudio.paused && !customAudio.ended) return;      // jangan tumpang tindih
+            customAudio.currentTime = 0;
+            customAudio.volume = Math.min(1, vol);
+            customAudio.play().catch(() => {});
+            return;
+        }
         initAudioContext();
         if (isBeeping) return;
-
         isBeeping = true;
+        const preset = SOUND_PRESETS[type] || SOUND_PRESETS.siren;
         try {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-
-            // Sirine nada ganda tajam (920Hz -> 680Hz -> 920Hz)
-            osc.type = 'sawtooth';
-            const now = audioCtx.currentTime;
-            osc.frequency.setValueAtTime(920, now);
-            osc.frequency.linearRampToValueAtTime(680, now + 0.15);
-            osc.frequency.linearRampToValueAtTime(920, now + 0.3);
-
-            gain.gain.setValueAtTime(0.4, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            osc.start(now);
-            osc.stop(now + 0.36);
-
-            setTimeout(() => {
-                isBeeping = false;
-            }, 380);
+            preset.play(audioCtx, audioCtx.currentTime, Math.min(1, vol));
+            setTimeout(() => { isBeeping = false; }, preset.ms);
         } catch (e) {
             console.error("Audio error:", e);
             isBeeping = false;
@@ -707,34 +949,29 @@
         isBeeping = false;
     }
 
+    const AUDIO_BTN_ON  = "px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-2xs flex items-center gap-2 transition cursor-pointer";
+    const AUDIO_BTN_OFF = "px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 text-xs font-semibold rounded-xl border border-red-200 shadow-2xs flex items-center gap-2 transition cursor-pointer";
+
+    function setAudioUi() {
+        const text = document.getElementById('audioText');
+        const btn = document.getElementById('toggleAudioBtn');
+        if (text) text.innerText = 'Audio Alarm: ' + (isAudioEnabled ? 'AKTIF' : 'SENYAP');
+        if (btn) btn.className = isAudioEnabled ? AUDIO_BTN_ON : AUDIO_BTN_OFF;
+    }
+
     function testAlarm() {
         initAudioContext();
         isAudioEnabled = true;
-        const icon = document.getElementById('audioIcon');
-        const text = document.getElementById('audioText');
-        const btn = document.getElementById('toggleAudioBtn');
-        if (icon) icon.innerText = '🔊';
-        if (text) text.innerText = 'Audio Alarm: AKTIF';
-        if (btn) btn.className = "px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition";
+        if (typeof cfg !== 'undefined') { cfg.sound.enabled = true; saveCfg(); syncSettingsUi(); }
+        setAudioUi();
         playAlarmSound();
     }
 
     function toggleAudio() {
         isAudioEnabled = !isAudioEnabled;
-        const icon = document.getElementById('audioIcon');
-        const text = document.getElementById('audioText');
-        const btn = document.getElementById('toggleAudioBtn');
-
-        if (isAudioEnabled) {
-            initAudioContext();
-            icon.innerText = '🔊';
-            text.innerText = 'Audio Alarm: AKTIF';
-            btn.className = "px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 flex items-center gap-2 transition";
-        } else {
-            icon.innerText = '🔇';
-            text.innerText = 'Audio Alarm: SENYAP';
-            btn.className = "px-3.5 py-2 bg-red-900/40 hover:bg-red-900/60 text-red-300 text-xs font-semibold rounded-xl border border-red-700/60 flex items-center gap-2 transition";
-        }
+        if (isAudioEnabled) initAudioContext();
+        if (typeof cfg !== 'undefined') { cfg.sound.enabled = isAudioEnabled; saveCfg(); syncSettingsUi(); }
+        setAudioUi();
     }
 
     // Enumerasi dan Pindai Daftar Perangkat Kamera
@@ -915,7 +1152,7 @@
             captureCtx.drawImage(videoEl, 0, 0, 640, 480);
             const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.65);
             // Render langsung ke canvas tampilan agar kamera selalu aktif dan tidak hitam
-            displayCtx.drawImage(videoEl, 0, 0, 640, 480);
+            drawDriverFrame();
 
             // Hitung FPS
             fpsFrames++;
@@ -947,11 +1184,13 @@
             const data = await res.json();
 
             // Render ke canvas tampilan utama
-            displayCtx.drawImage(videoEl, 0, 0, 640, 480);
+            drawDriverFrame();
 
             // Anotasi Landmark & Bounding Box Wajah
             if (data.face_detected) {
                 consecNoFaceFrames = 0;
+                displayCtx.save();
+                if (cfg.camera.mirror) { displayCtx.translate(640, 0); displayCtx.scale(-1, 1); }   // landmark ikut dicerminkan
                 // Gambar titik hijau pada mata
                 displayCtx.fillStyle = "#10B981";
                 if (data.left_eye_pts) {
@@ -976,6 +1215,7 @@
                     displayCtx.strokeStyle = data.is_alarm_active ? "#EF4444" : "#10B981";
                     displayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
                 }
+                displayCtx.restore();
             } else {
                 consecNoFaceFrames++;
                 // Hanya tampilkan banner jika wajah hilang sejenak tanpa kondisi alarm/peringatan distraksi aktif
@@ -994,7 +1234,7 @@
             }
 
             // Banner Visual Merah jika Alarm Aktif
-            if (data.is_alarm_active) {
+            if (data.is_alarm_active && cfg.alerts.banner && cfg.events[data.alarm_type || 'BAHAYA'] !== false) {
                 displayCtx.fillStyle = "rgba(220, 38, 38, 0.85)";
                 displayCtx.fillRect(0, 0, 640, 50);
                 displayCtx.fillStyle = "#FFFFFF";
@@ -1098,8 +1338,10 @@
         }
 
         // Status Alarm & Notifikasi
-        if (data.is_alarm_active) {
-            alarmBanner.classList.remove('hidden');
+        const aType = data.alarm_type || 'BAHAYA';
+        const alertOn = !!data.is_alarm_active && cfg.events[aType] !== false;   // jenis kejadian bisa dimatikan di Pengaturan
+        if (alertOn) {
+            alarmBanner.classList.toggle('hidden', !cfg.alerts.banner);
             alarmTitle.innerText = "PERINGATAN: " + (data.alarm_type || "BAHAYA");
             alarmDesc.innerText = data.alarm_message || "Kondisi berbahaya terdeteksi!";
             statusText.innerText = data.alarm_type || "BAHAYA";
@@ -1108,9 +1350,10 @@
             statusIcon.innerText = "🚨";
             statusSub.innerText = data.alarm_message;
 
-            playAlarmSound();
+            fireAlert(aType, data.alarm_message || '');
         } else {
-            alarmBanner.classList.add('hidden');
+            if (Date.now() >= testAlertUntil) alarmBanner.classList.add('hidden');
+            clearAlert();
             const label = data.status_label || "TERJAGA";
             statusText.innerText = label;
 
@@ -1182,7 +1425,10 @@
     let slotOrder = [tileDriver, tileObject, tileDetail];
 
     function applySlots() {
-        clusterGrid.style.setProperty('--n', Math.max(1, slotOrder.length - 1));
+        const nSide = Math.max(1, slotOrder.length - 1);
+        clusterGrid.style.setProperty('--n', nSide);
+        clusterGrid.style.setProperty('--cols', Math.min(nSide, 3));                       // preset "top"
+        clusterGrid.style.setProperty('--cols-eq', slotOrder.length <= 2 ? slotOrder.length : (slotOrder.length <= 4 ? 2 : 3));  // preset "grid"
         slotOrder.forEach((tile, i) => {
             tile.dataset.slot = (i === 0) ? 'main' : 'side';
             tile.style.order = i;
@@ -1279,7 +1525,7 @@
     }, { passive: true });
     window.addEventListener('resize', () => { if (isFsOn()) fsGoTo(fsIndex(), true); });
     document.addEventListener('keydown', (e) => {
-        if (!isFsOn()) return;
+        if (!isFsOn() || (typeof settingsModal !== 'undefined' && settingsModal.classList.contains('open'))) return;
         if (e.key === 'ArrowRight') { fsStep(1); }
         if (e.key === 'ArrowLeft') { fsStep(-1); }
     });
@@ -1505,6 +1751,204 @@ function toggleClusterFullscreen() {
 
     if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) {
         navigator.mediaDevices.addEventListener('devicechange', () => extraTiles.forEach(t => refreshExtraSelect(t, false)));
+    }
+
+
+    // =====================================================================
+    //  PENGATURAN (suara, peringatan, kamera, tampilan) - disimpan di localStorage
+    // =====================================================================
+    const CFG_KEY = 'dsSettings_{{ Auth::id() }}';
+    const CUSTOM_SND_KEY = 'dsCustomSound_{{ Auth::id() }}';
+    const CFG_DEFAULTS = {
+        sound:  { enabled: true, type: 'siren', volume: 0.7 },
+        alerts: { banner: true, flash: true, voice: false, vibrate: true },
+        events: { KANTUK: true, TIDAK_FOKUS: true, MENGUAP: true, WAJAH_HILANG: true, OBJEK_DEKAT: true },
+        camera: { layout: 'side', mainCam: 'driver', fit: 'contain', mirror: false, overlay: true, showDetail: true }
+    };
+    const settingsModal = document.getElementById('settingsModal');
+    const alertFlash = document.getElementById('alertFlash');
+    const stVolText = document.getElementById('stVolText');
+    const stCustomName = document.getElementById('stCustomName');
+    let customName = '';
+    let testAlertUntil = 0, testAlertTimer = null;
+
+    function mergeCfg(saved) {
+        const out = JSON.parse(JSON.stringify(CFG_DEFAULTS));
+        if (saved && typeof saved === 'object') {
+            Object.keys(out).forEach(g => Object.keys(out[g]).forEach(k => {
+                if (saved[g] && saved[g][k] !== undefined) out[g][k] = saved[g][k];
+            }));
+        }
+        out.theme = window.dsReadTheme ? window.dsReadTheme() : { mode: 'light', accent: 'blue' };
+        return out;
+    }
+    let cfg = (function () {
+        let saved = null;
+        try { saved = JSON.parse(localStorage.getItem(CFG_KEY) || 'null'); } catch (e) {}
+        return mergeCfg(saved);
+    })();
+    function saveCfg() {
+        try { const c = Object.assign({}, cfg); delete c.theme; localStorage.setItem(CFG_KEY, JSON.stringify(c)); } catch (e) {}
+    }
+
+    // ----- Suara kustom -----
+    (function loadCustomSound() {
+        try {
+            const o = JSON.parse(localStorage.getItem(CUSTOM_SND_KEY) || 'null');
+            if (o && o.data) { customAudio = new Audio(o.data); customName = o.name || 'Suara kustom'; }
+        } catch (e) {}
+    })();
+    function onCustomSoundFile(input) {
+        const f = input.files && input.files[0];
+        if (!f) return;
+        if (f.size > 8 * 1024 * 1024) { stCustomName.innerText = 'File terlalu besar (maks 8 MB).'; return; }
+        const rd = new FileReader();
+        rd.onload = () => {
+            customAudio = new Audio(rd.result);
+            customName = f.name;
+            try { localStorage.setItem(CUSTOM_SND_KEY, JSON.stringify({ name: f.name, data: rd.result })); }
+            catch (e) { customName = f.name + ' (hanya sesi ini, file terlalu besar untuk disimpan)'; }
+            syncSettingsUi();
+            previewSound();
+        };
+        rd.readAsDataURL(f);
+    }
+    function previewSound() { initAudioContext(); playAlarmSound(true); }
+
+    // ----- Saluran peringatan: suara, kilatan, ucapan, getar -----
+    let flashTimer = null, lastSpoken = 0, lastSpokenMsg = '', speechOwner = '', lastVibe = 0;
+    function showFlash(ms) {
+        alertFlash.classList.add('on');
+        clearTimeout(flashTimer);
+        flashTimer = setTimeout(() => alertFlash.classList.remove('on'), ms || 700);
+    }
+    function speakAlert(msg, owner) {
+        if (!('speechSynthesis' in window) || !msg || speechSynthesis.speaking) return;
+        const now = Date.now();
+        if (msg === lastSpokenMsg && now - lastSpoken < 8000) return;
+        const u = new SpeechSynthesisUtterance(msg.replace(/^(PERINGATAN|BAHAYA|Peringatan)\s*:\s*/, ''));
+        u.lang = 'id-ID';
+        u.volume = Math.max(0.2, Math.min(1, cfg.sound.volume));
+        speechOwner = owner; lastSpoken = now; lastSpokenMsg = msg;
+        speechSynthesis.speak(u);
+    }
+    function vibrateAlert() {
+        const now = Date.now();
+        if (now - lastVibe < 1500) return;
+        lastVibe = now;
+        try { if (navigator.vibrate) navigator.vibrate([300, 120, 300]); } catch (e) {}
+    }
+    // Dipanggil terus-menerus selama alarm aktif; tiap saluran sudah membatasi frekuensinya sendiri
+    function fireAlert(type, msg) {
+        playAlarmSound();                                            // (cek audio aktif ada di dalamnya)
+        if (cfg.alerts.flash) showFlash();
+        if (cfg.alerts.voice) speakAlert(msg, type === 'OBJEK_DEKAT' ? 'object' : 'driver');
+        if (cfg.alerts.vibrate) vibrateAlert();
+    }
+    function clearAlert() {          // alarm pengemudi selesai
+        if (speechOwner === 'driver' && 'speechSynthesis' in window && speechSynthesis.speaking) speechSynthesis.cancel();
+        stopBuzzer();
+    }
+    function testAlert() {
+        const msg = 'Ini adalah tes peringatan. Tetap fokus menatap jalan.';
+        testAlertUntil = Date.now() + 3000;
+        if (cfg.alerts.banner) {
+            alarmTitle.innerText = 'TES PERINGATAN';
+            alarmDesc.innerText = msg;
+            alarmBanner.classList.remove('hidden');
+            clearTimeout(testAlertTimer);
+            testAlertTimer = setTimeout(() => alarmBanner.classList.add('hidden'), 3000);
+        }
+        initAudioContext();
+        const iv = setInterval(() => { if (Date.now() >= testAlertUntil) clearInterval(iv); else fireAlert('TES', msg); }, 350);
+        fireAlert('TES', msg);
+    }
+
+    // ----- Kamera: frame pengemudi (dengan opsi cermin) -----
+    function drawDriverFrame() {
+        displayCtx.save();
+        if (cfg.camera.mirror) { displayCtx.translate(640, 0); displayCtx.scale(-1, 1); }
+        displayCtx.drawImage(videoEl, 0, 0, 640, 480);
+        displayCtx.restore();
+    }
+
+    // ----- Terapkan pengaturan ke tampilan -----
+    function applyCameraCfg() {
+        clusterGrid.dataset.layout = cfg.camera.layout;
+        clusterEl.style.setProperty('--cam-fit', cfg.camera.fit);
+        clusterEl.classList.toggle('no-overlay', !cfg.camera.overlay);
+        const has = slotOrder.includes(tileDetail);
+        if (!cfg.camera.showDetail && has) { slotOrder.splice(slotOrder.indexOf(tileDetail), 1); tileDetail.style.display = 'none'; }
+        if (cfg.camera.showDetail && !has) { slotOrder.push(tileDetail); tileDetail.style.display = ''; }
+        applySlots();
+    }
+    function applyMainCam() {
+        const t = { driver: tileDriver, object: tileObject, detail: tileDetail }[cfg.camera.mainCam];
+        if (t && slotOrder.includes(t)) makeMain(t);
+    }
+    function applySettings(key) {
+        const all = !key;
+        if (all || key.indexOf('theme.') === 0) { if (window.dsApplyTheme) window.dsApplyTheme(cfg.theme.mode, cfg.theme.accent, !all); }
+        if (all || key === 'sound.enabled') { isAudioEnabled = cfg.sound.enabled; setAudioUi(); }
+        if (all || (key.indexOf('camera.') === 0 && key !== 'camera.mainCam')) applyCameraCfg();
+        if (all || key === 'camera.mainCam') applyMainCam();
+    }
+
+    // ----- Panel pengaturan: binding otomatis lewat atribut data-k -----
+    function cfgGet(path) { return path.split('.').reduce((o, k) => (o == null ? o : o[k]), cfg); }
+    function cfgSet(path, v) {
+        const ks = path.split('.'); let o = cfg;
+        for (let i = 0; i < ks.length - 1; i++) o = o[ks[i]];
+        o[ks[ks.length - 1]] = v;
+    }
+    function syncSettingsUi() {
+        settingsModal.querySelectorAll('[data-k]').forEach(el => {
+            const v = cfgGet(el.dataset.k);
+            if (el.type === 'checkbox') el.checked = !!v;
+            else if (el.type === 'radio') el.checked = (String(v) === el.value);
+            else if (el.type === 'range') el.value = Math.round(v * (+el.dataset.scale || 1));
+            else el.value = v;
+        });
+        document.getElementById('stCustomWrap').style.display = (cfg.sound.type === 'custom') ? 'flex' : 'none';
+        stVolText.innerText = Math.round(cfg.sound.volume * 100) + '%';
+        stCustomName.innerText = customName || 'Belum ada file dipilih';
+    }
+    function onSettingEvent(e) {
+        const el = e.target.closest ? e.target.closest('[data-k]') : null;
+        if (!el) return;
+        if (el.type === 'range' ? e.type !== 'input' : e.type !== 'change') return;
+        let v;
+        if (el.type === 'checkbox') v = el.checked;
+        else if (el.type === 'radio') { if (!el.checked) return; v = el.value; }
+        else if (el.type === 'range') v = (+el.value) / (+el.dataset.scale || 1);
+        else v = el.value;
+        cfgSet(el.dataset.k, v);
+        saveCfg();
+        applySettings(el.dataset.k);
+        if (el.type === 'range') stVolText.innerText = Math.round(cfg.sound.volume * 100) + '%'; else syncSettingsUi();
+    }
+    settingsModal.addEventListener('input', onSettingEvent);
+    settingsModal.addEventListener('change', onSettingEvent);
+
+    function stTab(name) {
+        document.querySelectorAll('.st-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+        document.querySelectorAll('.st-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === name));
+    }
+    function openSettings() { syncSettingsUi(); settingsModal.classList.add('open'); }
+    function closeSettings() { settingsModal.classList.remove('open'); }
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && settingsModal.classList.contains('open')) { closeSettings(); e.stopImmediatePropagation(); }
+    }, true);
+
+    function resetSettings() {
+        if (!confirm('Kembalikan semua pengaturan ke default?')) return;
+        cfg = mergeCfg(null);
+        cfg.theme = { mode: 'light', accent: 'blue' };
+        saveCfg();
+        try { localStorage.removeItem(CUSTOM_SND_KEY); } catch (e) {}
+        customAudio = null; customName = '';
+        applySettings();
+        syncSettingsUi();
     }
 
     // ===== Tutorial pop-up bergambar (slider) =====
@@ -1749,10 +2193,11 @@ const tutTrack = document.getElementById('tutorialTrack');
             const parts = Object.keys(counts).map(k => counts[k] + ' ' + k);
             objSummary.innerText = parts.length ? parts.join(', ') : 'Tidak ada objek';
 
-            if (nearest) {
-                objAlert.classList.remove('hidden');
-                objAlertText.innerText = 'Objek terlalu dekat: ' + nearest.label + '! Kurangi kecepatan.';
-                if (Date.now() - objLastBeep > 1500) { objLastBeep = Date.now(); playAlarmSound(); }
+            if (nearest && cfg.events.OBJEK_DEKAT !== false) {
+                const nearMsg = 'Objek terlalu dekat: ' + nearest.label + '! Kurangi kecepatan.';
+                objAlert.classList.toggle('hidden', !cfg.alerts.banner);
+                objAlertText.innerText = nearMsg;
+                if (Date.now() - objLastBeep > 1500) { objLastBeep = Date.now(); fireAlert('OBJEK_DEKAT', nearMsg); }
             } else {
                 objAlert.classList.add('hidden');
             }
@@ -1764,5 +2209,6 @@ const tutTrack = document.getElementById('tutorialTrack');
     }
 
     applySlots();   // inisialisasi posisi kamera
+    applySettings();   // terapkan pengaturan tersimpan (tema, tata letak, dll.)
 </script>
 @endsection
