@@ -2,6 +2,66 @@
 @section('title', 'Monitoring Pengemudi Real-Time - DriveSafe DMS')
 
 @section('content')
+<!-- Cadangan tema: dipakai HANYA jika layouts/driver.blade.php belum diperbarui. Otomatis dibuang jika layout sudah mendukung tema. -->
+<style id="dsThemeFallbackCss">
+        /* ===== Skema warna: variabel dasar ===== */
+        :root {
+            --ds-card: #FFFFFF; --ds-bg2: #F8FAFC; --ds-border: #E2E8F0; --ds-text: #0F172A; --ds-muted: #64748B;
+            --ac-600: #2563EB; --ac-700: #1D4ED8; --ac-300: #93C5FD; --ac-rgb: 37, 99, 235;
+        }
+        html[data-accent="emerald"] { --ac-600: #059669; --ac-700: #047857; --ac-300: #6EE7B7; --ac-rgb: 5, 150, 105; }
+        html[data-accent="violet"]  { --ac-600: #7C3AED; --ac-700: #6D28D9; --ac-300: #C4B5FD; --ac-rgb: 124, 58, 237; }
+        html[data-accent="rose"]    { --ac-600: #E11D48; --ac-700: #BE123C; --ac-300: #FDA4AF; --ac-rgb: 225, 29, 72; }
+        html[data-accent="orange"]  { --ac-600: #EA580C; --ac-700: #C2410C; --ac-300: #FDBA74; --ac-rgb: 234, 88, 12; }
+
+        /* ===== Warna aksen: menimpa kelas biru Tailwind ===== */
+        html[data-accent] .bg-blue-600 { background-color: var(--ac-600) !important; }
+        html[data-accent] .hover\:bg-blue-700:hover { background-color: var(--ac-700) !important; }
+        html[data-accent] .text-blue-600, html[data-accent] .text-blue-700 { color: var(--ac-700) !important; }
+        html[data-accent] .bg-blue-50 { background-color: rgba(var(--ac-rgb), .09) !important; }
+        html[data-accent] .bg-blue-100, html[data-accent] .hover\:bg-blue-100:hover { background-color: rgba(var(--ac-rgb), .17) !important; }
+        html[data-accent] .border-blue-200, html[data-accent] .border-blue-100 { border-color: rgba(var(--ac-rgb), .30) !important; }
+        html[data-accent] .focus\:border-blue-600:focus { border-color: var(--ac-600) !important; }
+        html[data-accent] .bg-blue-500, html[data-accent] .bg-primary { background-color: var(--ac-600) !important; }
+        html[data-accent] .bg-blue-700 { background-color: var(--ac-700) !important; }
+        html[data-accent] .text-primary { color: var(--ac-700) !important; }
+        html[data-accent] .text-blue-400 { color: var(--ac-300) !important; }
+        html[data-accent] .hover\:text-blue-700:hover { color: var(--ac-700) !important; }
+        html[data-accent] .border-blue-600, html[data-accent] .border-blue-500 { border-color: var(--ac-600) !important; }
+        html[data-accent] .border-blue-500\/40 { border-color: rgba(var(--ac-rgb), .40) !important; }
+        html[data-accent] .bg-blue-500\/20 { background-color: rgba(var(--ac-rgb), .20) !important; }
+        html[data-accent] .focus\:ring-blue-500\/10:focus, html[data-accent] .focus\:ring-blue-100:focus { --tw-ring-color: rgba(var(--ac-rgb), .18) !important; }
+
+        /* ===== Tema gelap ===== */
+        html[data-theme="dark"] { color-scheme: dark; --ds-card: #111827; --ds-bg2: #0F172A; --ds-border: #2B3A52; --ds-text: #F1F5F9; --ds-muted: #94A3B8; }
+        html[data-theme="dark"] body { background-color: #0B1120 !important; color: #E2E8F0; }
+        html[data-theme="dark"] .bg-white { background-color: #111827 !important; }
+        html[data-theme="dark"] .bg-white\/95 { background-color: rgba(17, 24, 39, .95) !important; }
+        html[data-theme="dark"] .bg-slate-50 { background-color: #0F172A !important; }
+        html[data-theme="dark"] .bg-slate-100 { background-color: #1E293B !important; }
+        html[data-theme="dark"] .bg-slate-200 { background-color: #334155 !important; }
+        html[data-theme="dark"] .hover\:bg-slate-50:hover { background-color: #1E293B !important; }
+        html[data-theme="dark"] .hover\:bg-slate-100:hover, html[data-theme="dark"] .hover\:bg-slate-200:hover { background-color: #273449 !important; }
+        html[data-theme="dark"] .text-slate-900, html[data-theme="dark"] .text-slate-800 { color: #F1F5F9 !important; }
+        html[data-theme="dark"] .text-slate-700 { color: #E2E8F0 !important; }
+        html[data-theme="dark"] .text-slate-600 { color: #CBD5E1 !important; }
+        html[data-theme="dark"] .text-slate-500 { color: #94A3B8 !important; }
+        html[data-theme="dark"] .border-slate-100 { border-color: #1E293B !important; }
+        html[data-theme="dark"] .border-slate-200, html[data-theme="dark"] .border-slate-200\/90,
+        html[data-theme="dark"] .border-slate-200\/80, html[data-theme="dark"] .border-slate-300 { border-color: #2B3A52 !important; }
+        html[data-theme="dark"][data-accent] .text-blue-600, html[data-theme="dark"][data-accent] .text-blue-700 { color: var(--ac-300) !important; }
+        html[data-theme="dark"] .bg-amber-50 { background-color: rgba(245, 158, 11, .13) !important; }
+        html[data-theme="dark"] .text-amber-800, html[data-theme="dark"] .text-amber-600 { color: #FCD34D !important; }
+        html[data-theme="dark"] .border-amber-200 { border-color: rgba(245, 158, 11, .35) !important; }
+        html[data-theme="dark"] .bg-red-50, html[data-theme="dark"] .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, .14) !important; }
+        html[data-theme="dark"] .bg-emerald-50 { background-color: rgba(16, 185, 129, .13) !important; }
+        html[data-theme="dark"] .bg-purple-50 { background-color: rgba(168, 85, 247, .13) !important; }
+        html[data-theme="dark"] select, html[data-theme="dark"] input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), html[data-theme="dark"] textarea { background-color: #0F172A; color: #E2E8F0; border-color: #2B3A52; }
+        html[data-theme="dark"] ::-webkit-scrollbar-track { background: #0F172A; }
+        html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #334155; }
+</style>
+<script>if (window.dsApplyTheme) { var __f = document.getElementById('dsThemeFallbackCss'); if (__f) __f.remove(); }</script>
+
 <div class="space-y-6">
     <!-- Selamat Datang -->
     <section id="welcomeSection" class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs px-6 py-10 text-center">
@@ -639,6 +699,7 @@
                         </div>
                         <p class="st-note">&ldquo;Otomatis&rdquo; mengikuti pengaturan perangkat Anda. Berlaku di semua halaman pengemudi.</p>
 
+                        <p id="stThemeNote" class="st-note" style="display:none;color:#B45309">Mode cadangan: tema hanya berlaku di halaman ini. Ganti juga <b>layouts/driver.blade.php</b> agar berlaku di semua halaman.</p>
                         <div class="st-h">Warna aksen</div>
                         <div class="st-swatches">
                             <label class="st-sw" style="background:#2563EB" title="Biru"><input type="radio" name="stAccent" value="blue" data-k="theme.accent"></label>
@@ -833,6 +894,24 @@
     let currentStream = null;
     let isProcessing = false;
     let frameInterval = null;
+    // ===== Cadangan fungsi tema (jika layout belum diperbarui) =====
+    window.__dsThemeFallback = false;
+    if (!window.dsApplyTheme) {
+        window.__dsThemeFallback = true;
+        window.dsReadTheme = function () {
+            try { var t = JSON.parse(localStorage.getItem('dsTheme') || '{}'); return { mode: t.mode || 'light', accent: t.accent || 'blue' }; }
+            catch (e) { return { mode: 'light', accent: 'blue' }; }
+        };
+        window.dsApplyTheme = function (mode, accent, save) {
+            var t = window.dsReadTheme(); mode = mode || t.mode; accent = accent || t.accent;
+            var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', mode === 'auto' ? (dark ? 'dark' : 'light') : mode);
+            document.documentElement.setAttribute('data-accent', accent);
+            if (save) { try { localStorage.setItem('dsTheme', JSON.stringify({ mode: mode, accent: accent })); } catch (e) {} }
+        };
+        window.dsApplyTheme();
+    }
+
     let audioCtx = null;
     let isAudioEnabled = true;
     let isBeeping = false;
@@ -1912,6 +1991,7 @@ function toggleClusterFullscreen() {
         document.getElementById('stCustomWrap').style.display = (cfg.sound.type === 'custom') ? 'flex' : 'none';
         stVolText.innerText = Math.round(cfg.sound.volume * 100) + '%';
         stCustomName.innerText = customName || 'Belum ada file dipilih';
+        document.getElementById('stThemeNote').style.display = window.__dsThemeFallback ? 'block' : 'none';
     }
     function onSettingEvent(e) {
         const el = e.target.closest ? e.target.closest('[data-k]') : null;
