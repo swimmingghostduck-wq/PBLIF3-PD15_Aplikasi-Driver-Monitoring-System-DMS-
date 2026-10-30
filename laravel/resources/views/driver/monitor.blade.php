@@ -917,6 +917,14 @@
     let isBeeping = false;
     let fpsFrames = 0;
     let lastFpsTime = Date.now();
+    let animFrameId = null;
+
+    // Smoothing & Persistence Deteksi Wajah (Anti-Flicker / Bebas Kedip)
+    let lastFaceData = null;
+    let lastFaceDetectedTime = 0;
+    let smoothedBbox = null;        // [x1, y1, x2, y2]
+    let smoothedLeftEye = null;     // [[x, y], ...]
+    let smoothedRightEye = null;    // [[x, y], ...]
 
     const videoEl = document.getElementById('webcamVideo');
     const captureCanvas = document.getElementById('captureCanvas');
@@ -1143,7 +1151,11 @@
             // Update daftar kamera setelah izin diperoleh (nama perangkat akan muncul)
             await enumerateCameras();
 
-            // Mulai loop inferensi frame
+            // Mulai render loop kanvas kontinu (30-60 FPS) dengan anotasi landmark stabil
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            animFrameId = requestAnimationFrame(renderDriverCanvas);
+
+            // Mulai loop inferensi frame AI
             if (frameInterval) clearInterval(frameInterval);
             frameInterval = setInterval(sendFrameToAI, 80); // ~12-15 FPS
 
@@ -1164,6 +1176,10 @@
 
     // Mematikan Kamera Secara Total (OFF)
     function stopCamera() {
+        if (animFrameId) {
+            cancelAnimationFrame(animFrameId);
+            animFrameId = null;
+        }
         if (frameInterval) {
             clearInterval(frameInterval);
             frameInterval = null;
@@ -1176,6 +1192,10 @@
             videoEl.srcObject = null;
         }
         isProcessing = false;
+        lastFaceData = null;
+        smoothedBbox = null;
+        smoothedLeftEye = null;
+        smoothedRightEye = null;
 
         // Reset UI status
         camStatusBadge.className = "text-xs px-2.5 py-0.5 rounded-full font-semibold bg-slate-800 text-slate-400 border border-slate-700";
@@ -1221,7 +1241,89 @@
         }
     }
 
-    // Mengambil frame dari video, mengirim ke backend Flask, dan menggambar overlay
+    // Render loop kontinu kamera pengemudi (30-60 FPS) dengan anotasi landmark & bounding box stabil (anti-flicker)
+    function renderDriverCanvas() {
+        if (!currentStream || !videoEl || videoEl.paused || videoEl.ended) {
+            animFrameId = null;
+            return;
+        }
+
+        displayCtx.save();
+        if (cfg.camera.mirror) {
+            displayCtx.translate(640, 0);
+            displayCtx.scale(-1, 1);
+        }
+        displayCtx.drawImage(videoEl, 0, 0, 640, 480);
+
+        // Jika wajah terdeteksi dan masih segar (< 1.5 detik), render landmark mata & bounding box secara stabil
+        const isFresh = lastFaceData && (Date.now() - lastFaceDetectedTime < 1500);
+        if (isFresh && smoothedBbox) {
+            // Gambar titik hijau pada mata
+            displayCtx.fillStyle = "#10B981";
+            if (smoothedLeftEye) {
+                for (let i = 0; i < smoothedLeftEye.length; i++) {
+                    displayCtx.beginPath();
+                    displayCtx.arc(smoothedLeftEye[i][0], smoothedLeftEye[i][1], 3, 0, 2 * Math.PI);
+                    displayCtx.fill();
+                }
+            }
+            if (smoothedRightEye) {
+                for (let i = 0; i < smoothedRightEye.length; i++) {
+                    displayCtx.beginPath();
+                    displayCtx.arc(smoothedRightEye[i][0], smoothedRightEye[i][1], 3, 0, 2 * Math.PI);
+                    displayCtx.fill();
+                }
+            }
+
+            // Kotak Wajah (Bounding Box)
+            const [x1, y1, x2, y2] = smoothedBbox;
+            displayCtx.lineWidth = 2.5;
+            displayCtx.strokeStyle = lastFaceData.is_alarm_active ? "#EF4444" : "#10B981";
+            displayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+        } else if (consecNoFaceFrames > 3 && (!lastFaceData || !lastFaceData.is_alarm_active)) {
+            // Panduan saat posisi wajah hilang sejenak
+            displayCtx.fillStyle = "rgba(0, 0, 0, 0.65)";
+            displayCtx.fillRect(100, 200, 440, 80);
+            displayCtx.fillStyle = "#F59E0B";
+            displayCtx.font = "bold 16px sans-serif";
+            displayCtx.textAlign = "center";
+            displayCtx.fillText("Mencari Posisi Wajah Pengemudi...", 320, 235);
+            displayCtx.fillStyle = "#E2E8F0";
+            displayCtx.font = "12px sans-serif";
+            displayCtx.fillText("Pastikan wajah menghadap lurus ke depan jalan", 320, 260);
+            displayCtx.textAlign = "left";
+        }
+
+        // Banner Visual Merah jika Alarm Aktif
+        if (lastFaceData && lastFaceData.is_alarm_active && cfg.alerts.banner && cfg.events[lastFaceData.alarm_type || 'BAHAYA'] !== false) {
+            displayCtx.fillStyle = "rgba(220, 38, 38, 0.85)";
+            displayCtx.fillRect(0, 0, 640, 50);
+            displayCtx.fillStyle = "#FFFFFF";
+            displayCtx.font = "bold 16px sans-serif";
+            displayCtx.fillText("! " + (lastFaceData.alarm_message || "PERINGATAN BAHAYA"), 20, 32);
+        }
+
+        displayCtx.restore();
+
+        // Hitung FPS tampilan visual
+        fpsFrames++;
+        const now = Date.now();
+        if (now - lastFpsTime >= 1000) {
+            fpsCounter.innerText = `FPS: ${fpsFrames} | Resolusi: 640x480`;
+            fpsFrames = 0;
+            lastFpsTime = now;
+        }
+
+        animFrameId = requestAnimationFrame(renderDriverCanvas);
+    }
+
+    function drawDriverFrame() {
+        if (!animFrameId && currentStream) {
+            renderDriverCanvas();
+        }
+    }
+
+    // Mengambil frame dari video dan mengirim ke backend AI Python tanpa mengganggu render loop kontinu
     async function sendFrameToAI() {
         if (!currentStream || isProcessing || videoEl.paused || videoEl.ended) return;
 
@@ -1229,18 +1331,7 @@
         try {
             // Gambar frame video ke canvas offscreen
             captureCtx.drawImage(videoEl, 0, 0, 640, 480);
-            const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.65);
-            // Render langsung ke canvas tampilan agar kamera selalu aktif dan tidak hitam
-            drawDriverFrame();
-
-            // Hitung FPS
-            fpsFrames++;
-            const now = Date.now();
-            if (now - lastFpsTime >= 1000) {
-                fpsCounter.innerText = `FPS: ${fpsFrames} | Resolusi: 640x480`;
-                fpsFrames = 0;
-                lastFpsTime = now;
-            }
+            const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.60);
 
             // Kirim frame ke endpoint /driver/process_frame
             const res = await fetch("{{ route('driver.process_frame') }}", {
@@ -1262,63 +1353,53 @@
 
             const data = await res.json();
 
-            // Render ke canvas tampilan utama
-            drawDriverFrame();
-
-            // Anotasi Landmark & Bounding Box Wajah
+            // Pembaruan Landmark & Bounding Box dengan Exponential Moving Average (EMA)
             if (data.face_detected) {
                 consecNoFaceFrames = 0;
-                displayCtx.save();
-                if (cfg.camera.mirror) { displayCtx.translate(640, 0); displayCtx.scale(-1, 1); }   // landmark ikut dicerminkan
-                // Gambar titik hijau pada mata
-                displayCtx.fillStyle = "#10B981";
-                if (data.left_eye_pts) {
-                    data.left_eye_pts.forEach(pt => {
-                        displayCtx.beginPath();
-                        displayCtx.arc(pt[0], pt[1], 3, 0, 2 * Math.PI);
-                        displayCtx.fill();
-                    });
-                }
-                if (data.right_eye_pts) {
-                    data.right_eye_pts.forEach(pt => {
-                        displayCtx.beginPath();
-                        displayCtx.arc(pt[0], pt[1], 3, 0, 2 * Math.PI);
-                        displayCtx.fill();
-                    });
+                lastFaceDetectedTime = Date.now();
+                lastFaceData = data;
+
+                // Smoothing Bounding Box: 60% data baru, 40% data lama agar mulus tanpa getaran
+                if (data.bbox) {
+                    if (!smoothedBbox) {
+                        smoothedBbox = [...data.bbox];
+                    } else {
+                        for (let i = 0; i < 4; i++) {
+                            smoothedBbox[i] = smoothedBbox[i] * 0.4 + data.bbox[i] * 0.6;
+                        }
+                    }
                 }
 
-                // Kotak Wajah (Bounding Box)
-                if (data.bbox) {
-                    const [x1, y1, x2, y2] = data.bbox;
-                    displayCtx.lineWidth = 2.5;
-                    displayCtx.strokeStyle = data.is_alarm_active ? "#EF4444" : "#10B981";
-                    displayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+                // Smoothing titik mata kiri & kanan
+                if (data.left_eye_pts && data.left_eye_pts.length) {
+                    if (!smoothedLeftEye || smoothedLeftEye.length !== data.left_eye_pts.length) {
+                        smoothedLeftEye = data.left_eye_pts.map(p => [...p]);
+                    } else {
+                        for (let i = 0; i < smoothedLeftEye.length; i++) {
+                            smoothedLeftEye[i][0] = smoothedLeftEye[i][0] * 0.4 + data.left_eye_pts[i][0] * 0.6;
+                            smoothedLeftEye[i][1] = smoothedLeftEye[i][1] * 0.4 + data.left_eye_pts[i][1] * 0.6;
+                        }
+                    }
                 }
-                displayCtx.restore();
+
+                if (data.right_eye_pts && data.right_eye_pts.length) {
+                    if (!smoothedRightEye || smoothedRightEye.length !== data.right_eye_pts.length) {
+                        smoothedRightEye = data.right_eye_pts.map(p => [...p]);
+                    } else {
+                        for (let i = 0; i < smoothedRightEye.length; i++) {
+                            smoothedRightEye[i][0] = smoothedRightEye[i][0] * 0.4 + data.right_eye_pts[i][0] * 0.6;
+                            smoothedRightEye[i][1] = smoothedRightEye[i][1] * 0.4 + data.right_eye_pts[i][1] * 0.6;
+                        }
+                    }
+                }
             } else {
                 consecNoFaceFrames++;
-                // Hanya tampilkan banner jika wajah hilang sejenak tanpa kondisi alarm/peringatan distraksi aktif
-                if (consecNoFaceFrames > 4 && !data.is_alarm_active && data.status_label !== 'TIDAK_FOKUS') {
-                    displayCtx.fillStyle = "rgba(0, 0, 0, 0.65)";
-                    displayCtx.fillRect(100, 200, 440, 80);
-                    displayCtx.fillStyle = "#F59E0B";
-                    displayCtx.font = "bold 16px sans-serif";
-                    displayCtx.textAlign = "center";
-                    displayCtx.fillText("Mencari Posisi Wajah Pengemudi...", 320, 235);
-                    displayCtx.fillStyle = "#E2E8F0";
-                    displayCtx.font = "12px sans-serif";
-                    displayCtx.fillText("Pastikan wajah menghadap lurus ke depan jalan", 320, 260);
-                    displayCtx.textAlign = "left";
+                if (consecNoFaceFrames > 4) {
+                    lastFaceData = null;
+                    smoothedBbox = null;
+                    smoothedLeftEye = null;
+                    smoothedRightEye = null;
                 }
-            }
-
-            // Banner Visual Merah jika Alarm Aktif
-            if (data.is_alarm_active && cfg.alerts.banner && cfg.events[data.alarm_type || 'BAHAYA'] !== false) {
-                displayCtx.fillStyle = "rgba(220, 38, 38, 0.85)";
-                displayCtx.fillRect(0, 0, 640, 50);
-                displayCtx.fillStyle = "#FFFFFF";
-                displayCtx.font = "bold 16px sans-serif";
-                displayCtx.fillText("! " + (data.alarm_message || "PERINGATAN BAHAYA"), 20, 32);
             }
 
             // Update Panel Telemetri UI
@@ -1943,12 +2024,11 @@ function toggleClusterFullscreen() {
         fireAlert('TES', msg);
     }
 
-    // ----- Kamera: frame pengemudi (dengan opsi cermin) -----
+    // ----- Kamera: frame pengemudi (dikelola oleh renderDriverCanvas) -----
     function drawDriverFrame() {
-        displayCtx.save();
-        if (cfg.camera.mirror) { displayCtx.translate(640, 0); displayCtx.scale(-1, 1); }
-        displayCtx.drawImage(videoEl, 0, 0, 640, 480);
-        displayCtx.restore();
+        if (!animFrameId && currentStream) {
+            renderDriverCanvas();
+        }
     }
 
     // ----- Terapkan pengaturan ke tampilan -----

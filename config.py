@@ -42,7 +42,7 @@ class Config:
     # Ambang Batas Logika Kantuk & Distraksi (Fallback / Heuristik)
     EAR_THRESHOLD = 0.22         # Eye Aspect Ratio di bawah ini dihitung mata tertutup
     MAR_THRESHOLD = 0.65         # Mouth Aspect Ratio di atas ini dihitung menguap
-    DROWSY_CONSEC_FRAMES = 12    # ~1.2 detik berturut-turut untuk alarm kantuk
-    DISTRACTION_CONSEC_FRAMES = 28 # ~3.0 detik menoleh/menunduk untuk alarm tidak fokus
+    DROWSY_CONSEC_FRAMES = 7     # ~0.8-1.2 detik berturut-turut untuk alarm kantuk (dipercepat responsif)
+    DISTRACTION_CONSEC_FRAMES = 14 # ~1.8-2.2 detik menoleh/menunduk untuk alarm tidak fokus (dipercepat responsif)
     YAW_THRESHOLD = 25.0         # Derajat sudut menoleh ke samping (kiri / kanan)
     PITCH_THRESHOLD = 22.0       # Derajat sudut menunduk (bawah)

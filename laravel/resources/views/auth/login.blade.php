@@ -41,32 +41,7 @@
         }
     </style>
 </head>
-<body class="min-h-screen w-full bg-[#0A1329] bg-gradient-to-b from-[#10234E] via-[#0D1C3E] to-[#070E20] bg-fixed text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white flex flex-col justify-between p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
-
-    <!-- ========================================================
-         HEADER ATAS MINIMALIS (BRAND DRIVESAFE)
-         ======================================================== -->
-    <header class="w-full max-w-[920px] mx-auto px-2 py-2 flex items-center justify-between relative z-10">
-        <div class="flex items-center gap-3">
-            <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
-                <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="9" />
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M12 3v6m0 6v6M3 12h6m6 0h6" stroke-linecap="round" />
-                </svg>
-            </div>
-            <div>
-                <span class="text-lg font-bold font-heading text-white tracking-tight leading-none block">DriveSafe</span>
-                <span class="text-[10px] font-medium text-blue-200">Driver Monitoring System</span>
-            </div>
-        </div>
-
-        <div>
-            <a href="{{ route('register') }}" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-semibold backdrop-blur-md transition">
-                Daftar Akun
-            </a>
-        </div>
-    </header>
+<body class="min-h-screen w-full bg-[#0A1329] bg-gradient-to-b from-[#10234E] via-[#0D1C3E] to-[#070E20] bg-fixed text-slate-900 font-sans antialiased selection:bg-blue-600 selection:text-white flex items-center justify-center p-4 sm:p-6 lg:p-8 relative overflow-x-hidden">
 
     <!-- ========================================================
          KONTEN UTAMA: MODAL SPLIT DUA KOLOM PROPORSI STANDARD
@@ -78,6 +53,27 @@
              ======================================================== -->
         <div class="p-7 sm:p-9 lg:p-10 flex flex-col justify-between bg-white order-2 md:order-1 overflow-y-auto">
             <div>
+                <!-- Navbar di dalam Card: Brand DriveSafe & Daftar Akun -->
+                <div class="flex items-center justify-between pb-4 mb-5 border-b border-slate-100">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25">
+                            <svg class="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="9" />
+                                <circle cx="12" cy="12" r="3" />
+                                <path d="M12 3v6m0 6v6M3 12h6m6 0h6" stroke-linecap="round" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="text-base font-bold font-heading text-slate-900 tracking-tight leading-none block">DriveSafe</span>
+                            <span class="text-[10px] font-medium text-slate-500">Driver Monitoring System</span>
+                        </div>
+                    </div>
+
+                    <a href="{{ route('register') }}" class="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200/80 text-slate-700 hover:text-slate-900 text-xs font-semibold transition border border-slate-200/80">
+                        Daftar Akun
+                    </a>
+                </div>
+
                 <!-- Header Formulir -->
                 <div class="mb-5">
                     <div class="flex items-center gap-2 mb-1.5">
@@ -145,7 +141,7 @@
                         <label for="username" class="block text-xs font-medium text-slate-700 mb-1.5">
                             Username
                         </label>
-                        <input type="text" id="username" name="username" value="{{ old('username', 'apri') }}" required autofocus
+                        <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus
                                placeholder="Masukkan username Anda"
                                class="w-full h-11 px-3.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
                     </div>
@@ -156,7 +152,7 @@
                             Kata Sandi
                         </label>
                         <div class="relative">
-                            <input type="password" id="password" name="password" value="driver123" required
+                            <input type="password" id="password" name="password" required
                                    placeholder="Masukkan kata sandi"
                                    class="w-full h-11 pl-3.5 pr-11 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
                             <button type="button" onclick="togglePasswordVisibility('password', this)"
@@ -170,13 +166,12 @@
                         </div>
                     </div>
 
-                    <!-- Remember Me & Batas Sesi -->
-                    <div class="flex items-center justify-between pt-0.5">
+                    <!-- Remember Me -->
+                    <div class="flex items-center pt-0.5">
                         <label class="flex items-center gap-2 cursor-pointer select-none">
                             <input type="checkbox" name="remember" class="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500">
                             <span class="text-xs text-slate-600">Ingat sesi saya</span>
                         </label>
-                        <span class="text-xs text-slate-400 font-mono">Sesi: 2 jam</span>
                     </div>
 
                     <!-- Tombol Utama Submit: Standar Tombol Web Biasa (h-11, rounded-lg, solid blue) -->
@@ -188,21 +183,6 @@
                         </svg>
                     </button>
                 </form>
-
-                <!-- Pemisah ATAU -->
-                <div class="relative my-4 flex items-center justify-center">
-                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
-                    <span class="relative bg-white px-3 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">ATAU</span>
-                </div>
-
-                <!-- Tombol Sekunder Autofill Demo Cepat (Standar rounded-lg) -->
-                <button type="button" onclick="fillDemo()"
-                        class="w-full h-10 border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-medium rounded-lg transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs">
-                    <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    <span>Isi Kredensial Demo (<code id="demoCredText" class="font-mono text-blue-600 font-semibold">apri</code>)</span>
-                </button>
             </div>
 
             <!-- Tautan Pendaftaran Bawah -->
@@ -245,36 +225,22 @@
 
     </main>
 
-    <!-- Script Interaktif untuk Toggle Peran, Autofill, dan Password -->
+    <!-- Script Interaktif untuk Toggle Peran dan Password -->
     <script>
         function selectRole(role) {
             const roleInput = document.getElementById('roleInput');
             const btnDriver = document.getElementById('roleBtnDriver');
             const btnAdmin = document.getElementById('roleBtnAdmin');
-            const demoCred = document.getElementById('demoCredText');
-            const userInput = document.getElementById('username');
-            const passInput = document.getElementById('password');
 
             roleInput.value = role;
 
             if (role === 'driver') {
                 btnDriver.className = "py-2 px-3 rounded-md text-xs font-semibold bg-white text-blue-700 shadow-xs border border-slate-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer";
                 btnAdmin.className = "py-2 px-3 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer";
-                demoCred.innerHTML = "apri";
-                userInput.value = "apri";
-                passInput.value = "driver123";
             } else {
                 btnAdmin.className = "py-2 px-3 rounded-md text-xs font-semibold bg-white text-blue-700 shadow-xs border border-slate-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer";
                 btnDriver.className = "py-2 px-3 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer";
-                demoCred.innerHTML = "admin";
-                userInput.value = "admin";
-                passInput.value = "admin123";
             }
-        }
-
-        function fillDemo() {
-            const role = document.getElementById('roleInput').value;
-            selectRole(role);
         }
 
         function togglePasswordVisibility(fieldId, btn) {

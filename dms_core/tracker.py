@@ -12,8 +12,8 @@ class DrowsinessTracker:
     """
 
     def __init__(self, 
-                 drowsy_consec_frames=12, 
-                 distraction_consec_frames=28,
+                 drowsy_consec_frames=7, 
+                 distraction_consec_frames=14,
                  yaw_threshold=25.0,
                  pitch_threshold=22.0):
         self.drowsy_consec_frames = drowsy_consec_frames
@@ -26,6 +26,11 @@ class DrowsinessTracker:
         self.yawn_frames = 0
         self.distraction_frames = 0
         self.no_face_frames = 0
+
+        # Timestamp tracking untuk responsivitas alarm berbasis waktu nyata
+        self.closed_eyes_start_time = 0.0
+        self.distraction_start_time = 0.0
+        self.yawn_start_time = 0.0
 
         # Memory orientasi & smoothing pose (EMA filter)
         self.smooth_yaw = 0.0
@@ -178,27 +183,41 @@ class DrowsinessTracker:
 
         if is_distracted:
             self.distraction_frames += 1
+            if self.distraction_start_time == 0.0:
+                self.distraction_start_time = current_time
         else:
             # FAST RECOVERY: Pengemudi sudah menghadap ke depan!
             # Langsung bersihkan counter distraksi agar alarm segera padam dan tidak memicu snapshot palsu saat menghadap tengah
             self.distraction_frames = 0
+            self.distraction_start_time = 0.0
 
         # 2. Logika Kantuk / Mata Tertutup
         if is_drowsy_pred:
             self.closed_eyes_frames += 1
+            if self.closed_eyes_start_time == 0.0:
+                self.closed_eyes_start_time = current_time
         else:
             # Mata sudah terbuka -> pemulihan cepat
             self.closed_eyes_frames = 0
+            self.closed_eyes_start_time = 0.0
 
         # 3. Logika Menguap
         if is_yawning_pred:
             self.yawn_frames += 1
+            if self.yawn_start_time == 0.0:
+                self.yawn_start_time = current_time
         else:
             self.yawn_frames = max(0, self.yawn_frames - 2)
+            if self.yawn_frames == 0:
+                self.yawn_start_time = 0.0
 
         # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers & Smart Lifecycle)
+        # Responsif: Alarm aktif bila melampaui jumlah frame batas ATAU durasi waktu tertutup/distraksi tercapai
+        is_drowsy_time_met = (self.closed_eyes_start_time > 0 and (current_time - self.closed_eyes_start_time) >= 1.0 and self.closed_eyes_frames >= 3)
+        is_distraction_time_met = (self.distraction_start_time > 0 and (current_time - self.distraction_start_time) >= 1.8 and self.distraction_frames >= 5)
+
         # 1. KANTUK (Mata terpejam melampaui ambang batas)
-        if self.closed_eyes_frames >= self.drowsy_consec_frames:
+        if self.closed_eyes_frames >= self.drowsy_consec_frames or is_drowsy_time_met:
             self.is_alarm_active = True
             self.alarm_type = 'KANTUK'
             self.alarm_message = 'BAHAYA: Anda Terdeteksi Mengantuk! Segera Buka Mata!'
@@ -218,7 +237,7 @@ class DrowsinessTracker:
 
         # 2. TIDAK FOKUS (Menoleh/Menunduk berkelanjutan)
         # STRICT GUARD: Haram memicu alarm distraksi jika pengemudi sudah menghadap 'Tengah'!
-        elif self.distraction_frames >= self.distraction_consec_frames and is_distracted and self.last_direction != 'Tengah':
+        elif (self.distraction_frames >= self.distraction_consec_frames or is_distraction_time_met) and is_distracted and self.last_direction != 'Tengah':
             self.is_alarm_active = True
             self.alarm_type = 'TIDAK_FOKUS'
             if 'Bawah' in self.last_direction:
@@ -242,7 +261,7 @@ class DrowsinessTracker:
                 new_event_type = 'tidak_fokus'
 
         # 3. MENGUAP (Bukaan mulut lebar berkelanjutan)
-        elif self.yawn_frames >= 28:
+        elif self.yawn_frames >= 14:
             self.is_alarm_active = True
             self.alarm_type = 'MENGUAP'
             self.alarm_message = 'Peringatan: Terdeteksi Menguap Berulang Kali, Pertimbangkan Istirahat.'
@@ -282,24 +301,30 @@ class DrowsinessTracker:
 
     def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type, event_phase=None, incident_duration=2.0):
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
-        warning_frame_thresh = max(2, int(self.distraction_consec_frames * 0.6))
+        warning_frame_thresh = max(2, int(self.distraction_consec_frames * 0.5))
 
         if self.is_alarm_active:
             status_label = self.alarm_type
-        elif self.closed_eyes_frames >= 5:
+        elif self.closed_eyes_frames >= 3:
             status_label = 'MENGANTUK'
         elif self.distraction_frames >= warning_frame_thresh:
             status_label = 'TIDAK_FOKUS'
         elif self.no_face_frames >= warning_frame_thresh:
             status_label = 'TIDAK_FOKUS'
-        elif prediction_dict.get('is_yawning', False) or self.yawn_frames >= 12:
+        elif prediction_dict.get('is_yawning', False) or self.yawn_frames >= 8:
             status_label = 'MENGUAP'
         else:
             status_label = 'TERJAGA'
 
-        drowsy_progress = min(100, int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100))
+        current_time = time.time()
+        time_pct = int(((current_time - self.closed_eyes_start_time) / 1.0) * 100) if self.closed_eyes_start_time > 0 else 0
+        frame_pct = int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100)
+        drowsy_progress = min(100, max(frame_pct, time_pct))
         drowsy_score = round(drowsy_progress / 100.0, 2)
-        distraction_progress = min(100, int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100))
+
+        distract_time_pct = int(((current_time - self.distraction_start_time) / 1.8) * 100) if self.distraction_start_time > 0 else 0
+        distract_frame_pct = int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100)
+        distraction_progress = min(100, max(distract_frame_pct, distract_time_pct))
 
         return {
             'is_alarm_active': self.is_alarm_active,
