@@ -77,8 +77,8 @@ def init_dms_engine(app):
             mar_thresh=app.config['MAR_THRESHOLD']
         )
         tracker = DrowsinessTracker(
-            drowsy_consec_frames=app.config.get('DROWSY_CONSEC_FRAMES', 12),
-            distraction_consec_frames=app.config.get('DISTRACTION_CONSEC_FRAMES', 28),
+            drowsy_consec_frames=app.config.get('DROWSY_CONSEC_FRAMES', 7),
+            distraction_consec_frames=app.config.get('DISTRACTION_CONSEC_FRAMES', 20),
             yaw_threshold=app.config.get('YAW_THRESHOLD', 25.0),
             pitch_threshold=app.config.get('PITCH_THRESHOLD', 22.0)
         )

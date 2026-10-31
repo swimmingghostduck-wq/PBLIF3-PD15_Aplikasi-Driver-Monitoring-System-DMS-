@@ -13,7 +13,7 @@ class DrowsinessTracker:
 
     def __init__(self, 
                  drowsy_consec_frames=7, 
-                 distraction_consec_frames=14,
+                 distraction_consec_frames=20,
                  yaw_threshold=25.0,
                  pitch_threshold=22.0):
         self.drowsy_consec_frames = drowsy_consec_frames
@@ -214,7 +214,7 @@ class DrowsinessTracker:
         # 5. Evaluasi Ambang Batas Peringatan (Alarm Triggers & Smart Lifecycle)
         # Responsif: Alarm aktif bila melampaui jumlah frame batas ATAU durasi waktu tertutup/distraksi tercapai
         is_drowsy_time_met = (self.closed_eyes_start_time > 0 and (current_time - self.closed_eyes_start_time) >= 1.0 and self.closed_eyes_frames >= 3)
-        is_distraction_time_met = (self.distraction_start_time > 0 and (current_time - self.distraction_start_time) >= 1.8 and self.distraction_frames >= 5)
+        is_distraction_time_met = (self.distraction_start_time > 0 and (current_time - self.distraction_start_time) >= 2.4 and self.distraction_frames >= 7)
 
         # 1. KANTUK (Mata terpejam melampaui ambang batas)
         if self.closed_eyes_frames >= self.drowsy_consec_frames or is_drowsy_time_met:
@@ -301,7 +301,7 @@ class DrowsinessTracker:
 
     def _build_status(self, features_dict, prediction_dict, should_record_event, new_event_type, event_phase=None, incident_duration=2.0):
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
-        warning_frame_thresh = max(2, int(self.distraction_consec_frames * 0.5))
+        warning_frame_thresh = max(3, int(self.distraction_consec_frames * 0.55))
 
         if self.is_alarm_active:
             status_label = self.alarm_type
@@ -322,7 +322,7 @@ class DrowsinessTracker:
         drowsy_progress = min(100, max(frame_pct, time_pct))
         drowsy_score = round(drowsy_progress / 100.0, 2)
 
-        distract_time_pct = int(((current_time - self.distraction_start_time) / 1.8) * 100) if self.distraction_start_time > 0 else 0
+        distract_time_pct = int(((current_time - self.distraction_start_time) / 2.4) * 100) if self.distraction_start_time > 0 else 0
         distract_frame_pct = int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100)
         distraction_progress = min(100, max(distract_frame_pct, distract_time_pct))
 
