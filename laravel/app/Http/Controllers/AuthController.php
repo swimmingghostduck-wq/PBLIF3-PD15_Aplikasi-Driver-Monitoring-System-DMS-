@@ -19,7 +19,7 @@ class AuthController extends Controller
             if ($user) {
                 return $user->isAdmin()
                     ? redirect()->route('admin.dashboard')
-                    : redirect()->route('driver.dashboard');
+                    : redirect()->route('driver.monitor');
             }
         }
 
@@ -47,20 +47,22 @@ class AuthController extends Controller
         }
 
         if (!$user || !Hash::check($credentials['password'], $user->password)) {
-            return back()->withInput($request->only('username'))
-                ->with('danger', 'Username atau password yang Anda masukkan salah.');
+            return back()->withInput($request->only('username', 'role'))
+                ->with('danger', 'Username atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.')
+                ->with('error', 'Username atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.');
         }
 
         if (!$user->is_active) {
-            return back()->withInput($request->only('username'))
-                ->with('danger', 'Akun Anda dinonaktifkan. Silakan hubungi administrator.');
+            return back()->withInput($request->only('username', 'role'))
+                ->with('danger', 'Akun Anda dinonaktifkan. Silakan hubungi administrator.')
+                ->with('error', 'Akun Anda dinonaktifkan. Silakan hubungi administrator.');
         }
 
         Auth::login($user, $remember);
         $request->session()->regenerate();
 
         $intended = $request->session()->pull('url.intended');
-        $defaultRoute = $user->isAdmin() ? route('admin.dashboard') : route('driver.dashboard');
+        $defaultRoute = $user->isAdmin() ? route('admin.dashboard') : route('driver.monitor');
 
         if (!$intended || str_contains($intended, '/login') || str_contains($intended, '/register') || str_contains($intended, '/logout')) {
             $targetUrl = $defaultRoute;
@@ -87,7 +89,7 @@ class AuthController extends Controller
             if ($user) {
                 return $user->isAdmin()
                     ? redirect()->route('admin.dashboard')
-                    : redirect()->route('driver.dashboard');
+                    : redirect()->route('driver.monitor');
             }
         }
 

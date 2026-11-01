@@ -108,7 +108,53 @@ class DmsWebTest extends TestCase
         $driver = User::where('role', 'driver')->first();
 
         $response = $this->actingAs($driver)->get('/admin/dashboard');
-        $response->assertRedirect('/driver/dashboard');
+        $response->assertRedirect('/driver/monitor');
+    }
+
+    /**
+     * Test autentikasi login pengemudi langsung mengarahkan ke halaman monitoring kamera.
+     */
+    public function test_driver_login_redirects_to_monitor_page(): void
+    {
+        $response = $this->post('/login', [
+            'username' => 'apri',
+            'password' => 'driver123',
+            'role' => 'driver',
+        ]);
+
+        $response->assertRedirect('/driver/monitor');
+        $this->assertAuthenticated();
+    }
+
+    /**
+     * Test login gagal dengan password salah mengembalikan flash error dan input lama.
+     */
+    public function test_login_fails_with_invalid_credentials_and_shows_alert(): void
+    {
+        $response = $this->post('/login', [
+            'username' => 'apri',
+            'password' => 'passwordsalah',
+            'role' => 'driver',
+        ]);
+
+        $response->assertSessionHas('danger');
+        $response->assertSessionHas('error');
+        $response->assertSessionHasInput('username', 'apri');
+        $this->assertGuest();
+    }
+
+    /**
+     * Test alert notifikasi gagal login benar-benar ter-render pada HTML halaman login.
+     */
+    public function test_login_alert_renders_in_html(): void
+    {
+        $response = $this->withSession([
+            'danger' => 'Username atau kata sandi yang Anda masukkan salah. Silakan periksa kembali.'
+        ])->get('/login');
+
+        $response->assertStatus(200);
+        $response->assertSee('Autentikasi Gagal');
+        $response->assertSee('Username atau kata sandi yang Anda masukkan salah.');
     }
 
     /**

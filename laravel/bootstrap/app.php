@@ -21,7 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($user && method_exists($user, 'isAdmin') && $user->isAdmin()) {
                 return route('admin.dashboard');
             }
-            return route('driver.dashboard');
+            return route('driver.monitor');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {

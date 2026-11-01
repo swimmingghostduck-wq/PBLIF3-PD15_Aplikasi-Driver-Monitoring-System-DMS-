@@ -84,3 +84,6 @@ skills-lock.json
 Thumbs.db
 desktop.ini
 
+
+laravel/public/snapshots/*
+!laravel/public/snapshots/.gitkeep

@@ -66,7 +66,7 @@
             <div class="flex items-center justify-between h-16">
 
                 <!-- Logo & Nama -->
-                <a href="{{ route('driver.dashboard') }}" class="flex items-center gap-3" aria-label="DriveSafe - beranda">
+                <a href="{{ route('driver.monitor') }}" class="flex items-center gap-3" aria-label="DriveSafe - Kamera Monitoring">
                     <img src="{{ asset('logo.svg') }}" alt="DriveSafe Logo" class="w-9 h-9">
                     <div>
                         <span class="font-heading font-bold text-lg tracking-tight text-slate-900 block leading-tight">DriveSafe</span>

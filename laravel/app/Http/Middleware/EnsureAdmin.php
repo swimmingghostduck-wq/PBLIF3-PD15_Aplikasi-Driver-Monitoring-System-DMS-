@@ -21,8 +21,9 @@ class EnsureAdmin
         }
 
         if (!Auth::user()->isAdmin()) {
-            return redirect()->route('driver.dashboard')
-                ->with('danger', 'Akses ditolak. Halaman ini khusus Administrator.');
+            return redirect()->route('driver.monitor')
+                ->with('danger', 'Akses ditolak. Halaman ini khusus Administrator.')
+                ->with('error', 'Akses ditolak. Halaman ini khusus Administrator.');
         }
 
         return $next($request);

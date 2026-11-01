@@ -95,15 +95,15 @@
                 <div class="mb-5">
                     <div class="grid grid-cols-2 p-1 bg-slate-100 rounded-lg gap-1 border border-slate-200/80">
                         <button type="button" id="roleBtnDriver" onclick="selectRole('driver')"
-                                class="py-2 px-3 rounded-md text-xs font-semibold bg-white text-blue-700 shadow-xs border border-slate-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer">
-                            <svg class="w-4 h-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                class="py-2 px-3 rounded-md text-xs font-semibold {{ old('role', 'driver') === 'driver' ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900' }} flex items-center justify-center gap-2 transition-all cursor-pointer">
+                            <svg class="w-4 h-4 {{ old('role', 'driver') === 'driver' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                             </svg>
                             <span>Pengemudi</span>
                         </button>
                         <button type="button" id="roleBtnAdmin" onclick="selectRole('admin')"
-                                class="py-2 px-3 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer">
-                            <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                class="py-2 px-3 rounded-md text-xs font-semibold {{ old('role', 'driver') === 'admin' ? 'bg-white text-blue-700 shadow-xs border border-slate-200/80' : 'text-slate-600 hover:text-slate-900' }} flex items-center justify-center gap-2 transition-all cursor-pointer">
+                            <svg class="w-4 h-4 {{ old('role', 'driver') === 'admin' ? 'text-blue-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                             </svg>
                             <span>Admin</span>
@@ -111,50 +111,88 @@
                     </div>
                 </div>
 
-                <!-- Notifikasi Status / Error -->
-                @if (session('status'))
-                <div class="mb-4 p-3 rounded-lg bg-blue-50 text-blue-700 text-xs flex items-center gap-2 border border-blue-200">
-                    <svg class="w-4 h-4 shrink-0 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>{{ session('status') }}</span>
+                <!-- Notifikasi Status / Error / Sukses -->
+                @if (session('danger') || session('error'))
+                <div role="alert" class="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-3 shadow-2xs">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div class="leading-relaxed">
+                            <span class="font-semibold block text-rose-900">Autentikasi Gagal</span>
+                            <span>{{ session('danger') ?? session('error') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-rose-400 hover:text-rose-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
                 </div>
                 @endif
 
-                @if ($errors->any())
-                <div class="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-xs border border-red-200">
-                    <ul class="list-disc list-inside space-y-0.5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+                @if ($errors->any() && !session('danger') && !session('error'))
+                <div role="alert" class="mb-4 p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start justify-between gap-3 shadow-2xs">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <ul class="list-disc list-inside space-y-0.5 leading-relaxed">
+                            @foreach ($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                    </div>
+                    <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-rose-400 hover:text-rose-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
+                </div>
+                @endif
+
+                @if (session('success'))
+                <div role="alert" class="mb-4 p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-start justify-between gap-3 shadow-2xs">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="leading-relaxed">{{ session('success') }}</span>
+                    </div>
+                    <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-emerald-400 hover:text-emerald-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
+                </div>
+                @endif
+
+                @if (session('info') || session('status'))
+                <div role="alert" class="mb-4 p-3.5 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs flex items-start justify-between gap-3 shadow-2xs">
+                    <div class="flex items-start gap-2.5">
+                        <svg class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="leading-relaxed">{{ session('info') ?? session('status') }}</span>
+                    </div>
+                    <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-blue-400 hover:text-blue-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
                 </div>
                 @endif
 
                 <!-- Formulir Login dengan Kotak Input Standard & Umum -->
                 <form method="POST" action="{{ route('login') }}" class="space-y-4">
                     @csrf
-                    <input type="hidden" name="role" id="roleInput" value="driver">
+                    <input type="hidden" name="role" id="roleInput" value="{{ old('role', 'driver') }}">
 
-                    <!-- Field Username: Standar Umum Web (h-11, rounded-lg, border-slate-300, bg-white) -->
+                    <!-- Field Username: Standar Umum Web -->
                     <div>
                         <label for="username" class="block text-xs font-medium text-slate-700 mb-1.5">
                             Username
                         </label>
-                        <input type="text" id="username" name="username" value="{{ old('username') }}" required autofocus
-                               placeholder="Masukkan username Anda"
-                               class="w-full h-11 px-3.5 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                        <input type="text" id="username" name="username" value="{{ old('username') }}" required
+                               @if(!old('username')) autofocus @endif
+                               placeholder="{{ old('role', 'driver') === 'admin' ? 'Masukkan username admin (contoh: admin)' : 'Masukkan username pengemudi (contoh: apri)' }}"
+                               class="w-full h-11 px-3.5 rounded-lg border {{ (session('danger') || session('error') || $errors->has('username')) ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-300 focus:border-blue-600 focus:ring-blue-100' }} bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition shadow-xs">
                     </div>
 
-                    <!-- Field Password: Standar Umum Web (h-11, rounded-lg, border-slate-300, bg-white) -->
+                    <!-- Field Password: Standar Umum Web -->
                     <div>
                         <label for="password" class="block text-xs font-medium text-slate-700 mb-1.5">
                             Kata Sandi
                         </label>
                         <div class="relative">
                             <input type="password" id="password" name="password" required
+                                   @if(old('username')) autofocus @endif
                                    placeholder="Masukkan kata sandi"
-                                   class="w-full h-11 pl-3.5 pr-11 rounded-lg border border-slate-300 bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100 transition shadow-xs">
+                                   class="w-full h-11 pl-3.5 pr-11 rounded-lg border {{ (session('danger') || session('error') || $errors->has('password')) ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100' : 'border-slate-300 focus:border-blue-600 focus:ring-blue-100' }} bg-white text-slate-900 text-sm placeholder-slate-400 focus:outline-none focus:ring-2 transition shadow-xs">
                             <button type="button" onclick="togglePasswordVisibility('password', this)"
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 rounded focus:outline-none transition cursor-pointer"
                                     title="Tampilkan / Sembunyikan Kata Sandi">
@@ -183,6 +221,21 @@
                         </svg>
                     </button>
                 </form>
+
+                <!-- Petunjuk Cepat Akun Demo (Memudahkan Penguji / Evaluator) -->
+                <div class="mt-4 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-500 flex items-center justify-between gap-2">
+                    <span class="font-medium text-slate-500">Akun Cepat:</span>
+                    <div class="flex items-center gap-1.5">
+                        <button type="button" onclick="quickFill('apri', 'driver123', 'driver')"
+                                class="px-2 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-mono text-[11px] cursor-pointer transition shadow-2xs">
+                            Driver: <span class="font-semibold text-blue-600">apri</span>
+                        </button>
+                        <button type="button" onclick="quickFill('admin', 'admin123', 'admin')"
+                                class="px-2 py-1 rounded-md bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 font-mono text-[11px] cursor-pointer transition shadow-2xs">
+                            Admin: <span class="font-semibold text-blue-600">admin</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- Tautan Pendaftaran Bawah -->
@@ -225,21 +278,51 @@
 
     </main>
 
-    <!-- Script Interaktif untuk Toggle Peran dan Password -->
+    <!-- Script Interaktif untuk Toggle Peran, Password, dan Quick Fill -->
     <script>
         function selectRole(role) {
             const roleInput = document.getElementById('roleInput');
             const btnDriver = document.getElementById('roleBtnDriver');
             const btnAdmin = document.getElementById('roleBtnAdmin');
+            const usernameInput = document.getElementById('username');
 
             roleInput.value = role;
 
             if (role === 'driver') {
                 btnDriver.className = "py-2 px-3 rounded-md text-xs font-semibold bg-white text-blue-700 shadow-xs border border-slate-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer";
+                const svgD = btnDriver.querySelector('svg');
+                if (svgD) svgD.className.baseVal = "w-4 h-4 text-blue-600";
+                
                 btnAdmin.className = "py-2 px-3 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer";
+                const svgA = btnAdmin.querySelector('svg');
+                if (svgA) svgA.className.baseVal = "w-4 h-4 text-slate-400";
+
+                if (usernameInput && !usernameInput.value) {
+                    usernameInput.placeholder = "Masukkan username pengemudi (contoh: apri)";
+                }
             } else {
                 btnAdmin.className = "py-2 px-3 rounded-md text-xs font-semibold bg-white text-blue-700 shadow-xs border border-slate-200/80 flex items-center justify-center gap-2 transition-all cursor-pointer";
+                const svgA = btnAdmin.querySelector('svg');
+                if (svgA) svgA.className.baseVal = "w-4 h-4 text-blue-600";
+
                 btnDriver.className = "py-2 px-3 rounded-md text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center justify-center gap-2 transition-all cursor-pointer";
+                const svgD = btnDriver.querySelector('svg');
+                if (svgD) svgD.className.baseVal = "w-4 h-4 text-slate-400";
+
+                if (usernameInput && !usernameInput.value) {
+                    usernameInput.placeholder = "Masukkan username admin (contoh: admin)";
+                }
+            }
+        }
+
+        function quickFill(user, pass, role) {
+            selectRole(role);
+            const uInput = document.getElementById('username');
+            const pInput = document.getElementById('password');
+            if (uInput) uInput.value = user;
+            if (pInput) {
+                pInput.value = pass;
+                pInput.focus();
             }
         }
 
