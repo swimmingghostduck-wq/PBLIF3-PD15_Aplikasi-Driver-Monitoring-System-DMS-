@@ -168,7 +168,11 @@
                                 </button>
 
                                 <form action="{{ route('admin.delete_driver', $d->id) }}" method="POST"
-                                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus akun pengemudi {{ $d->full_name }}?');">
+                                      data-confirm="Apakah Anda yakin ingin menghapus akun pengemudi {{ $d->full_name }} (@{{ $d->username }}) beserta seluruh riwayat insidennya?"
+                                      data-confirm-title="Hapus Akun Pengemudi"
+                                      data-confirm-variant="danger"
+                                      data-confirm-btn="Ya, Hapus Pengemudi"
+                                      data-confirm-note="Seluruh catatan insiden dan log telemetri milik pengemudi ini akan ikut terhapus secara permanen.">
                                     @csrf
                                     <button type="submit"
                                             class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
@@ -209,7 +213,12 @@
             </button>
         </div>
 
-        <form method="POST" action="{{ route('admin.create_driver') }}" class="p-5 space-y-4 text-xs font-sans">
+        <form method="POST" action="{{ route('admin.create_driver') }}"
+              data-confirm="Pastikan data akun pengemudi baru sudah sesuai sebelum disimpan."
+              data-confirm-title="Konfirmasi Tambah Pengemudi"
+              data-confirm-variant="primary"
+              data-confirm-btn="Daftarkan Pengemudi"
+              class="p-5 space-y-4 text-xs font-sans">
             @csrf
             <div>
                 <label class="block font-medium text-slate-700 mb-1">Nama Lengkap *</label>
@@ -267,7 +276,12 @@
             </button>
         </div>
 
-        <form id="editDriverForm" method="POST" action="#" class="p-5 space-y-4 text-xs font-sans">
+        <form id="editDriverForm" method="POST" action="#"
+              data-confirm="Apakah Anda yakin ingin menyimpan perubahan data pengemudi ini?"
+              data-confirm-title="Konfirmasi Perubahan Pengemudi"
+              data-confirm-variant="primary"
+              data-confirm-btn="Simpan Perubahan"
+              class="p-5 space-y-4 text-xs font-sans">
             @csrf
             <div>
                 <label class="block font-medium text-slate-700 mb-1">Nama Lengkap *</label>

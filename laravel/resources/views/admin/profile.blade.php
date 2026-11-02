@@ -14,7 +14,12 @@
     </div>
 
     <!-- Clean, Single-Column Settings Form -->
-    <form method="POST" action="{{ route('admin.update_profile') }}" class="space-y-6">
+    <form method="POST" action="{{ route('admin.update_profile') }}"
+          data-confirm="Apakah Anda yakin ingin menyimpan seluruh perubahan informasi profil dan keamanan ini?"
+          data-confirm-title="Konfirmasi Simpan Profil"
+          data-confirm-variant="primary"
+          data-confirm-btn="Simpan Perubahan"
+          class="space-y-6">
         @csrf
         <!-- Seksi 1: Informasi Akun -->
         <div class="bg-white rounded-2xl border border-slate-200/90 shadow-2xs overflow-hidden">

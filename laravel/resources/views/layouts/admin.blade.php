@@ -233,33 +233,68 @@
                 </div>
             </header>
 
-            <!-- Flash Notification Messages -->
-            <div class="w-full px-6 sm:px-8 lg:px-10 mt-4">
+            <!-- Flash Notification Messages (Auto-dismiss & Dynamic) -->
+            <div id="adminFlashContainer" class="w-full px-6 sm:px-8 lg:px-10 mt-4 space-y-3">
                 @if(session('success'))
-                    <div class="p-3 mb-3 rounded-xl border text-xs font-medium flex items-center justify-between bg-emerald-50 border-emerald-200 text-emerald-800">
-                        <span>{{ session('success') }}</span>
-                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 font-bold ml-4 leading-none cursor-pointer text-sm">&times;</button>
+                    <div role="alert" class="p-3.5 rounded-xl border text-xs font-medium flex items-start justify-between gap-3 shadow-2xs transition-all animate-in fade-in slide-in-from-top-2 duration-200 bg-emerald-50 border-emerald-200 text-emerald-800">
+                        <div class="flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="leading-relaxed">
+                                <span class="font-bold block text-emerald-900">Perubahan Berhasil</span>
+                                <span>{{ session('success') }}</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-emerald-400 hover:text-emerald-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
                     </div>
                 @endif
-                @if(session('danger'))
-                    <div class="p-3 mb-3 rounded-xl border text-xs font-medium flex items-center justify-between bg-rose-50 border-rose-200 text-rose-700">
-                        <span>{{ session('danger') }}</span>
-                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 font-bold ml-4 leading-none cursor-pointer text-sm">&times;</button>
+                @if(session('danger') || session('error'))
+                    <div role="alert" class="p-3.5 rounded-xl border text-xs font-medium flex items-start justify-between gap-3 shadow-2xs transition-all animate-in fade-in slide-in-from-top-2 duration-200 bg-rose-50 border-rose-200 text-rose-800">
+                        <div class="flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            <div class="leading-relaxed">
+                                <span class="font-bold block text-rose-900">Perubahan Gagal</span>
+                                <span>{{ session('danger') ?? session('error') }}</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-rose-400 hover:text-rose-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
                     </div>
                 @endif
                 @if(session('info'))
-                    <div class="p-3 mb-3 rounded-xl border text-xs font-medium flex items-center justify-between bg-slate-100 border-slate-200 text-slate-800">
-                        <span>{{ session('info') }}</span>
-                        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-slate-700 font-bold ml-4 leading-none cursor-pointer text-sm">&times;</button>
+                    <div role="alert" class="p-3.5 rounded-xl border text-xs font-medium flex items-start justify-between gap-3 shadow-2xs transition-all bg-blue-50 border-blue-200 text-blue-800">
+                        <div class="flex items-start gap-2.5">
+                            <svg class="w-4 h-4 text-blue-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <div class="leading-relaxed">
+                                <span class="font-bold block text-blue-900">Informasi Sistem</span>
+                                <span>{{ session('info') }}</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-blue-400 hover:text-blue-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
                     </div>
                 @endif
                 @if($errors->any())
-                    <div class="p-3 mb-3 rounded-xl border text-xs font-medium bg-rose-50 border-rose-200 text-rose-700">
-                        <ul class="list-disc list-inside space-y-1">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
+                    <div role="alert" class="p-3.5 rounded-xl border text-xs font-medium bg-rose-50 border-rose-200 text-rose-800 shadow-2xs">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex items-start gap-2.5">
+                                <svg class="w-4 h-4 text-rose-600 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                <div class="leading-relaxed">
+                                    <span class="font-bold block text-rose-900 mb-1">Terdapat Kesalahan Validasi:</span>
+                                    <ul class="list-disc list-inside space-y-0.5">
+                                        @foreach($errors->all() as $error)
+                                            <li>{{ $error }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </div>
+                            <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-rose-400 hover:text-rose-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
+                        </div>
                     </div>
                 @endif
             </div>
@@ -283,6 +318,54 @@
         </div>
     </div>
 
+    <!-- Universal Admin Confirmation Modal ("Alert Dahulu") -->
+    <div id="adminConfirmModal" class="fixed inset-0 z-50 hidden transition-opacity duration-200" aria-modal="true" role="dialog">
+        <!-- Backdrop Overlay -->
+        <div id="adminConfirmBackdrop" onclick="closeAdminConfirm()" class="fixed inset-0 bg-slate-950/50 backdrop-blur-xs transition-opacity"></div>
+        
+        <!-- Modal Card Dialog -->
+        <div class="fixed inset-0 z-10 flex items-center justify-center p-4 sm:p-6 overflow-y-auto pointer-events-none">
+            <div class="bg-white border border-slate-200/90 rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transform transition-all animate-in fade-in zoom-in-95 duration-150 pointer-events-auto">
+                <div class="p-6">
+                    <div class="flex items-start gap-4">
+                        <!-- Icon Badge -->
+                        <div id="adminConfirmIconContainer" class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/80 flex items-center justify-center shrink-0">
+                            <svg id="adminConfirmIconPrimary" class="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <svg id="adminConfirmIconDanger" class="w-5 h-5 text-rose-600 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        
+                        <!-- Content -->
+                        <div class="flex-1">
+                            <h3 id="adminConfirmTitle" class="text-base font-bold font-heading text-slate-900 tracking-tight leading-snug">
+                                Konfirmasi Perubahan
+                            </h3>
+                            <p id="adminConfirmMessage" class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                                Apakah Anda yakin ingin memproses tindakan ini?
+                            </p>
+                            <p id="adminConfirmNote" class="text-[11px] font-mono text-slate-500 mt-2.5 bg-slate-50 p-2.5 rounded-lg border border-slate-200/80 hidden">
+                                Catatan tambahan tindakan
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Modal Actions -->
+                <div class="px-6 py-3.5 bg-slate-50/80 border-t border-slate-100 flex items-center justify-end gap-2.5 font-sans">
+                    <button type="button" onclick="closeAdminConfirm()" class="h-9 px-4 rounded-xl bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="button" id="adminConfirmSubmitBtn" class="h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5">
+                        <span>Ya, Lanjutkan</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Toggle Script for Mobile Sidebar -->
     <script>
         function toggleAdminSidebar(open) {
@@ -297,6 +380,143 @@
                 backdrop.classList.add('hidden');
                 document.body.classList.remove('overflow-hidden');
             }
+        }
+
+        // --- Universal Alert & Confirm Handler for Admin Prototype ---
+        let pendingConfirmForm = null;
+        let pendingConfirmCallback = null;
+
+        function showAdminConfirm(options) {
+            options = options || {};
+            const title = options.title || 'Konfirmasi Perubahan';
+            const message = options.message || 'Apakah Anda yakin ingin memproses perubahan ini?';
+            const note = options.note || '';
+            const variant = options.variant || 'primary'; // 'primary' | 'danger'
+            const btnText = options.btnText || (variant === 'danger' ? 'Ya, Hapus' : 'Ya, Simpan');
+
+            document.getElementById('adminConfirmTitle').textContent = title;
+            document.getElementById('adminConfirmMessage').textContent = message;
+
+            const noteEl = document.getElementById('adminConfirmNote');
+            if (note) {
+                noteEl.textContent = note;
+                noteEl.classList.remove('hidden');
+            } else {
+                noteEl.classList.add('hidden');
+            }
+
+            const iconPrimary = document.getElementById('adminConfirmIconPrimary');
+            const iconDanger = document.getElementById('adminConfirmIconDanger');
+            const iconContainer = document.getElementById('adminConfirmIconContainer');
+            const submitBtn = document.getElementById('adminConfirmSubmitBtn');
+
+            if (variant === 'danger') {
+                iconPrimary.classList.add('hidden');
+                iconDanger.classList.remove('hidden');
+                iconContainer.className = "w-10 h-10 rounded-xl bg-rose-50 text-rose-600 border border-rose-200/80 flex items-center justify-center shrink-0";
+                submitBtn.className = "h-9 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5";
+                submitBtn.innerHTML = `<span>${btnText}</span>`;
+            } else {
+                iconDanger.classList.add('hidden');
+                iconPrimary.classList.remove('hidden');
+                iconContainer.className = "w-10 h-10 rounded-xl bg-blue-50 text-blue-600 border border-blue-200/80 flex items-center justify-center shrink-0";
+                submitBtn.className = "h-9 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer flex items-center gap-1.5";
+                submitBtn.innerHTML = `<span>${btnText}</span>`;
+            }
+
+            pendingConfirmCallback = typeof options.onConfirm === 'function' ? options.onConfirm : null;
+            document.getElementById('adminConfirmModal').classList.remove('hidden');
+        }
+
+        function closeAdminConfirm() {
+            document.getElementById('adminConfirmModal').classList.add('hidden');
+            pendingConfirmForm = null;
+            pendingConfirmCallback = null;
+        }
+
+        document.getElementById('adminConfirmSubmitBtn')?.addEventListener('click', function() {
+            if (pendingConfirmCallback) {
+                const cb = pendingConfirmCallback;
+                closeAdminConfirm();
+                cb();
+                return;
+            }
+
+            if (pendingConfirmForm) {
+                const form = pendingConfirmForm;
+                closeAdminConfirm();
+                form.setAttribute('data-confirmed', 'true');
+                form.submit();
+            } else {
+                closeAdminConfirm();
+            }
+        });
+
+        // Intercept all forms with data-confirm automatically across admin pages
+        document.addEventListener('submit', function(e) {
+            const form = e.target;
+            if (!form || !form.hasAttribute('data-confirm')) return;
+
+            if (form.getAttribute('data-confirmed') === 'true') {
+                form.removeAttribute('data-confirmed');
+                return; // Proceed with real submit!
+            }
+
+            e.preventDefault();
+            pendingConfirmForm = form;
+
+            showAdminConfirm({
+                title: form.getAttribute('data-confirm-title') || 'Konfirmasi Tindakan',
+                message: form.getAttribute('data-confirm') || 'Apakah Anda yakin ingin memproses tindakan ini?',
+                note: form.getAttribute('data-confirm-note') || '',
+                variant: form.getAttribute('data-confirm-variant') || 'primary',
+                btnText: form.getAttribute('data-confirm-btn') || ''
+            });
+        });
+
+        // Function to dynamically trigger notification alerts (for prototype & real events)
+        function showAdminAlert(type, title, message) {
+            const container = document.getElementById('adminFlashContainer');
+            if (!container) return;
+
+            const alertEl = document.createElement('div');
+            const isSuccess = type === 'success';
+            const isDanger = type === 'danger' || type === 'error';
+
+            const bgClass = isSuccess ? 'bg-emerald-50 border-emerald-200 text-emerald-800' : 
+                            (isDanger ? 'bg-rose-50 border-rose-200 text-rose-800' : 'bg-blue-50 border-blue-200 text-blue-800');
+            const iconColor = isSuccess ? 'text-emerald-600' : (isDanger ? 'text-rose-600' : 'text-blue-600');
+            const defaultTitle = isSuccess ? 'Perubahan Berhasil' : (isDanger ? 'Perubahan Gagal' : 'Informasi Sistem');
+
+            alertEl.className = `p-3.5 rounded-xl border text-xs font-medium flex items-start justify-between gap-3 shadow-2xs transition-all animate-in fade-in slide-in-from-top-2 duration-200 ${bgClass}`;
+            alertEl.setAttribute('role', 'alert');
+
+            alertEl.innerHTML = `
+                <div class="flex items-start gap-2.5">
+                    <svg class="w-4 h-4 ${iconColor} shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        ${isSuccess ? '<path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />' : 
+                          (isDanger ? '<path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />' :
+                          '<path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />')}
+                    </svg>
+                    <div class="leading-relaxed">
+                        <span class="font-bold block ${isSuccess ? 'text-emerald-900' : (isDanger ? 'text-rose-900' : 'text-blue-900')}">${title || defaultTitle}</span>
+                        <span>${message}</span>
+                    </div>
+                </div>
+                <button type="button" onclick="this.closest('[role=alert]').remove()" class="text-slate-400 hover:text-slate-700 p-0.5 rounded cursor-pointer leading-none font-bold text-base" title="Tutup pemberitahuan">&times;</button>
+            `;
+
+            container.prepend(alertEl);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Auto dismiss after 7s
+            setTimeout(() => {
+                if (alertEl.parentElement) {
+                    alertEl.style.opacity = '0';
+                    alertEl.style.transition = 'opacity 0.3s ease';
+                    setTimeout(() => alertEl.remove(), 300);
+                }
+            }, 7000);
         }
     </script>
     @yield('scripts')

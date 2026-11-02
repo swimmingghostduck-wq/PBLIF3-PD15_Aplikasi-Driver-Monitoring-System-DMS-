@@ -132,7 +132,11 @@
                 @if($recentAlerts->count() > 0)
                 <div class="w-px h-3.5 bg-slate-200"></div>
                 <form action="{{ route('admin.clear_alerts') }}" method="POST"
-                      onsubmit="return confirm('Apakah Anda yakin ingin menghapus seluruh log insiden? Tindakan ini tidak dapat dibatalkan.');">
+                      data-confirm="PERINGATAN: Seluruh riwayat catatan insiden armada akan dibersihkan secara permanen. Tindakan ini tidak dapat dibatalkan."
+                      data-confirm-title="Bersihkan Seluruh Riwayat Insiden"
+                      data-confirm-variant="danger"
+                      data-confirm-btn="Ya, Bersihkan Semua"
+                      data-confirm-note="Seluruh data log telemetri kewaspadaan pengemudi akan dikosongkan secara permanen.">
                     @csrf
                     <button type="submit" class="h-8 px-2.5 bg-white hover:bg-rose-50 text-rose-600 rounded-lg border border-slate-200 hover:border-rose-200 transition-colors flex items-center gap-1.5 cursor-pointer font-sans text-xs font-medium">
                         <svg class="w-3.5 h-3.5 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
@@ -251,7 +255,10 @@
                                 @endif
 
                                 <form action="{{ route('admin.delete_alert', $alert->id) }}" method="POST"
-                                      onsubmit="return confirm('Hapus catatan insiden #{{ $alert->id }}?');">
+                                      data-confirm="Apakah Anda yakin ingin menghapus catatan insiden #{{ $alert->id }}?"
+                                      data-confirm-title="Hapus Catatan Insiden"
+                                      data-confirm-variant="danger"
+                                      data-confirm-btn="Hapus Catatan">
                                     @csrf
                                     <button type="submit" class="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer" title="Hapus insiden ini">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">

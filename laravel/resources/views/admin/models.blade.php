@@ -2,7 +2,12 @@
 @section('title', 'Statistik Model AI - DriveSafe')
 
 @section('header_actions')
-<form action="{{ route('admin.reload_model') }}" method="POST">
+<form action="{{ route('admin.reload_model') }}" method="POST"
+      data-confirm="Apakah Anda yakin ingin menyinkronkan ulang model Random Forest Classifier dengan engine inferensi AI?"
+      data-confirm-title="Konfirmasi Sinkronisasi Model AI"
+      data-confirm-variant="primary"
+      data-confirm-btn="Sinkronkan Model"
+      data-confirm-note="Sistem akan merefresh cache file model Random Forest pada pipeline deteksi.">
     @csrf
     <button type="submit" 
             class="h-9 px-3.5 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-200/90 shadow-2xs transition-colors flex items-center gap-2 cursor-pointer">

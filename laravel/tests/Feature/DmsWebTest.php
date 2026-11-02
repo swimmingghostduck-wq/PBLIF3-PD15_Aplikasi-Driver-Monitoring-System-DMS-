@@ -192,5 +192,45 @@ class DmsWebTest extends TestCase
             'severity' => 'BAHAYA'
         ]);
     }
+
+    /**
+     * Test layout admin merender modal konfirmasi ("alert dahulu") tanpa simulator widget.
+     */
+    public function test_admin_layout_renders_confirmation_modal(): void
+    {
+        $admin = User::where('username', 'admin')->first();
+
+        $response = $this->actingAs($admin)->get('/admin/dashboard');
+        $response->assertStatus(200);
+        $response->assertSee('adminConfirmModal');
+        $response->assertSee('Konfirmasi Perubahan');
+        $response->assertDontSee('adminPrototypeSimulator');
+    }
+
+    /**
+     * Test layout admin merender alert pesan berhasil dan pesan gagal dengan benar.
+     */
+    public function test_admin_layout_renders_success_and_error_flash_alerts(): void
+    {
+        $admin = User::where('username', 'admin')->first();
+
+        // 1. Uji pesan sukses
+        $successResponse = $this->actingAs($admin)
+            ->withSession(['success' => 'Data pengemudi berhasil diperbarui.'])
+            ->get('/admin/drivers');
+
+        $successResponse->assertStatus(200);
+        $successResponse->assertSee('Perubahan Berhasil');
+        $successResponse->assertSee('Data pengemudi berhasil diperbarui.');
+
+        // 2. Uji pesan gagal
+        $dangerResponse = $this->actingAs($admin)
+            ->withSession(['danger' => 'Gagal memperbarui profil administrator.'])
+            ->get('/admin/profile');
+
+        $dangerResponse->assertStatus(200);
+        $dangerResponse->assertSee('Perubahan Gagal');
+        $dangerResponse->assertSee('Gagal memperbarui profil administrator.');
+    }
 }
 
