@@ -303,9 +303,14 @@ class DrowsinessTracker:
         """Menyusun struktur data status komprehensif untuk dirender di UI dan dicatat di database."""
         warning_frame_thresh = max(3, int(self.distraction_consec_frames * 0.55))
 
+        # Filter Kedipan Normal (Blink Debounce):
+        # Kedipan normal manusia berlangsung 100-250ms (1-2 frame pada 10-15 FPS).
+        # Status 'MENGANTUK' dan kenaikan bar skor kantuk hanya dipicu jika mata terpejam kontinu >= 3 frame.
+        is_normal_blink = (self.closed_eyes_frames <= 2)
+
         if self.is_alarm_active:
             status_label = self.alarm_type
-        elif self.closed_eyes_frames >= 3:
+        elif not is_normal_blink and self.closed_eyes_frames >= 3:
             status_label = 'MENGANTUK'
         elif self.distraction_frames >= warning_frame_thresh:
             status_label = 'TIDAK_FOKUS'
@@ -317,14 +322,25 @@ class DrowsinessTracker:
             status_label = 'TERJAGA'
 
         current_time = time.time()
-        time_pct = int(((current_time - self.closed_eyes_start_time) / 1.0) * 100) if self.closed_eyes_start_time > 0 else 0
-        frame_pct = int((self.closed_eyes_frames / max(1, self.drowsy_consec_frames)) * 100)
-        drowsy_progress = min(100, max(frame_pct, time_pct))
-        drowsy_score = round(drowsy_progress / 100.0, 2)
+        # Perhitungan Skor & Progres Kantuk:
+        # Selama kedipan normal atau saat mata terbuka, skor wajib 0% (pemulihan instan)
+        if is_normal_blink or self.closed_eyes_start_time == 0.0:
+            drowsy_progress = 0
+            drowsy_score = 0.0
+        else:
+            time_pct = int(((current_time - self.closed_eyes_start_time) / 1.0) * 100) if self.closed_eyes_start_time > 0 else 0
+            # Skalakan dari frame 3 sampai batas alarm agar kenaikan progres bar proporsional
+            frame_pct = int(((self.closed_eyes_frames - 2) / max(1, self.drowsy_consec_frames - 2)) * 100)
+            drowsy_progress = min(100, max(frame_pct, time_pct))
+            drowsy_score = round(drowsy_progress / 100.0, 2)
 
-        distract_time_pct = int(((current_time - self.distraction_start_time) / 2.4) * 100) if self.distraction_start_time > 0 else 0
-        distract_frame_pct = int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100)
-        distraction_progress = min(100, max(distract_frame_pct, distract_time_pct))
+        # Progres Distraksi: langsung 0% jika menghadap tengah atau tidak terdistraksi
+        if self.distraction_frames == 0 or self.last_direction == 'Tengah':
+            distraction_progress = 0
+        else:
+            distract_time_pct = int(((current_time - self.distraction_start_time) / 2.4) * 100) if self.distraction_start_time > 0 else 0
+            distract_frame_pct = int((self.distraction_frames / max(1, self.distraction_consec_frames)) * 100)
+            distraction_progress = min(100, max(distract_frame_pct, distract_time_pct))
 
         return {
             'is_alarm_active': self.is_alarm_active,

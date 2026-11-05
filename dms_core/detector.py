@@ -177,10 +177,13 @@ class FaceLandmarkDetector:
 
         return pitch, yaw, roll
 
-    def calculate_gaze_ratio(self, landmarks_pixel):
+    def calculate_gaze_ratio(self, landmarks_pixel, ear_left=None, ear_right=None, yaw=0.0, pitch=0.0):
         """
         Menghitung rasio arah pandangan mata (Gaze Tracking) via posisi horizontal iris.
-        Nilai ~0.50 (toleransi 0.36 - 0.64) berarti bola mata fokus menatap lurus ke depan jalan.
+        Mendukung pelacakan monokular adaptif:
+        - Jika salah satu mata tertutup (mengedip sebelah / kelilipan), iris mata yang terbuka tetap dilacak dengan presisi.
+        - Jika kedua mata terpejam, iris diabaikan dan pandangan mengacu pada orientasi kepala.
+        Nilai ~0.50 (toleransi 0.35 - 0.65) berarti bola mata fokus menatap lurus ke depan jalan.
         """
         if len(landmarks_pixel) < 478:
             return 0.50, True
@@ -196,12 +199,29 @@ class FaceLandmarkDetector:
         left_width = max(1, abs(p133[0] - p33[0]))
         right_width = max(1, abs(p263[0] - p362[0]))
 
-        left_ratio = (p468[0] - min(p33[0], p133[0])) / left_width
-        right_ratio = (p473[0] - min(p362[0], p263[0])) / right_width
+        left_ratio = max(0.0, min(1.0, (p468[0] - min(p33[0], p133[0])) / left_width))
+        right_ratio = max(0.0, min(1.0, (p473[0] - min(p362[0], p263[0])) / right_width))
 
-        gaze_h = round((left_ratio + right_ratio) / 2.0, 3)
-        # Pandangan mata lurus ke depan
-        is_gaze_forward = bool(0.36 <= gaze_h <= 0.64)
+        # Ambang keterbukaan kelopak mata individual
+        left_open = (ear_left is None) or (ear_left >= 0.18)
+        right_open = (ear_right is None) or (ear_right >= 0.18)
+
+        if left_open and right_open:
+            # Kedua mata terbuka normal: gunakan rata-rata posisi kedua iris
+            gaze_h = round((left_ratio + right_ratio) / 2.0, 3)
+            is_gaze_forward = bool(0.35 <= gaze_h <= 0.65)
+        elif left_open and not right_open:
+            # Hanya mata kiri yang terbuka: gunakan hanya iris mata kiri
+            gaze_h = round(float(left_ratio), 3)
+            is_gaze_forward = bool(0.35 <= gaze_h <= 0.65)
+        elif right_open and not left_open:
+            # Hanya mata kanan yang terbuka: gunakan hanya iris mata kanan
+            gaze_h = round(float(right_ratio), 3)
+            is_gaze_forward = bool(0.35 <= gaze_h <= 0.65)
+        else:
+            # Kedua mata terpejam: iris tidak valid, tentukan dari orientasi kepala
+            gaze_h = 0.50
+            is_gaze_forward = bool(abs(yaw) < 22.0 and abs(pitch) < 20.0)
 
         return float(gaze_h), is_gaze_forward
 
@@ -279,8 +299,8 @@ class FaceLandmarkDetector:
         # Ekstraksi pose kepala (Pitch, Yaw, Roll)
         pitch, yaw, roll = self.estimate_head_pose(landmarks_pixel, (h, w))
 
-        # Ekstraksi arah pandangan mata (Iris Gaze)
-        gaze_h, is_gaze_forward = self.calculate_gaze_ratio(landmarks_pixel)
+        # Ekstraksi arah pandangan mata (Iris Gaze Adaptif)
+        gaze_h, is_gaze_forward = self.calculate_gaze_ratio(landmarks_pixel, ear_left, ear_right, yaw, pitch)
 
         eye_diff = abs(ear_left - ear_right)
         ear_mar_ratio = ear_avg / (mar + 1e-6)

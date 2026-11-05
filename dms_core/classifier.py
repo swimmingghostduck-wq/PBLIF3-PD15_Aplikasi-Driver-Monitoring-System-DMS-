@@ -104,17 +104,27 @@ class DrowsinessClassifier:
                 is_drowsy = ('MENGANTUK' in pred_label or 'DROWSY' in pred_label or 'CLOSED' in pred_label or pred_label == '1')
                 is_yawning = (mar > self.mar_thresh or 'YAWN' in pred_label or 'MENGUAP' in pred_label)
 
-                # Proteksi fisiologis: Jika kelopak mata terbuka jelas (EAR >= 0.23), mata tidak terpejam
-                if ear_avg >= 0.23:
+                # Proteksi fisiologis komprehensif:
+                # 1. Kantuk adalah proses bilateral (kedua mata terpejam). Jika salah satu mata terbuka jelas (EAR >= 0.21)
+                #    atau rata-rata EAR >= 0.20, driver terjaga (bukan microsleep/kantuk).
+                # 2. Ketika driver terjaga (tidak mengantuk), skor kantuk HARUS instan 0.0 agar indikator UI langsung
+                #    kembali ke 0% tanpa menyisakan probabilitas residu (1.0 - proba).
+                ear_left = features_dict.get('ear_left', ear_avg)
+                ear_right = features_dict.get('ear_right', ear_avg)
+                max_ear = max(ear_left, ear_right)
+
+                if ear_avg >= 0.20 or max_ear >= 0.21:
                     is_drowsy = False
-                elif ear_avg <= 0.16:
+                elif ear_avg <= 0.16 and max_ear < 0.18:
                     is_drowsy = True
+
+                drowsy_score = round(float(proba), 3) if is_drowsy else 0.0
 
                 status = self.LABEL_MENGANTUK if is_drowsy else (self.LABEL_MENGUAP if is_yawning else self.LABEL_TERJAGA)
                 
                 return {
                     'status': status,
-                    'drowsy_score': round(float(proba) if is_drowsy else (1.0 - float(proba)), 3),
+                    'drowsy_score': drowsy_score,
                     'is_drowsy': is_drowsy,
                     'is_yawning': is_yawning,
                     'method': self.model_name
@@ -123,16 +133,23 @@ class DrowsinessClassifier:
                 print(f"[DMS Classifier] Error inferensi model: {e}. Menggunakan fallback.")
 
         # 2. Heuristik Baseline Geometris (Rule-Based Cerdas)
-        is_eyes_closed = ear_avg < self.ear_thresh
+        ear_left = features_dict.get('ear_left', ear_avg)
+        ear_right = features_dict.get('ear_right', ear_avg)
+        max_ear = max(ear_left, ear_right)
+
+        # Mata terpejam hanya jika kedua kelopak mata tertutup (kantuk bilateral)
+        is_eyes_closed = (ear_avg < self.ear_thresh) and (max_ear < 0.20)
         is_yawning = mar > self.mar_thresh
 
-        # Perhitungan skor kantuk continuous (0.0 sampai 1.0)
-        if ear_avg <= 0.10:
-            drowsy_score = 1.0
-        elif ear_avg >= 0.35:
+        # Perhitungan skor kantuk continuous (0.0 sampai 1.0):
+        # Saat mata terbuka, skor wajib 0.0 (pemulihan instan)
+        if not is_eyes_closed:
             drowsy_score = 0.0
         else:
-            drowsy_score = max(0.0, min(1.0, (0.35 - ear_avg) / (0.35 - 0.10)))
+            if ear_avg <= 0.10:
+                drowsy_score = 1.0
+            else:
+                drowsy_score = max(0.0, min(1.0, (self.ear_thresh - ear_avg) / (self.ear_thresh - 0.10)))
 
         if is_eyes_closed and is_yawning:
             status = self.LABEL_MENGANTUK

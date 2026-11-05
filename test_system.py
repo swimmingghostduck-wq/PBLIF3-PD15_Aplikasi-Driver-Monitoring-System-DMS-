@@ -241,5 +241,72 @@ class TestDMSSystem(unittest.TestCase):
         self.assertIn('ear_avg', json_data)
         self.assertIn('status_label', json_data)
 
+    def test_10_blink_filter_and_monocular_gaze(self):
+        """Memastikan filter kedipan alami (debouncing) dan pelacakan tatapan monokular adaptif berjalan akurat."""
+        from dms_core.classifier import DrowsinessClassifier
+        from dms_core.tracker import DrowsinessTracker
+        from dms_core.detector import FaceLandmarkDetector
+        import os
+
+        # 1. Uji Monocular Gaze: saat 1 mata tertutup dan 1 mata terbuka menatap lurus
+        det = FaceLandmarkDetector()
+        mock_landmarks = [(0, 0)] * 478
+        mock_landmarks[33] = (100, 100)
+        mock_landmarks[133] = (150, 100)
+        mock_landmarks[468] = (125, 100)  # iris kiri tepat di tengah (ratio 0.50)
+
+        mock_landmarks[362] = (200, 100)
+        mock_landmarks[263] = (250, 100)
+        mock_landmarks[473] = (202, 100)  # iris kanan terpejam/terdistorsi di sudut (ratio ~0.04)
+
+        # Jika mata kanan terpejam (ear_right = 0.08) dan mata kiri terbuka (ear_left = 0.28)
+        gaze_h, is_forward = det.calculate_gaze_ratio(mock_landmarks, ear_left=0.28, ear_right=0.08, yaw=0.0, pitch=0.0)
+        self.assertTrue(is_forward, "Gaze harus tetap fokus lurus ke depan dengan mengandalkan mata yang terbuka")
+        self.assertAlmostEqual(gaze_h, 0.50, delta=0.05)
+
+        # 2. Uji Classifier: tutup satu mata tidak boleh diprediksi MENGANTUK
+        model_path = os.path.join(ROOT_DIR, 'models', 'trained_model.joblib')
+        clf = DrowsinessClassifier(model_path=model_path)
+        one_eye_features = {
+            'face_detected': True,
+            'ear_left': 0.28,
+            'ear_right': 0.06,
+            'ear_avg': 0.17,
+            'mar': 0.20,
+            'features_vector': [0.28, 0.06, 0.17, 0.20, 0.0, 0.0, 0.0, 0.22, 0.85, 0.0]
+        }
+        pred = clf.predict(one_eye_features)
+        self.assertFalse(pred['is_drowsy'], "Tutup 1 mata tidak boleh dianggap kantuk bilateral")
+        self.assertEqual(pred['drowsy_score'], 0.0, "Skor kantuk harus 0.0 saat salah satu mata terjaga")
+
+        # 3. Uji Tracker: kedipan normal (frame 1-2) harus 0% skor kantuk, dan buka mata langsung reset instan ke 0%
+        tracker = DrowsinessTracker(drowsy_consec_frames=7)
+        normal_face = {'face_detected': True, 'yaw': 0.0, 'pitch': 0.0}
+        drowsy_pred = {'is_drowsy': True, 'is_yawning': False, 'status': 'MENGANTUK'}
+        awake_pred = {'is_drowsy': False, 'is_yawning': False, 'status': 'TERJAGA'}
+
+        # Frame 1 kedipan
+        st1 = tracker.update(normal_face, drowsy_pred)
+        self.assertEqual(st1['drowsy_progress'], 0)
+        self.assertEqual(st1['drowsy_score'], 0.0)
+        self.assertEqual(st1['status_label'], 'TERJAGA')
+
+        # Frame 2 kedipan
+        st2 = tracker.update(normal_face, drowsy_pred)
+        self.assertEqual(st2['drowsy_progress'], 0)
+        self.assertEqual(st2['drowsy_score'], 0.0)
+        self.assertEqual(st2['status_label'], 'TERJAGA')
+
+        # Frame 3 (mulai terindikasi kantuk > 2 frame)
+        st3 = tracker.update(normal_face, drowsy_pred)
+        self.assertGreater(st3['drowsy_progress'], 0)
+        self.assertEqual(st3['status_label'], 'MENGANTUK')
+
+        # Saat buka mata (frame berikutnya terjaga) -> pemulihan instan ke 0%
+        st_awake = tracker.update(normal_face, awake_pred)
+        self.assertEqual(st_awake['drowsy_progress'], 0, "Progres harus langsung 0 saat mata terbuka")
+        self.assertEqual(st_awake['drowsy_score'], 0.0, "Skor harus langsung 0.0 saat mata terbuka")
+        self.assertEqual(st_awake['status_label'], 'TERJAGA')
+
 if __name__ == '__main__':
     unittest.main()
