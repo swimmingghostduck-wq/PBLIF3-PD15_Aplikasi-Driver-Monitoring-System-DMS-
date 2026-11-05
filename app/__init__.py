@@ -40,7 +40,7 @@ def create_app(config_class=Config):
         print(f"[Database] Terhubung ke MySQL server ({app.config['MYSQL_HOST']}:{app.config['MYSQL_PORT']}). Database: {app.config['MYSQL_DB']}")
     except Exception as e:
         print(f"[Database] MySQL server tidak terdeteksi ({e}).")
-        print("[Database] Mengalihkan ke SQLite lokal (sqlite:///dms.db) demi kelancaran aplikasi...")
+        print(f"[Database] Mengalihkan ke SQLite bersama Laravel ({app.config.get('SQLITE_PATH')}) demi kelancaran aplikasi...")
         app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLITE_URI']
 
     db.init_app(app)

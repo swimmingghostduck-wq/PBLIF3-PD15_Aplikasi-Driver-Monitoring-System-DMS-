@@ -19,8 +19,14 @@ class Config:
     # Batas Waktu Inaktivitas Sesi Pengguna (detik)
     SESSION_INACTIVITY_TIMEOUT = 1800  # 30 menit inaktivitas otomatis logout
     
-    # Konfigurasi Database: Prioritas MySQL (XAMPP default: root tanpa password)
-    # Jika koneksi MySQL gagal, aplikasi otomatis beralih ke SQLite lokal.
+    # Path Penyimpanan Direktori Basis
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    MODELS_DIR = os.path.join(BASE_DIR, 'models')
+    DATASET_DIR = os.path.join(BASE_DIR, 'dataset')
+    SNAPSHOTS_DIR = os.path.join(BASE_DIR, 'app', 'static', 'snapshots')
+
+    # Konfigurasi Database: Prioritas MySQL (XAMPP / Laragon default: root tanpa password)
+    # Jika koneksi MySQL gagal, aplikasi otomatis beralih ke SQLite bersama Web Laravel.
     MYSQL_HOST = os.environ.get('MYSQL_HOST', 'localhost')
     MYSQL_PORT = int(os.environ.get('MYSQL_PORT', 3306))
     MYSQL_USER = os.environ.get('MYSQL_USER', 'root')
@@ -28,16 +34,11 @@ class Config:
     MYSQL_DB = os.environ.get('MYSQL_DB', 'dms_db')
     
     MYSQL_URI = f"mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@{MYSQL_HOST}:{MYSQL_PORT}/{MYSQL_DB}"
-    SQLITE_URI = "sqlite:///dms.db"
+    SQLITE_PATH = os.path.join(BASE_DIR, 'laravel', 'database', 'database.sqlite')
+    SQLITE_URI = f"sqlite:///{SQLITE_PATH.replace(os.sep, '/')}"
     
     SQLALCHEMY_DATABASE_URI = MYSQL_URI
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    
-    # Path Penyimpanan Model & Dataset
-    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-    MODELS_DIR = os.path.join(BASE_DIR, 'models')
-    DATASET_DIR = os.path.join(BASE_DIR, 'dataset')
-    SNAPSHOTS_DIR = os.path.join(BASE_DIR, 'app', 'static', 'snapshots')
     
     # Ambang Batas Logika Kantuk & Distraksi (Fallback / Heuristik)
     EAR_THRESHOLD = 0.22         # Eye Aspect Ratio di bawah ini dihitung mata tertutup
